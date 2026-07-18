@@ -196,6 +196,20 @@ const cards=[
   {name:'Saqueador Grik',description:'Pequeno, veloz e traiçoeiro. Grik luta apenas pelo que consegue roubar.',hp:32,damage:9,move:5,cost:2,ability:'Pilhagem',abilityText:'Ao eliminar uma unidade, devolve 1 ponto de custo ao seu rei.',rarity:'COMUM',rarityClass:'common',info:'GOBLIN · SAQUEADOR',glyph:'♟'},
   {name:'Guardião de Ossos',description:'Uma sentinela reanimada que ainda protege as criptas de um reino esquecido.',hp:78,damage:17,move:2,cost:6,ability:'Juramento da Cripta',abilityText:'Retorna com 25 de vida uma vez após ser eliminado.',rarity:'ÉPICA',rarityClass:'epic',info:'MORTO-VIVO · GUARDIÃO',glyph:'☠'}
 ];
+const deckPreview=document.querySelector('#deck-preview'),deckPile=document.querySelector('.deck-pile');
+function previewDeckCard(index){
+  const c=cards[index];deckPreview.className=`deck-preview rarity-${c.rarityClass}`;deckPreview.innerHTML=`
+    <div class="preview-top"><b class="preview-cost">${c.cost}</b><strong>${c.name}</strong><i class="preview-gem"></i></div>
+    <div class="preview-art"><span>${c.glyph}</span></div><p class="preview-description">${c.description}</p>
+    <div class="preview-stats"><span><small>VIDA</small><b>${c.hp}</b></span><span><small>DANO</small><b>${c.damage}</b></span><span><small>MOVIMENTO</small><b>${c.move}</b></span></div>
+    <div class="preview-ability"><small>HABILIDADE ESPECIAL</small><strong>${c.ability}</strong><p>${c.abilityText}</p></div>
+    <div class="preview-info"><span>${c.info}</span><b>${c.rarity}</b></div>`;
+  deckPreview.classList.add('visible');deckPreview.setAttribute('aria-hidden','false');
+}
+function hideDeckPreview(){deckPreview.classList.remove('visible');deckPreview.setAttribute('aria-hidden','true')}
+deckPile.querySelectorAll('[data-deck-card]').forEach(card=>{card.addEventListener('pointerenter',()=>previewDeckCard(Number(card.dataset.deckCard)));card.addEventListener('focus',()=>previewDeckCard(Number(card.dataset.deckCard)))});
+deckPile.addEventListener('pointerleave',hideDeckPreview);deckPile.addEventListener('focusout',e=>{if(!deckPile.contains(e.relatedTarget))hideDeckPreview()});
+document.addEventListener('pointermove',e=>{if(!deckPile.contains(e.target))hideDeckPreview()});
 const hand=document.querySelector('#card-hand');
 hand.innerHTML=cards.map((c,i)=>`<button class="game-card rarity-${c.rarityClass}" data-card="${i}" aria-label="Carta ${c.name}, ${c.rarity}">
   <span class="card-top"><b class="card-cost">${c.cost}</b><strong class="card-name">${c.name}</strong><i class="card-rarity-gem"></i></span>
@@ -209,7 +223,7 @@ hand.addEventListener('click',e=>{const card=e.target.closest('.game-card');if(!
 
 let drawingCard=false,handShift=0;
 function drawCardPreview(){
-  if(drawingCard)return;drawingCard=true;const deck=document.querySelector('.deck-stack').getBoundingClientRect(),target=hand.getBoundingClientRect();
+  if(drawingCard)return;drawingCard=true;const deck=document.querySelector('.deck-pile').getBoundingClientRect(),target=hand.getBoundingClientRect();
   const ghost=document.createElement('div');ghost.className='draw-card-ghost';ghost.textContent='♜';ghost.style.left=`${deck.left}px`;ghost.style.top=`${deck.top}px`;document.body.appendChild(ghost);
   const dx=target.left+target.width/2-deck.left-36,dy=Math.min(innerHeight-125,target.top+40)-deck.top-53;
   const motion=ghost.animate([{transform:'translate(0,0) rotate(-8deg) scale(.72)',opacity:.35},{offset:.48,transform:`translate(${dx*.52}px,${dy*.35}px) rotate(7deg) scale(1.15)`,opacity:1},{transform:`translate(${dx}px,${dy}px) rotate(0) scale(.9)`,opacity:.15}],{duration:980,easing:'cubic-bezier(.2,.75,.2,1)'});

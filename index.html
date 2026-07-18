@@ -18,9 +18,16 @@
         <article class="player enemy" id="player-two"><div class="player-vitals"><span class="health"><small>HP</small><b>16/20</b></span><span class="energy"><small>ENERGIA</small><b>6/10</b></span></div><div class="player-name"><small>TRONO CARMESIM</small><strong>REI VAROS</strong></div><span class="crown">♚</span></article>
       </section>
       <aside class="deck-panel" aria-label="Baralho do Reino do Corvo">
-        <div class="deck-stack"><i></i><i></i><span>♜</span></div>
+        <div class="deck-pile" aria-label="Cartas embaralhadas">
+          <button data-deck-card="3" aria-label="Examinar carta do dragão"><span>♜</span></button>
+          <button data-deck-card="4" aria-label="Examinar carta do goblin"><span>♜</span></button>
+          <button data-deck-card="1" aria-label="Examinar carta do guerreiro"><span>♜</span></button>
+          <button data-deck-card="5" aria-label="Examinar carta do guardião"><span>♜</span></button>
+          <button data-deck-card="2" aria-label="Examinar carta da arqueira"><span>♜</span></button>
+        </div>
         <div><small>BARALHO DO CORVO</small><strong><b id="deck-count">28</b> CARTAS</strong><button id="draw-card">SIMULAR COMPRA <span>＋</span></button></div>
       </aside>
+      <section id="deck-preview" class="deck-preview" aria-live="polite" aria-hidden="true"></section>
       <aside id="unit-panel" class="unit-panel" aria-live="polite" aria-hidden="true">
         <button class="panel-close" aria-label="Fechar informações">×</button>
         <small id="unit-role">UNIDADE</small>
