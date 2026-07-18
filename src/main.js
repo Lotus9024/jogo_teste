@@ -15,7 +15,7 @@ const sun=new THREE.DirectionalLight(0xe2c69c,3.7); sun.position.set(-6,13,7); s
 const cool=new THREE.DirectionalLight(0x596b78,1.35);cool.position.set(7,7,-8);scene.add(cool);
 
 const M={
-  stone:new THREE.MeshStandardMaterial({color:0x292e2b,roughness:.91,metalness:.03}), stoneDark:new THREE.MeshStandardMaterial({color:0x171b19,roughness:.96}),
+  stone:new THREE.MeshStandardMaterial({color:0x353c37,emissive:0x080a08,emissiveIntensity:.22,roughness:.91,metalness:.03}), stoneDark:new THREE.MeshStandardMaterial({color:0x202622,emissive:0x040504,emissiveIntensity:.18,roughness:.96}),
   iron:new THREE.MeshStandardMaterial({color:0x777b7a,roughness:.31,metalness:.86}), steel:new THREE.MeshStandardMaterial({color:0xa9adaa,roughness:.22,metalness:.92}),
   leather:new THREE.MeshStandardMaterial({color:0x4a2c20,roughness:.72}), darkLeather:new THREE.MeshStandardMaterial({color:0x211b19,roughness:.82}),
   skin:new THREE.MeshStandardMaterial({color:0xa97156,roughness:.72}), red:new THREE.MeshStandardMaterial({color:0x682b25,roughness:.76}),
@@ -114,6 +114,48 @@ function makeKeep(accent,enemy=false){
 }
 const alliedKeep=makeKeep(0x3d5974),enemyKeep=makeKeep(0x7b2825,true);
 alliedKeep.position.set(0,.06,half-tile);enemyKeep.position.set(0,.06,-half+tile);board.add(alliedKeep,enemyKeep);
+
+// A ruined, misty valley frames the game board while keeping every tile clear.
+const environment=new THREE.Group(),wisps=[];
+const earth=new THREE.MeshStandardMaterial({color:0x0c110e,emissive:0x010201,emissiveIntensity:.25,roughness:1}),ashStone=new THREE.MeshStandardMaterial({color:0x353c36,roughness:.98}),deadWood=new THREE.MeshStandardMaterial({color:0x463126,emissive:0x080504,emissiveIntensity:.28,roughness:1});
+add(new THREE.CircleGeometry(19,72),earth,environment,[0,-.58,0],[-Math.PI/2,0,0],[1,.78,1]);
+add(new THREE.RingGeometry(8.8,11.8,72),new THREE.MeshStandardMaterial({color:0x171d19,roughness:1}),environment,[0,-.55,0],[-Math.PI/2,0,0],[1,.82,1]);
+
+function deadTree(x,z,scale=1,twist=0){
+  const tree=new THREE.Group();tree.position.set(x,-.52,z);tree.rotation.y=twist;tree.scale.setScalar(scale);
+  add(new THREE.CylinderGeometry(.09,.18,1.65,9),deadWood,tree,[0,.82,0],[0,0,.08]);
+  [[-.42,1.2,.35],[.4,1.05,-.45],[-.3,.72,-.62]].forEach(([bx,by,rz],i)=>{add(new THREE.CylinderGeometry(.035,.075,.85-i*.12,7),deadWood,tree,[bx*.48,by,0],[0,0,rz]);add(new THREE.ConeGeometry(.025,.28,6),deadWood,tree,[bx,by+.28,0],[0,0,rz]);});
+  environment.add(tree);
+}
+[[-10.3,-6.3,1.15,.2],[-11.2,-1.2,.85,-.5],[-10.1,4.6,1.05,.7],[10.5,-5.2,1,.1],[11.1,.2,1.2,-.35],[9.9,5.7,.88,.8],[-5.8,-9.5,.78,.4],[6.4,9.3,.92,-.2]].forEach(p=>deadTree(...p));
+
+function brokenPillar(x,z,height=1.35,lean=0){
+  const ruin=new THREE.Group();ruin.position.set(x,-.53,z);ruin.rotation.z=lean;
+  add(new THREE.CylinderGeometry(.25,.32,.18,10),ashStone,ruin,[0,.09,0]);add(new THREE.CylinderGeometry(.2,.23,height,10),ashStone,ruin,[0,.18+height/2,0]);
+  add(new THREE.CylinderGeometry(.3,.23,.15,10),ashStone,ruin,[0,height+.2,0],[.12,.08,0]);environment.add(ruin);
+}
+[[-9.25,-3.4,1.5,.08],[-9.6,2.8,.9,-.13],[9.35,-2.6,1.2,.12],[9.7,3.7,1.65,-.06],[-4.2,9.2,.75,.16],[4.7,-9.15,1.05,-.12]].forEach(p=>brokenPillar(...p));
+
+const rockSpots=[[-12,-7,.75],[-11,7,.55],[-8.9,-8.6,.6],[-7.6,9.3,.75],[-3.1,-9.4,.42],[2.2,9.6,.5],[8.7,-8.8,.72],[11.8,-6,.48],[11.5,6.8,.65],[-12.2,2.8,.45],[12,-1.6,.52]];
+rockSpots.forEach(([x,z,s],i)=>{const rock=add(new THREE.DodecahedronGeometry(s,0),ashStone,environment,[x,-.42+s*.35,z],[i*.17,i*.31,i*.11],[1,.55,.8]);rock.rotation.y=i*.74;});
+
+function graveStone(x,z,rotation=0){
+  const grave=new THREE.Group();grave.position.set(x,-.5,z);grave.rotation.y=rotation;
+  add(new THREE.BoxGeometry(.48,.55,.16,2,2,1),ashStone,grave,[0,.3,0],[0,0,.04]);add(new THREE.SphereGeometry(.24,12,7,0,Math.PI*2,0,Math.PI/2),ashStone,grave,[0,.58,0]);
+  add(new THREE.BoxGeometry(.24,.035,.018),M.iron,grave,[0,.37,.09]);add(new THREE.BoxGeometry(.035,.25,.018),M.iron,grave,[0,.37,.09]);environment.add(grave);
+}
+[[-8.8,-5.7,.2],[-8.9,1.1,-.1],[-8.7,6.3,.15],[8.7,-6.2,-.2],[8.9,.9,.12],[8.75,5.4,-.08]].forEach(p=>graveStone(...p));
+
+// Two ruined watchfires create warm landmarks in the otherwise cold valley.
+for(const [x,z] of [[-9.2,0],[9.2,0]]){
+  add(new THREE.CylinderGeometry(.22,.29,.3,12),M.iron,environment,[x,-.35,z]);add(new THREE.ConeGeometry(.14,.38,9),new THREE.MeshBasicMaterial({color:0xb65a2b}),environment,[x,.02,z]);
+  const fire=new THREE.PointLight(0xb5532c,3.1,4.2,2);fire.position.set(x,.35,z);scene.add(fire);
+}
+for(let i=0;i<6;i++){
+  const mistMat=new THREE.MeshBasicMaterial({color:0x718379,transparent:true,opacity:.012+i*.003,depthWrite:false,side:THREE.DoubleSide});
+  const mist=add(new THREE.CircleGeometry(1.6+i*.18,32),mistMat,environment,[(i%2?1:-1)*(8.7+(i%3)), -.43, -7.2+i*2.8],[-Math.PI/2,0,0],[1.8,.7,1]);mist.userData={mist:true,index:i,baseX:mist.position.x};wisps.push(mist);
+}
+scene.add(environment);
 scene.add(board);
 
 // Each miniature is snapped to the exact center of a tile. Scale 0.64 keeps
@@ -234,5 +276,5 @@ function moveTray(direction){handShift=THREE.MathUtils.clamp(handShift+direction
 document.querySelector('#tray-prev').addEventListener('click',()=>moveTray(1));document.querySelector('#tray-next').addEventListener('click',()=>moveTray(-1));
 
 const clock=new THREE.Clock();
-function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();controls.update();units.forEach((u,i)=>{const rig=u.getObjectByName('rig');rig.position.y=.18+Math.sin(t*1.35+i*1.7)*.012;rig.rotation.z=Math.sin(t*.8+i)*.006;u.traverse(o=>{if(o.userData.magic){o.rotation.y=t*1.5;o.position.y=2.23+Math.sin(t*2.5)*.045;}})});renderer.render(scene,camera)}
-function resize(){const aspect=innerWidth/innerHeight,view=innerWidth<700?9.6:8.9;camera.left=-view*aspect;camera.right=view*aspect;camera.top=view;camera.bottom=-view;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7))}addEventListener('resize',resize);resize();animate();setTimeout(()=>document.querySelector('.loading').classList.add('done'),500);
+function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();controls.update();units.forEach((u,i)=>{const rig=u.getObjectByName('rig');rig.position.y=.18+Math.sin(t*1.35+i*1.7)*.012;rig.rotation.z=Math.sin(t*.8+i)*.006;u.traverse(o=>{if(o.userData.magic){o.rotation.y=t*1.5;o.position.y=2.23+Math.sin(t*2.5)*.045;}})});wisps.forEach((w,i)=>{w.position.x=w.userData.baseX+Math.sin(t*.12+i)*.55;w.material.opacity=.012+i*.003+Math.sin(t*.35+i)*.004;});renderer.render(scene,camera)}
+function resize(){const aspect=innerWidth/innerHeight,view=innerWidth<700?11.2:10.2;camera.left=-view*aspect;camera.right=view*aspect;camera.top=view;camera.bottom=-view;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7))}addEventListener('resize',resize);resize();animate();setTimeout(()=>document.querySelector('.loading').classList.add('done'),500);
