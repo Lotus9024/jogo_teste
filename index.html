@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b0e0e" />
+    <title>Mesa de Guerra — Tabuleiro 3D</title>
+  </head>
+  <body>
+    <main id="game" tabindex="0" aria-label="Tabuleiro 3D medieval com três tropas">
+      <header class="hud-title">
+        <span class="sigil">♜</span>
+        <div><small>CRÔNICAS DOS REINOS</small><h1>TRONOS EM RUÍNAS</h1></div>
+      </header>
+      <section class="players" aria-label="Jogadores e turno atual">
+        <article class="player active" id="player-one"><span class="crown">♛</span><div><small>REINO DO CORVO</small><strong>REI ALDRIC</strong></div><b>18</b></article>
+        <div class="turn"><small>RODADA</small><strong id="round-number">I</strong></div>
+        <article class="player enemy" id="player-two"><b>16</b><div><small>TRONO CARMESIM</small><strong>REI VAROS</strong></div><span class="crown">♚</span></article>
+      </section>
+      <aside id="unit-panel" class="unit-panel" aria-live="polite" aria-hidden="true">
+        <button class="panel-close" aria-label="Fechar informações">×</button>
+        <small id="unit-role">UNIDADE</small>
+        <h2 id="unit-name">—</h2>
+        <div class="hp-line"><span>VIDA</span><b id="stat-hp">0 / 0</b></div>
+        <div class="hp-track"><i id="hp-fill"></i></div>
+        <div class="stat-grid">
+          <div><span>⚔</span><small>DANO</small><b id="stat-damage">0</b></div>
+          <div><span>⌁</span><small>MOVIMENTO</small><b id="stat-move">0</b></div>
+          <div><span>✦</span><small>CUSTO</small><b id="stat-cost">0</b></div>
+        </div>
+        <div class="ability">
+          <div><small>HABILIDADE ESPECIAL</small><span id="ability-state">DISPONÍVEL</span></div>
+          <strong id="stat-ability">—</strong>
+          <p id="ability-description">Selecione uma unidade para ver sua habilidade.</p>
+        </div>
+      </aside>
+      <section class="card-dock" aria-label="Mão de cartas">
+        <div class="dock-label"><span>MÃO DO REINO</span><b id="hand-count">6 CARTAS</b></div>
+        <div id="card-hand" class="card-hand"></div>
+      </section>
+      <div class="bottom-command">
+        <span id="turn-label">TURNO DE REI ALDRIC</span>
+        <button id="end-turn"><i></i> ENCERRAR TURNO <kbd>↵</kbd></button>
+      </div>
+      <div class="hint"><i></i> SELECIONE UMA TROPA &nbsp;·&nbsp; ARRASTE PARA GIRAR &nbsp;·&nbsp; SCROLL PARA ZOOM</div>
+      <div class="loading"><div class="loader-mark">✦</div><span>PREPARANDO O CAMPO</span></div>
+    </main>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
