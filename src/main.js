@@ -82,6 +82,26 @@ for(const x of [-1,1])for(const z of [-1,1]){
   add(new THREE.ConeGeometry(.08,.22,10),new THREE.MeshBasicMaterial({color:0xc06932}),board,[bx,.34,bz]);
   const ember=new THREE.PointLight(0x9c3f1d,2.2,2.4,2);ember.position.set(bx,.55,bz);scene.add(ember);
 }
+
+// Compact keeps mark each king's side without hiding the board from the
+// top-down camera. They are presentation pieces only in this visual build.
+function makeKeep(accent,enemy=false){
+  const keep=new THREE.Group(),bannerMat=new THREE.MeshStandardMaterial({color:accent,roughness:.72,side:THREE.DoubleSide});
+  add(new THREE.CylinderGeometry(.86,1.0,.18,32),M.base,keep,[0,.05,0]);
+  add(new THREE.BoxGeometry(1.08,.72,.88,4,3,3),M.stone,keep,[0,.47,0]);
+  for(const x of [-.46,.46])for(const z of [-.36,.36]){
+    add(new THREE.CylinderGeometry(.25,.3,.82,16),M.stoneDark,keep,[x,.51,z]);
+    add(new THREE.ConeGeometry(.31,.34,16),M.iron,keep,[x,1.09,z]);
+  }
+  for(const x of [-.42,0,.42])add(new THREE.BoxGeometry(.22,.22,.2),M.stoneDark,keep,[x,.94,0]);
+  add(new THREE.CylinderGeometry(.025,.025,1.15,10),M.iron,keep,[0,1.44,0]);
+  add(new THREE.PlaneGeometry(.42,.5,2,2),bannerMat,keep,[.22,1.7,0],[0,enemy?Math.PI:0,0]);
+  const crown=add(new THREE.OctahedronGeometry(.1,0),M.gold,keep,[0,1.04,.48]);crown.rotation.z=Math.PI/4;
+  keep.rotation.y=enemy?Math.PI:0;
+  return keep;
+}
+const alliedKeep=makeKeep(0x3d5974),enemyKeep=makeKeep(0x7b2825,true);
+alliedKeep.position.set(0,.06,half-tile);enemyKeep.position.set(0,.06,-half+tile);board.add(alliedKeep,enemyKeep);
 scene.add(board);
 
 // Each miniature is snapped to the exact center of a tile. Scale 0.64 keeps
@@ -89,7 +109,16 @@ scene.add(board);
 const units=[makeMage(),makeWarrior(),makeArcher()]; units[0].position.set(-2.16,.06,0);units[1].position.set(0,.06,0);units[2].position.set(2.16,.06,0);units.forEach(u=>{u.scale.setScalar(.64);scene.add(u)});
 
 // Selection and unit status HUD.
-const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();let selected=null;
+const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();let selected=null,dragged=null,dragMoved=false,justDragged=false;
+const boardPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
+const dragPoint=new THREE.Vector3();
+const tileMarker=add(new THREE.PlaneGeometry(tile*.9,tile*.9),new THREE.MeshBasicMaterial({color:0xcaa45d,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide}),scene,[0,.075,0],[-Math.PI/2,0,0]);
+tileMarker.visible=false;
+function unitAtPointer(e){
+  const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;ray.setFromCamera(pointer,camera);
+  const hits=ray.intersectObjects(units,true);if(!hits.length)return null;let u=hits[0].object;while(u.parent&&!u.userData.selectable)u=u.parent;return u.userData.selectable?u:null;
+}
+function snapToTile(value){return THREE.MathUtils.clamp(Math.round((value+half)/tile)*tile-half,-half,half)}
 function showUnit(u){
   const d=u.userData,panel=document.querySelector('#unit-panel');
   document.querySelector('#unit-role').textContent=d.role;document.querySelector('#unit-name').textContent=d.name;
@@ -99,8 +128,28 @@ function showUnit(u){
   const state=document.querySelector('#ability-state');state.textContent=d.abilityUsed?'JÁ USADA':'DISPONÍVEL';state.classList.toggle('used',d.abilityUsed);
   panel.classList.add('open');panel.setAttribute('aria-hidden','false');
 }
-function pick(e){const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;ray.setFromCamera(pointer,camera);const hits=ray.intersectObjects(units,true);if(!hits.length)return;let u=hits[0].object;while(u.parent&&!u.userData.selectable)u=u.parent;if(!u.userData.selectable)return;if(selected)selected.getObjectByName('selectionRing').material.emissiveIntensity=.18;selected=u;selected.getObjectByName('selectionRing').material.emissiveIntensity=1.3;showUnit(u);}
+function selectUnit(u){if(selected)selected.getObjectByName('selectionRing').material.emissiveIntensity=.18;selected=u;selected.getObjectByName('selectionRing').material.emissiveIntensity=1.3;showUnit(u)}
+function pick(e){if(justDragged){justDragged=false;return}const u=unitAtPointer(e);if(u)selectUnit(u)}
+function startDrag(e){
+  if(e.button!==0)return;const u=unitAtPointer(e);if(!u)return;
+  e.preventDefault();e.stopPropagation();dragged=u;dragMoved=false;controls.enabled=false;selectUnit(u);renderer.domElement.setPointerCapture(e.pointerId);
+  dragged.position.y=.18;tileMarker.position.set(dragged.position.x,.075,dragged.position.z);tileMarker.visible=true;app.dataset.dragging=dragged.userData.name;
+}
+function moveDrag(e){
+  if(!dragged)return;e.preventDefault();dragMoved=true;
+  const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;ray.setFromCamera(pointer,camera);
+  if(ray.ray.intersectPlane(boardPlane,dragPoint)){const x=snapToTile(dragPoint.x),z=snapToTile(dragPoint.z);dragged.position.x=x;dragged.position.z=z;tileMarker.position.set(x,.075,z)}
+}
+function finishDrag(e){
+  if(!dragged)return;e.preventDefault();e.stopPropagation();dragged.position.y=.06;controls.enabled=true;tileMarker.visible=false;
+  app.dataset.lastMoved=`${dragged.userData.name}:${dragged.position.x.toFixed(2)},${dragged.position.z.toFixed(2)}`;delete app.dataset.dragging;justDragged=dragMoved;dragged=null;
+  if(renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.releasePointerCapture(e.pointerId);
+}
 renderer.domElement.addEventListener('click',pick);
+renderer.domElement.addEventListener('pointerdown',startDrag,true);
+renderer.domElement.addEventListener('pointermove',moveDrag,true);
+renderer.domElement.addEventListener('pointerup',finishDrag,true);
+renderer.domElement.addEventListener('pointercancel',finishDrag,true);
 document.querySelector('.panel-close').addEventListener('click',()=>{const panel=document.querySelector('#unit-panel');panel.classList.remove('open');panel.setAttribute('aria-hidden','true');if(selected){selected.getObjectByName('selectionRing').material.emissiveIntensity=.18;selected=null;}});
 
 let activePlayer=1,round=1;
