@@ -97,7 +97,19 @@ function makeKeep(accent,enemy=false){
   add(new THREE.CylinderGeometry(.025,.025,1.15,10),M.iron,keep,[0,1.44,0]);
   add(new THREE.PlaneGeometry(.42,.5,2,2),bannerMat,keep,[.22,1.7,0],[0,enemy?Math.PI:0,0]);
   const crown=add(new THREE.OctahedronGeometry(.1,0),M.gold,keep,[0,1.04,.48]);crown.rotation.z=Math.PI/4;
+  if(enemy){
+    const bloodStone=new THREE.MeshStandardMaterial({color:0x4f1718,roughness:.68,metalness:.16});
+    for(const x of [-.34,0,.34])add(new THREE.ConeGeometry(.08,.55,8),bloodStone,keep,[x,1.25,-.12],[0,0,x*.7]);
+    add(new THREE.TorusGeometry(.31,.045,8,28),bloodStone,keep,[0,.68,.46],[Math.PI/2,0,0]);
+  }else{
+    const ravenGlow=new THREE.MeshBasicMaterial({color:0x668da5});
+    for(const x of [-.31,.31])add(new THREE.OctahedronGeometry(.075,0),ravenGlow,keep,[x,1.3,.18]);
+    add(new THREE.ConeGeometry(.19,.62,4),M.iron,keep,[0,1.3,-.12],[0,Math.PI/4,0]);
+  }
+  keep.name=enemy?'Castelo Carmesim':'Fortaleza do Corvo';
+  keep.userData={hoverable:true,name:keep.name,role:'BASE · NÍVEL 1',hp:enemy?16:18,maxHp:20,damage:0,move:0,cost:'—',ability:enemy?'Pacto de Sangue':'Vigia do Corvo',abilityUsed:false,description:enemy?'As torres carmesins fortalecem tropas feridas próximas.':'As sentinelas do corvo revelam invasores nas casas vizinhas.'};
   keep.rotation.y=enemy?Math.PI:0;
+  keep.scale.setScalar(.68);
   return keep;
 }
 const alliedKeep=makeKeep(0x3d5974),enemyKeep=makeKeep(0x7b2825,true);
@@ -106,7 +118,8 @@ scene.add(board);
 
 // Each miniature is snapped to the exact center of a tile. Scale 0.64 keeps
 // even the outermost weapon silhouette inside the 1.08 × 1.08 footprint.
-const units=[makeMage(),makeWarrior(),makeArcher()]; units[0].position.set(-2.16,.06,0);units[1].position.set(0,.06,0);units[2].position.set(2.16,.06,0);units.forEach(u=>{u.scale.setScalar(.64);scene.add(u)});
+const units=[makeMage(),makeWarrior(),makeArcher()]; units[0].position.set(-2.16,.06,0);units[1].position.set(0,.06,0);units[2].position.set(2.16,.06,0);units.forEach(u=>{u.scale.setScalar(.64);u.userData.hoverable=true;scene.add(u)});
+const hoverables=[...units,alliedKeep,enemyKeep];
 
 // Selection and unit status HUD.
 const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();let selected=null,dragged=null,dragMoved=false,justDragged=false;
@@ -117,6 +130,10 @@ tileMarker.visible=false;
 function unitAtPointer(e){
   const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;ray.setFromCamera(pointer,camera);
   const hits=ray.intersectObjects(units,true);if(!hits.length)return null;let u=hits[0].object;while(u.parent&&!u.userData.selectable)u=u.parent;return u.userData.selectable?u:null;
+}
+function hoverableAtPointer(e){
+  const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;ray.setFromCamera(pointer,camera);
+  const hits=ray.intersectObjects(hoverables,true);if(!hits.length)return null;let o=hits[0].object;while(o.parent&&!o.userData.hoverable)o=o.parent;return o.userData.hoverable?o:null;
 }
 function snapToTile(value){return THREE.MathUtils.clamp(Math.round((value+half)/tile)*tile-half,-half,half)}
 function showUnit(u){
@@ -145,11 +162,23 @@ function finishDrag(e){
   app.dataset.lastMoved=`${dragged.userData.name}:${dragged.position.x.toFixed(2)},${dragged.position.z.toFixed(2)}`;delete app.dataset.dragging;justDragged=dragMoved;dragged=null;
   if(renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.releasePointerCapture(e.pointerId);
 }
+const hoverCard=document.querySelector('#hover-card');
+function showHover(e){
+  if(dragged){hoverCard.classList.remove('visible');return}const o=hoverableAtPointer(e);if(!o){hoverCard.classList.remove('visible');hoverCard.setAttribute('aria-hidden','true');return}
+  const d=o.userData;document.querySelector('#hover-role').textContent=d.role;document.querySelector('#hover-name').textContent=d.name;
+  document.querySelector('#hover-hp').textContent=`${d.hp}/${d.maxHp}`;document.querySelector('#hover-hp-fill').style.width=`${d.hp/d.maxHp*100}%`;
+  document.querySelector('#hover-damage').textContent=d.damage;document.querySelector('#hover-move').textContent=d.move;document.querySelector('#hover-cost').textContent=d.cost;
+  document.querySelector('#hover-ability').textContent=d.ability;document.querySelector('#hover-description').textContent=d.description;
+  const used=document.querySelector('#hover-used');used.textContent=d.abilityUsed?'JÁ USADA':'DISPONÍVEL';used.classList.toggle('used',d.abilityUsed);
+  hoverCard.style.left=`${Math.min(e.clientX,innerWidth-255)}px`;hoverCard.style.top=`${Math.min(e.clientY,innerHeight-205)}px`;hoverCard.classList.add('visible');hoverCard.setAttribute('aria-hidden','false');
+}
 renderer.domElement.addEventListener('click',pick);
 renderer.domElement.addEventListener('pointerdown',startDrag,true);
 renderer.domElement.addEventListener('pointermove',moveDrag,true);
+renderer.domElement.addEventListener('pointermove',showHover);
 renderer.domElement.addEventListener('pointerup',finishDrag,true);
 renderer.domElement.addEventListener('pointercancel',finishDrag,true);
+renderer.domElement.addEventListener('pointerleave',()=>hoverCard.classList.remove('visible'));
 document.querySelector('.panel-close').addEventListener('click',()=>{const panel=document.querySelector('#unit-panel');panel.classList.remove('open');panel.setAttribute('aria-hidden','true');if(selected){selected.getObjectByName('selectionRing').material.emissiveIntensity=.18;selected=null;}});
 
 let activePlayer=1,round=1;
@@ -177,6 +206,18 @@ hand.innerHTML=cards.map((c,i)=>`<button class="game-card rarity-${c.rarityClass
   <span class="card-info"><span>${c.info}</span><b>${c.rarity}</b></span>
 </button>`).join('');
 hand.addEventListener('click',e=>{const card=e.target.closest('.game-card');if(!card)return;const wasSelected=card.classList.contains('selected');hand.querySelectorAll('.game-card').forEach(el=>el.classList.remove('selected'));if(!wasSelected)card.classList.add('selected');});
+
+let drawingCard=false,handShift=0;
+function drawCardPreview(){
+  if(drawingCard)return;drawingCard=true;const deck=document.querySelector('.deck-stack').getBoundingClientRect(),target=hand.getBoundingClientRect();
+  const ghost=document.createElement('div');ghost.className='draw-card-ghost';ghost.textContent='♜';ghost.style.left=`${deck.left}px`;ghost.style.top=`${deck.top}px`;document.body.appendChild(ghost);
+  const dx=target.left+target.width/2-deck.left-36,dy=Math.min(innerHeight-125,target.top+40)-deck.top-53;
+  const motion=ghost.animate([{transform:'translate(0,0) rotate(-8deg) scale(.72)',opacity:.35},{offset:.48,transform:`translate(${dx*.52}px,${dy*.35}px) rotate(7deg) scale(1.15)`,opacity:1},{transform:`translate(${dx}px,${dy}px) rotate(0) scale(.9)`,opacity:.15}],{duration:980,easing:'cubic-bezier(.2,.75,.2,1)'});
+  motion.onfinish=()=>{const source=hand.querySelector('.game-card');if(source){const clone=source.cloneNode(true);clone.classList.remove('selected');hand.appendChild(clone)}ghost.remove();const count=hand.children.length;document.querySelector('#hand-count').textContent=`${count} CARTAS`;const deckCount=document.querySelector('#deck-count');deckCount.textContent=Math.max(0,Number(deckCount.textContent)-1);hand.classList.add('reflow');setTimeout(()=>hand.classList.remove('reflow'),600);drawingCard=false;};
+}
+document.querySelector('#draw-card').addEventListener('click',drawCardPreview);
+function moveTray(direction){handShift=THREE.MathUtils.clamp(handShift+direction*120,-360,360);hand.style.setProperty('--hand-shift',`${handShift}px`)}
+document.querySelector('#tray-prev').addEventListener('click',()=>moveTray(1));document.querySelector('#tray-next').addEventListener('click',()=>moveTray(-1));
 
 const clock=new THREE.Clock();
 function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();controls.update();units.forEach((u,i)=>{const rig=u.getObjectByName('rig');rig.position.y=.18+Math.sin(t*1.35+i*1.7)*.012;rig.rotation.z=Math.sin(t*.8+i)*.006;u.traverse(o=>{if(o.userData.magic){o.rotation.y=t*1.5;o.position.y=2.23+Math.sin(t*2.5)*.045;}})});renderer.render(scene,camera)}

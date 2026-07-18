@@ -14,9 +14,13 @@
       </header>
       <section class="players" aria-label="Jogadores e turno atual">
         <article class="player active" id="player-one"><span class="crown">♛</span><div class="player-name"><small>REINO DO CORVO</small><strong>REI ALDRIC</strong></div><div class="player-vitals"><span class="energy"><small>ENERGIA</small><b>8/10</b></span><span class="health"><small>HP</small><b>18/20</b></span></div></article>
-        <div class="turn"><small>RODADA</small><strong id="round-number">I</strong></div>
+        <div class="turn"><small>RODADA</small><strong id="round-number">I</strong><span class="turn-timer">◷ <b id="turn-clock">02:47</b></span></div>
         <article class="player enemy" id="player-two"><div class="player-vitals"><span class="health"><small>HP</small><b>16/20</b></span><span class="energy"><small>ENERGIA</small><b>6/10</b></span></div><div class="player-name"><small>TRONO CARMESIM</small><strong>REI VAROS</strong></div><span class="crown">♚</span></article>
       </section>
+      <aside class="deck-panel" aria-label="Baralho do Reino do Corvo">
+        <div class="deck-stack"><i></i><i></i><span>♜</span></div>
+        <div><small>BARALHO DO CORVO</small><strong><b id="deck-count">28</b> CARTAS</strong><button id="draw-card">SIMULAR COMPRA <span>＋</span></button></div>
+      </aside>
       <aside id="unit-panel" class="unit-panel" aria-live="polite" aria-hidden="true">
         <button class="panel-close" aria-label="Fechar informações">×</button>
         <small id="unit-role">UNIDADE</small>
@@ -34,9 +38,28 @@
           <p id="ability-description">Selecione uma unidade para ver sua habilidade.</p>
         </div>
       </aside>
+      <aside id="hover-card" class="hover-card" aria-hidden="true">
+        <div class="hover-heading"><span id="hover-role">UNIDADE</span><b id="hover-used">DISPONÍVEL</b></div>
+        <h3 id="hover-name">—</h3>
+        <div class="hover-hp"><span>HP</span><i><em id="hover-hp-fill"></em></i><b id="hover-hp">0/0</b></div>
+        <div class="hover-stats"><span><small>DANO</small><b id="hover-damage">0</b></span><span><small>MOV.</small><b id="hover-move">0</b></span><span><small>CUSTO</small><b id="hover-cost">0</b></span></div>
+        <div class="hover-ability"><small>HABILIDADE ESPECIAL</small><strong id="hover-ability">—</strong><p id="hover-description">—</p></div>
+      </aside>
+      <aside class="field-notes" aria-label="Objetivo e regras rápidas">
+        <div class="notes-title"><span>⚜</span><div><small>OBJETIVO</small><strong>QUEDA DOS REINOS</strong></div></div>
+        <p>Destrua o castelo inimigo antes que o seu trono seja reduzido a ruínas.</p>
+        <div class="rule-row"><i>1</i><span><b>COMPRE</b><small>1 carta por rodada</small></span></div>
+        <div class="rule-row"><i>2</i><span><b>CONJURE</b><small>gaste energia</small></span></div>
+        <div class="rule-row"><i>3</i><span><b>AJA</b><small>mova ou ataque</small></span></div>
+        <div class="energy-rule"><span>ENERGIA</span><b>+4</b><small>POR TURNO · MÁX. 12</small></div>
+      </aside>
+      <div class="base-tag enemy-base-tag"><span>CASTELO CARMESIM · NV. 1</span><b>HP 16/20</b><i>ENERGIA 6/10</i></div>
+      <div class="base-tag allied-base-tag"><span>FORTALEZA DO CORVO · NV. 1</span><b>HP 18/20</b><i>ENERGIA 8/10</i></div>
       <section class="card-dock" aria-label="Mão de cartas">
         <div class="dock-label"><span>MÃO DO REINO</span><b id="hand-count">6 CARTAS</b></div>
+        <button class="tray-nav tray-prev" id="tray-prev" aria-label="Ver cartas anteriores">‹</button>
         <div id="card-hand" class="card-hand"></div>
+        <button class="tray-nav tray-next" id="tray-next" aria-label="Ver próximas cartas">›</button>
       </section>
       <div class="bottom-command">
         <div class="command-resource energy"><small>ENERGIA</small><b>8 <em>/ 10</em></b></div>
