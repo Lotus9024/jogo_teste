@@ -4,7 +4,16 @@ import { config } from '../config.js';
 const { Pool } = pg;
 
 export const pool = config.databaseUrl
-  ? new Pool({ connectionString: config.databaseUrl, ssl: config.databaseSsl ? { rejectUnauthorized: false } : false })
+  ? new Pool({
+      connectionString: config.databaseUrl,
+      ssl: config.databaseSsl ? { rejectUnauthorized: false } : false,
+      max: 10,
+      idleTimeoutMillis: 10_000,
+      connectionTimeoutMillis: 3_000,
+      statement_timeout: 5_000,
+      query_timeout: 6_000,
+      application_name: 'tronos-server'
+    })
   : null;
 
 export async function databaseHealth() {

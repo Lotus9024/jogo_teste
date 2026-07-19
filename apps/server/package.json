@@ -8,7 +8,11 @@
     "start": "node src/index.js",
     "build": "node --check src/index.js",
     "test": "node --test",
-    "db:migrate": "node src/database/migrate.js"
+    "db:start": "node scripts/startLocalDatabase.js",
+    "db:stop": "node scripts/stopLocalDatabase.js",
+    "db:provision": "node scripts/provisionLocalDatabase.js",
+    "db:migrate": "node src/database/migrate.js",
+    "db:verify": "node scripts/verifyDatabaseSecurity.js"
   },
   "dependencies": {
     "@tronos/shared": "0.2.0",

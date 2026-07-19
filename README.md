@@ -31,15 +31,16 @@ npm run dev
 
 ## PostgreSQL
 
-Para iniciar o banco local com Docker:
+O Windows local usa um cluster isolado em `127.0.0.1:55432`. As credenciais ficam em `apps/server/.env`, que é ignorado pelo Git.
 
 ```bash
-docker compose up -d postgres
-copy apps\server\.env.example apps\server\.env
+npm run db:start
+npm run db:provision
 npm run db:migrate
+npm run db:verify
 ```
 
-O servidor pode iniciar sem PostgreSQL durante o desenvolvimento visual. O endpoint `/health` informa se o banco está configurado e conectado.
+O Docker Compose permanece disponível como alternativa. Consulte `SECURITY.md` antes de alterar papéis ou permissões.
 
 ## Comandos
 
@@ -49,3 +50,4 @@ O servidor pode iniciar sem PostgreSQL durante o desenvolvimento visual. O endpo
 - `npm run build`: valida todos os workspaces e gera o cliente.
 - `npm test`: testes do protocolo e das salas.
 - `npm run db:migrate`: aplica migrations pendentes.
+- `npm run db:verify`: testa as restrições do papel usado pela aplicação.
