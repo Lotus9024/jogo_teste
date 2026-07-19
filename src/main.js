@@ -266,8 +266,7 @@ renderer.domElement.addEventListener('pointercancel',finishDrag,true);
 renderer.domElement.addEventListener('pointerleave',()=>hoverCard.classList.remove('visible'));
 
 let activePlayer=1,round=1;
-function roman(n){return ['I','II','III','IV','V','VI','VII','VIII','IX','X'][Math.min(n,10)-1]||n}
-function endTurn(){activePlayer=activePlayer===1?2:1;if(activePlayer===1)round++;document.querySelector('#player-one').classList.toggle('active',activePlayer===1);document.querySelector('#round-number').textContent=roman(round);document.querySelector('#turn-label').textContent=activePlayer===1?'TURNO DE REI ALDRIC':'TURNO DE REI VAROS';}
+function endTurn(){activePlayer=activePlayer===1?2:1;if(activePlayer===1)round++;document.querySelector('#turn-label').textContent=activePlayer===1?'TURNO DE REI ALDRIC':'TURNO DE REI VAROS';}
 document.querySelector('#end-turn').addEventListener('click',endTurn);addEventListener('keydown',e=>{if(e.key==='Enter')endTurn()});
 
 // Fictional card hand. All gameplay fields live in data so new cards can be
@@ -314,20 +313,18 @@ function drawCardPreview(){
 }
 document.querySelector('#draw-card').addEventListener('click',drawCardPreview);
 function deckAtPointer(e){const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;ray.setFromCamera(pointer,camera);return ray.intersectObject(deck3D,true).length>0}
-function hoverDeck(e){const over=deckAtPointer(e);if(over!==deckHover){deckHover=over;renderer.domElement.style.cursor=over?'pointer':'';document.querySelector('#deck-label').classList.toggle('hovered',over);if(over)previewDeckCard(deckPreviewIndex);else hideDeckPreview()}}
+function hoverDeck(e){const over=deckAtPointer(e);if(over!==deckHover){deckHover=over;renderer.domElement.style.cursor=over?'pointer':'';if(over)previewDeckCard(deckPreviewIndex);else hideDeckPreview()}}
 let deckPressed=false;
 renderer.domElement.addEventListener('pointermove',hoverDeck);
 renderer.domElement.addEventListener('pointerdown',e=>{if(e.button!==0||!deckAtPointer(e))return;e.preventDefault();e.stopPropagation();deckPressed=true;controls.enabled=false},true);
 renderer.domElement.addEventListener('pointerup',e=>{if(!deckPressed)return;e.preventDefault();e.stopPropagation();deckPressed=false;controls.enabled=true;if(deckAtPointer(e))drawCardPreview()},true);
-renderer.domElement.addEventListener('pointerleave',()=>{deckHover=false;deckPressed=false;controls.enabled=true;renderer.domElement.style.cursor='';document.querySelector('#deck-label').classList.remove('hovered');hideDeckPreview()});
+renderer.domElement.addEventListener('pointerleave',()=>{deckHover=false;deckPressed=false;controls.enabled=true;renderer.domElement.style.cursor='';hideDeckPreview()});
 function moveTray(direction){handShift=THREE.MathUtils.clamp(handShift+direction*120,-360,360);hand.style.setProperty('--hand-shift',`${handShift}px`)}
 document.querySelector('#tray-prev').addEventListener('click',()=>moveTray(1));document.querySelector('#tray-next').addEventListener('click',()=>moveTray(-1));
 
 const clock=new THREE.Clock();
 const enemyBaseTag=document.querySelector('.enemy-base-tag');
-const deckLabel=document.querySelector('#deck-label');
 const baseTagPoint=new THREE.Vector3();
 function positionEnemyStatus(){enemyKeep.getWorldPosition(baseTagPoint);baseTagPoint.y+=4.35;baseTagPoint.project(camera);enemyBaseTag.style.left=`${(baseTagPoint.x*.5+.5)*innerWidth}px`;enemyBaseTag.style.top=`${(-baseTagPoint.y*.5+.5)*innerHeight}px`;enemyBaseTag.style.visibility=baseTagPoint.z<1?'visible':'hidden';}
-function positionDeckLabel(){const p=deckScreenPosition(-.02);deckLabel.style.left=`${p.x}px`;deckLabel.style.top=`${p.y}px`}
-function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();controls.update();positionEnemyStatus();positionDeckLabel();topDeckCard.position.y=THREE.MathUtils.lerp(topDeckCard.position.y,deckHover ? .98 : .766,.14);topDeckCard.rotation.z=THREE.MathUtils.lerp(topDeckCard.rotation.z,deckHover ? -.08 : 0,.12);units.forEach((u,i)=>{const rig=u.getObjectByName('rig');rig.position.y=.18+Math.sin(t*1.35+i*1.7)*.012;rig.rotation.z=Math.sin(t*.8+i)*.006;u.traverse(o=>{if(o.userData.magic){o.rotation.y=t*1.5;o.position.y=2.23+Math.sin(t*2.5)*.045;}})});wisps.forEach((w,i)=>{w.position.x=w.userData.baseX+Math.sin(t*.12+i)*.55;w.material.opacity=.012+i*.003+Math.sin(t*.35+i)*.004;});renderer.render(scene,camera)}
+function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();controls.update();positionEnemyStatus();topDeckCard.position.y=THREE.MathUtils.lerp(topDeckCard.position.y,deckHover ? .98 : .766,.14);topDeckCard.rotation.z=THREE.MathUtils.lerp(topDeckCard.rotation.z,deckHover ? -.08 : 0,.12);units.forEach((u,i)=>{const rig=u.getObjectByName('rig');rig.position.y=.18+Math.sin(t*1.35+i*1.7)*.012;rig.rotation.z=Math.sin(t*.8+i)*.006;u.traverse(o=>{if(o.userData.magic){o.rotation.y=t*1.5;o.position.y=2.23+Math.sin(t*2.5)*.045;}})});wisps.forEach((w,i)=>{w.position.x=w.userData.baseX+Math.sin(t*.12+i)*.55;w.material.opacity=.012+i*.003+Math.sin(t*.35+i)*.004;});renderer.render(scene,camera)}
 function resize(){const aspect=innerWidth/innerHeight,view=innerWidth<700?11.2:10.2;camera.left=-view*aspect;camera.right=view*aspect;camera.top=view;camera.bottom=-view;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7))}addEventListener('resize',resize);resize();animate();setTimeout(()=>document.querySelector('.loading').classList.add('done'),500);
