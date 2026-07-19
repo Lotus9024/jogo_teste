@@ -173,13 +173,29 @@ const earth=new THREE.MeshStandardMaterial({color:0x0c110e,emissive:0x010201,emi
 add(new THREE.CircleGeometry(19,72),earth,environment,[0,-.58,0],[-Math.PI/2,0,0],[1,.78,1]);
 add(new THREE.RingGeometry(8.8,11.8,72),new THREE.MeshStandardMaterial({color:0x171d19,roughness:1}),environment,[0,-.55,0],[-Math.PI/2,0,0],[1,.82,1]);
 
+// Uneven polygonal slabs replace the flat ground color. Dark gaps between the
+// pieces act as cracks while subtle height and color changes break repetition.
+const fracturedGroundMats=[
+  new THREE.MeshStandardMaterial({color:0x242b27,emissive:0x030504,emissiveIntensity:.2,roughness:.98}),
+  new THREE.MeshStandardMaterial({color:0x30372f,emissive:0x040604,emissiveIntensity:.18,roughness:1}),
+  new THREE.MeshStandardMaterial({color:0x1b231f,emissive:0x020302,emissiveIntensity:.22,roughness:.96}),
+  new THREE.MeshStandardMaterial({color:0x394039,emissive:0x050605,emissiveIntensity:.16,roughness:.99})
+];
+function fracturedValue(seed){const n=Math.sin(seed*12.9898)*43758.5453;return n-Math.floor(n)}
+for(let i=0;i<420;i++){
+  const x=(fracturedValue(i+1)-.5)*35,z=(fracturedValue(i+91)-.5)*27;
+  if((Math.abs(x)<8.75&&Math.abs(z)<8.75)||(x*x/(17.5*17.5)+z*z/(13.5*13.5)>1))continue;
+  const size=.34+fracturedValue(i+211)*.58,turn=fracturedValue(i+317)*Math.PI;
+  add(new THREE.CircleGeometry(size,5+i%3),fracturedGroundMats[i%fracturedGroundMats.length],environment,[x,-.548+fracturedValue(i+411)*.012,z],[-Math.PI/2,0,turn],[1.15+fracturedValue(i+517)*.5,.72+fracturedValue(i+613)*.34,1]);
+}
+
 function deadTree(x,z,scale=1,twist=0){
   const tree=new THREE.Group();tree.position.set(x,-.52,z);tree.rotation.y=twist;tree.scale.setScalar(scale);
   add(new THREE.CylinderGeometry(.09,.18,1.65,9),deadWood,tree,[0,.82,0],[0,0,.08]);
   [[-.42,1.2,.35],[.4,1.05,-.45],[-.3,.72,-.62]].forEach(([bx,by,rz],i)=>{add(new THREE.CylinderGeometry(.035,.075,.85-i*.12,7),deadWood,tree,[bx*.48,by,0],[0,0,rz]);add(new THREE.ConeGeometry(.025,.28,6),deadWood,tree,[bx,by+.28,0],[0,0,rz]);});
   environment.add(tree);
 }
-[[-10.3,-6.3,1.15,.2],[-11.2,-1.2,.85,-.5],[10.5,-5.2,1,.1],[11.1,.2,1.2,-.35],[-5.8,-9.5,.78,.4]].forEach(p=>deadTree(...p));
+[[-11.2,-1.2,.85,-.5],[-10.1,4.6,1.05,.7],[10.5,-5.2,1,.1],[11.1,.2,1.2,-.35],[9.9,5.7,.88,.8],[-5.8,-9.5,.78,.4],[6.4,9.3,.92,-.2]].forEach(p=>deadTree(...p));
 
 function brokenPillar(x,z,height=1.35,lean=0){
   const ruin=new THREE.Group();ruin.position.set(x,-.53,z);ruin.rotation.z=lean;
@@ -188,7 +204,7 @@ function brokenPillar(x,z,height=1.35,lean=0){
 }
 [[-9.25,-3.4,1.5,.08],[-9.6,2.8,.9,-.13],[9.35,-2.6,1.2,.12],[9.7,3.7,1.65,-.06],[-4.2,9.2,.75,.16],[4.7,-9.15,1.05,-.12]].forEach(p=>brokenPillar(...p));
 
-const rockSpots=[[-12,-7,.75],[-8.9,-8.6,.6],[-3.1,-9.4,.42],[8.7,-8.8,.72],[11.8,-6,.48],[-12.2,2.8,.45],[12,-1.6,.52]];
+const rockSpots=[[-12,-7,.75],[-11,7,.55],[-7.6,9.3,.75],[-3.1,-9.4,.42],[2.2,9.6,.5],[8.7,-8.8,.72],[11.8,-6,.48],[11.5,6.8,.65],[-12.2,2.8,.45],[12,-1.6,.52]];
 rockSpots.forEach(([x,z,s],i)=>{const rock=add(new THREE.DodecahedronGeometry(s,0),ashStone,environment,[x,-.42+s*.35,z],[i*.17,i*.31,i*.11],[1,.55,.8]);rock.rotation.y=i*.74;});
 
 function graveStone(x,z,rotation=0){
@@ -196,7 +212,7 @@ function graveStone(x,z,rotation=0){
   add(new THREE.BoxGeometry(.48,.55,.16,2,2,1),ashStone,grave,[0,.3,0],[0,0,.04]);add(new THREE.SphereGeometry(.24,12,7,0,Math.PI*2,0,Math.PI/2),ashStone,grave,[0,.58,0]);
   add(new THREE.BoxGeometry(.24,.035,.018),M.iron,grave,[0,.37,.09]);add(new THREE.BoxGeometry(.035,.25,.018),M.iron,grave,[0,.37,.09]);environment.add(grave);
 }
-[[-8.8,-5.7,.2],[-8.9,1.1,-.1],[8.7,-6.2,-.2],[8.9,.9,.12]].forEach(p=>graveStone(...p));
+[[-8.8,-5.7,.2],[-8.9,1.1,-.1],[-8.7,6.3,.15],[8.7,-6.2,-.2],[8.9,.9,.12],[8.75,5.4,-.08]].forEach(p=>graveStone(...p));
 
 // Two ruined watchfires create warm landmarks in the otherwise cold valley.
 for(const [x,z] of [[-9.2,0],[9.2,0]]){
@@ -298,7 +314,7 @@ hand.innerHTML=cards.map((c,i)=>`<button class="game-card rarity-${c.rarityClass
   <span class="card-ability" aria-label="Habilidade ${c.ability}"><span><strong>${c.ability}</strong></span><b class="ability-cost"><small>CUSTO</small>${c.abilityCost}</b><p>${c.abilityText}</p></span>
   <span class="card-info"><span>${c.info}</span><b>${c.rarity}</b></span>
 </button>`).join('');
-hand.addEventListener('click',e=>{const card=e.target.closest('.game-card');if(!card)return;const wasSelected=card.classList.contains('selected');hand.querySelectorAll('.game-card').forEach(el=>el.classList.remove('selected'));if(!wasSelected)card.classList.add('selected');});
+hand.addEventListener('click',e=>{const card=e.target.closest('.game-card');if(!card)return;const wasSelected=card.classList.contains('selected');hand.querySelectorAll('.game-card').forEach(el=>el.classList.remove('selected'));if(!wasSelected)card.classList.add('selected');document.querySelector('.bottom-command').classList.toggle('hidden-by-card',!wasSelected);});
 
 let drawingCard=false,handShift=0,deckRemaining=28,deckHover=false,deckPreviewIndex=3;
 const deckScreenPoint=new THREE.Vector3();
