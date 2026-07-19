@@ -228,8 +228,8 @@ scene.add(board);
 
 // Each miniature is snapped to the exact center of a tile. Scale 0.64 keeps
 // even the outermost weapon silhouette inside the 1.08 × 1.08 footprint.
-const units=[makeMage(),makeWarrior(),makeArcher()]; units[0].position.set(-2.16,.06,0);units[1].position.set(0,.06,0);units[2].position.set(2.16,.06,0);units.forEach(u=>{u.scale.setScalar(.64);u.userData.hoverable=true;scene.add(u)});
-const hoverables=[...units,alliedKeep,enemyKeep];
+const units=[makeMage(),makeWarrior(),makeArcher()]; units[0].position.set(-2.16,.06,0);units[1].position.set(0,.06,0);units[2].position.set(2.16,.06,0);units.forEach((u,cardIndex)=>{u.scale.setScalar(.64);u.userData.hoverable=true;u.userData.cardIndex=cardIndex;scene.add(u)});
+const hoverables=[...units];
 
 // Selection and unit status HUD.
 const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();let selected=null,dragged=null,dragMoved=false,justDragged=false;
@@ -266,12 +266,9 @@ function finishDrag(e){
 const hoverCard=document.querySelector('#hover-card');
 function showHover(e){
   if(dragged){hoverCard.classList.remove('visible');return}const o=hoverableAtPointer(e);if(!o){hoverCard.classList.remove('visible');hoverCard.setAttribute('aria-hidden','true');return}
-  const d=o.userData;document.querySelector('#hover-role').textContent=d.role;document.querySelector('#hover-name').textContent=d.name;
-  document.querySelector('#hover-hp').textContent=`${d.hp}/${d.maxHp}`;document.querySelector('#hover-hp-fill').style.width=`${d.hp/d.maxHp*100}%`;
-  document.querySelector('#hover-damage').textContent=d.damage;document.querySelector('#hover-move').textContent=d.move;document.querySelector('#hover-cost').textContent=d.cost;
-  document.querySelector('#hover-ability').textContent=d.ability;document.querySelector('#hover-description').textContent=d.description;
-  const used=document.querySelector('#hover-used');used.textContent=d.abilityUsed?'JÁ USADA':'DISPONÍVEL';used.classList.toggle('used',d.abilityUsed);
-  hoverCard.style.left=`${Math.min(e.clientX,innerWidth-255)}px`;hoverCard.style.top=`${Math.min(e.clientY,innerHeight-205)}px`;hoverCard.classList.add('visible');hoverCard.setAttribute('aria-hidden','false');
+  const source=hand.querySelector(`[data-card="${o.userData.cardIndex}"]`);if(!source)return;
+  const preview=source.cloneNode(true);preview.classList.remove('selected');preview.tabIndex=-1;
+  hoverCard.replaceChildren(preview);hoverCard.style.left=`${Math.min(e.clientX+18,innerWidth-236)}px`;hoverCard.style.top=`${Math.min(e.clientY+18,innerHeight-396)}px`;hoverCard.classList.add('visible');hoverCard.setAttribute('aria-hidden','false');
 }
 renderer.domElement.addEventListener('click',pick);
 renderer.domElement.addEventListener('pointerdown',startDrag,true);
