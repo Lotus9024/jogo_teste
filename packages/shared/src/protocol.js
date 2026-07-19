@@ -14,8 +14,11 @@ export const SERVER_EVENTS = Object.freeze({
 
 export function parseMessage(raw) {
   try {
-    const message = JSON.parse(String(raw));
-    if (!message || typeof message.type !== 'string') return null;
+    const source = String(raw);
+    if (source.length > 4096) return null;
+    const message = JSON.parse(source);
+    if (!message || typeof message !== 'object' || Array.isArray(message) || typeof message.type !== 'string') return null;
+    if (!Object.values({ ...CLIENT_EVENTS, ...SERVER_EVENTS }).includes(message.type)) return null;
     return { type: message.type, payload: message.payload ?? {} };
   } catch {
     return null;

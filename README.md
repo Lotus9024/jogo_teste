@@ -29,6 +29,18 @@ npm run dev
 - Servidor e health check: `http://localhost:3001/health`
 - WebSocket: `ws://localhost:3001/ws`
 
+Abra o cliente em duas abas. Na primeira, escolha **Criar sala**; na segunda, informe o código de seis caracteres e escolha **Entrar**. Cada jogador vê o próprio castelo na parte inferior: o assento azul permanece azul e o vermelho permanece vermelho, enquanto a câmera e os lados do campo são invertidos para o segundo jogador.
+
+## Partida online atual
+
+- Mão inicial de 5 cartas, limite de 7 e compra automática no início do turno.
+- Guerreiro, Guarda e Arqueiro com vida, dano, movimento, alcance, energia, habilidade e instantânea.
+- Invocação por arrastar, movimento destacado no grid, ataques a unidades e castelos e uma ação por unidade/turno.
+- Turnos alternados de 3 minutos, energia inicial 10, recuperação +4 e limite 12.
+- Vitória quando o castelo adversário chega a zero dos 20 HP.
+
+O estado decisivo vive somente no servidor. A interface pode prever o destino de um arraste, mas energia, alcance, turno, propriedade, dano, compra e vitória sempre são recalculados e validados pelo backend.
+
 ## PostgreSQL
 
 O Windows local usa um cluster isolado em `127.0.0.1:55432`. As credenciais ficam em `apps/server/.env`, que é ignorado pelo Git.

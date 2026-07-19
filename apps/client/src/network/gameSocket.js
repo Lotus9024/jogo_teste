@@ -8,7 +8,7 @@ export class GameSocketClient extends EventTarget {
   }
 
   connect() {
-    if (this.socket?.readyState === WebSocket.OPEN) return;
+    if (this.socket && this.socket.readyState < WebSocket.CLOSING) return;
     this.socket = new WebSocket(this.url);
     this.socket.addEventListener('open', () => this.#emit('connected'));
     this.socket.addEventListener('close', () => this.#emit('disconnected'));
@@ -26,8 +26,8 @@ export class GameSocketClient extends EventTarget {
     this.#send(CLIENT_EVENTS.ROOM_JOIN, { roomCode, playerName });
   }
 
-  sendAction(roomCode, action) {
-    this.#send(CLIENT_EVENTS.GAME_ACTION, { roomCode, action });
+  sendAction(action, version) {
+    this.#send(CLIENT_EVENTS.GAME_ACTION, { action, version });
   }
 
   #send(type, payload) {

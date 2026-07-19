@@ -10,6 +10,7 @@ test('cria uma sala e inicia a partida com dois jogadores', () => {
   assert.equal(joined.room.players.length, 2);
   assert.equal(joined.room.state.phase, 'playing');
   assert.equal(joined.room.state.players[1].seat, 2);
+  assert.match(joined.room.code, /^[A-Z2-9]{6}$/);
 });
 
 test('impede um terceiro jogador na mesma sala', () => {

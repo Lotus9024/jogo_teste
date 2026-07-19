@@ -6,5 +6,9 @@ export const GAME_CONFIG = Object.freeze({
   maxEnergy: 12,
   energyPerTurn: 4,
   turnDurationSeconds: 180,
-  cardsDrawnPerTurn: 1
+  cardsDrawnPerTurn: 1,
+  startingHandSize: 5,
+  maxHandSize: 7,
+  deckSize: 18,
+  maxMessageBytes: 4096
 });

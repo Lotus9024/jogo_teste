@@ -5,10 +5,11 @@
   "type": "module",
   "exports": {
     "./protocol": "./src/protocol.js",
-    "./game-config": "./src/gameConfig.js"
+    "./game-config": "./src/gameConfig.js",
+    "./cards": "./src/cards.js"
   },
   "scripts": {
-    "build": "node --check src/protocol.js && node --check src/gameConfig.js",
+    "build": "node --check src/protocol.js && node --check src/gameConfig.js && node --check src/cards.js",
     "test": "node --test"
   }
 }
