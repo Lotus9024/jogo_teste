@@ -127,8 +127,9 @@ function makeKeep(accent,enemy=false){
     }
   }
 
-  add(new THREE.CylinderGeometry(.035,.035,1.3,10),M.iron,keep,[0,2.48,.12]);
-  add(new THREE.PlaneGeometry(.58,.76,3,3),bannerMat,keep,[.31,2.68,.13],[0,enemy?Math.PI:0,0]);
+  add(new THREE.CylinderGeometry(.04,.045,2.3,10),M.iron,keep,[0,3.35,.12]);
+  add(new THREE.SphereGeometry(.075,12,8),M.gold,keep,[0,4.52,.12]);
+  add(new THREE.PlaneGeometry(.72,.9,4,4),bannerMat,keep,[.4,4.02,.13],[0,enemy?Math.PI:0,0]);
   if(enemy){
     add(new THREE.ConeGeometry(.34,1.42,5),roofMat,keep,[0,2.52,0],[0,Math.PI/5,0]);
     for(const s of [-1,1])add(new THREE.TorusGeometry(.28,.045,7,24,Math.PI*1.25),M.iron,keep,[s*.72,1.32,.64],[Math.PI/2,s*.3,0]);
@@ -169,25 +170,16 @@ const topDeckCard=deckCards.at(-1);scene.add(deck3D);
 
 // A ruined, misty valley frames the game board while keeping every tile clear.
 const environment=new THREE.Group(),wisps=[];
-const earth=new THREE.MeshStandardMaterial({color:0x0c110e,emissive:0x010201,emissiveIntensity:.25,roughness:1}),ashStone=new THREE.MeshStandardMaterial({color:0x353c36,roughness:.98}),deadWood=new THREE.MeshStandardMaterial({color:0x463126,emissive:0x080504,emissiveIntensity:.28,roughness:1});
-add(new THREE.CircleGeometry(19,72),earth,environment,[0,-.58,0],[-Math.PI/2,0,0],[1,.78,1]);
-add(new THREE.RingGeometry(8.8,11.8,72),new THREE.MeshStandardMaterial({color:0x171d19,roughness:1}),environment,[0,-.55,0],[-Math.PI/2,0,0],[1,.82,1]);
-
-// Uneven polygonal slabs replace the flat ground color. Dark gaps between the
-// pieces act as cracks while subtle height and color changes break repetition.
-const fracturedGroundMats=[
-  new THREE.MeshStandardMaterial({color:0x242b27,emissive:0x030504,emissiveIntensity:.2,roughness:.98}),
-  new THREE.MeshStandardMaterial({color:0x30372f,emissive:0x040604,emissiveIntensity:.18,roughness:1}),
-  new THREE.MeshStandardMaterial({color:0x1b231f,emissive:0x020302,emissiveIntensity:.22,roughness:.96}),
-  new THREE.MeshStandardMaterial({color:0x394039,emissive:0x050605,emissiveIntensity:.16,roughness:.99})
-];
-function fracturedValue(seed){const n=Math.sin(seed*12.9898)*43758.5453;return n-Math.floor(n)}
-for(let i=0;i<420;i++){
-  const x=(fracturedValue(i+1)-.5)*35,z=(fracturedValue(i+91)-.5)*27;
-  if((Math.abs(x)<8.75&&Math.abs(z)<8.75)||(x*x/(17.5*17.5)+z*z/(13.5*13.5)>1))continue;
-  const size=.34+fracturedValue(i+211)*.58,turn=fracturedValue(i+317)*Math.PI;
-  add(new THREE.CircleGeometry(size,5+i%3),fracturedGroundMats[i%fracturedGroundMats.length],environment,[x,-.548+fracturedValue(i+411)*.012,z],[-Math.PI/2,0,turn],[1.15+fracturedValue(i+517)*.5,.72+fracturedValue(i+613)*.34,1]);
+const dirtSize=128,dirtPixels=new Uint8Array(dirtSize*dirtSize*4);
+for(let y=0;y<dirtSize;y++)for(let x=0;x<dirtSize;x++){
+  const i=(y*dirtSize+x)*4,grain=(Math.sin(x*12.37+y*5.71)*43758.5453)%1;
+  const shade=Math.max(52,Math.min(104,76+Math.sin(x*.19)*5+Math.sin(y*.13)*4+grain*15));
+  dirtPixels[i]=shade;dirtPixels[i+1]=shade+1;dirtPixels[i+2]=shade;dirtPixels[i+3]=255;
 }
+const dirtTexture=new THREE.DataTexture(dirtPixels,dirtSize,dirtSize,THREE.RGBAFormat);dirtTexture.needsUpdate=true;dirtTexture.wrapS=dirtTexture.wrapT=THREE.RepeatWrapping;dirtTexture.repeat.set(8,6);dirtTexture.colorSpace=THREE.SRGBColorSpace;
+const earth=new THREE.MeshStandardMaterial({color:0x676a67,map:dirtTexture,emissive:0x080909,emissiveIntensity:.12,roughness:1}),ashStone=new THREE.MeshStandardMaterial({color:0x353c36,roughness:.98}),deadWood=new THREE.MeshStandardMaterial({color:0x463126,emissive:0x080504,emissiveIntensity:.28,roughness:1});
+add(new THREE.CircleGeometry(19,72),earth,environment,[0,-.58,0],[-Math.PI/2,0,0],[1,.78,1]);
+add(new THREE.RingGeometry(8.8,11.8,72),new THREE.MeshStandardMaterial({color:0x555956,map:dirtTexture,roughness:1}),environment,[0,-.55,0],[-Math.PI/2,0,0],[1,.82,1]);
 
 function deadTree(x,z,scale=1,twist=0){
   const tree=new THREE.Group();tree.position.set(x,-.52,z);tree.rotation.y=twist;tree.scale.setScalar(scale);
@@ -204,7 +196,7 @@ function brokenPillar(x,z,height=1.35,lean=0){
 }
 [[-9.25,-3.4,1.5,.08],[-9.6,2.8,.9,-.13],[9.35,-2.6,1.2,.12],[9.7,3.7,1.65,-.06],[-4.2,9.2,.75,.16],[4.7,-9.15,1.05,-.12]].forEach(p=>brokenPillar(...p));
 
-const rockSpots=[[-12,-7,.75],[-11,7,.55],[-7.6,9.3,.75],[-3.1,-9.4,.42],[2.2,9.6,.5],[8.7,-8.8,.72],[11.8,-6,.48],[11.5,6.8,.65],[-12.2,2.8,.45],[12,-1.6,.52]];
+const rockSpots=[[-11,7,.55],[-7.6,9.3,.75],[-3.1,-9.4,.42],[2.2,9.6,.5],[8.7,-8.8,.72],[11.8,-6,.48],[11.5,6.8,.65],[-12.2,2.8,.45],[12,-1.6,.52]];
 rockSpots.forEach(([x,z,s],i)=>{const rock=add(new THREE.DodecahedronGeometry(s,0),ashStone,environment,[x,-.42+s*.35,z],[i*.17,i*.31,i*.11],[1,.55,.8]);rock.rotation.y=i*.74;});
 
 function graveStone(x,z,rotation=0){
@@ -266,9 +258,8 @@ function finishDrag(e){
 const hoverCard=document.querySelector('#hover-card');
 function showHover(e){
   if(dragged){hoverCard.classList.remove('visible');return}const o=hoverableAtPointer(e);if(!o){hoverCard.classList.remove('visible');hoverCard.setAttribute('aria-hidden','true');return}
-  const source=hand.querySelector(`[data-card="${o.userData.cardIndex}"]`);if(!source)return;
-  const preview=source.cloneNode(true);preview.classList.remove('selected');preview.tabIndex=-1;
-  hoverCard.replaceChildren(preview);hoverCard.style.left=`${Math.min(e.clientX+18,innerWidth-236)}px`;hoverCard.style.top=`${Math.min(e.clientY+18,innerHeight-396)}px`;hoverCard.classList.add('visible');hoverCard.setAttribute('aria-hidden','false');
+  hoverCard.innerHTML=cardMarkup(cards[o.userData.cardIndex],o.userData.cardIndex);const preview=hoverCard.firstElementChild;preview.classList.remove('selected');preview.tabIndex=-1;
+  hoverCard.style.left=`${Math.min(e.clientX+18,innerWidth-236)}px`;hoverCard.style.top=`${Math.min(e.clientY+18,innerHeight-396)}px`;hoverCard.classList.add('visible');hoverCard.setAttribute('aria-hidden','false');
 }
 renderer.domElement.addEventListener('click',pick);
 renderer.domElement.addEventListener('pointerdown',startDrag,true);
@@ -303,15 +294,52 @@ function previewDeckCard(index){
   deckPreview.classList.add('visible');deckPreview.setAttribute('aria-hidden','false');
 }
 function hideDeckPreview(){deckPreview.classList.remove('visible');deckPreview.setAttribute('aria-hidden','true')}
-const hand=document.querySelector('#card-hand');
-hand.innerHTML=cards.map((c,i)=>`<button class="game-card rarity-${c.rarityClass}" data-card="${i}" aria-label="Carta ${c.name}, ${c.rarity}">
+function cardMarkup(c,i){return `<button class="game-card rarity-${c.rarityClass}" data-card="${i}" aria-label="Carta ${c.name}, ${c.rarity}">
   <span class="card-top"><strong class="card-name">${c.name}</strong><b class="card-level">NV. ${c.level}</b></span>
   <span class="card-art"><span>${c.glyph}</span></span>
   <span class="card-main-row"><span class="card-combat-stats"><span aria-label="Vida"><small aria-hidden="true">♥</small><b>${c.hp}</b></span><span aria-label="Dano"><small aria-hidden="true">⚔</small><b>${c.damage}</b></span><span aria-label="Movimento"><small aria-hidden="true"><svg class="stat-boot" viewBox="0 0 24 24"><path d="M5 2h8v9.5c0 1.5 1.2 2.5 2.8 2.5H20c1.1 0 2 .9 2 2v4H9a6 6 0 0 1-6-6V9h2V2Z"/></svg></small><b>${c.move}</b></span></span><span class="card-cast-cost"><small>CUSTO</small><b>${c.cost}</b></span></span>
   <span class="card-ability" aria-label="Habilidade ${c.ability}"><span><strong>${c.ability}</strong></span><b class="ability-cost"><small>CUSTO</small>${c.abilityCost}</b><p>${c.abilityText}</p></span>
   <span class="card-info"><span>${c.info}</span><b>${c.rarity}</b></span>
-</button>`).join('');
-hand.addEventListener('click',e=>{const card=e.target.closest('.game-card');if(!card)return;const wasSelected=card.classList.contains('selected');hand.querySelectorAll('.game-card').forEach(el=>el.classList.remove('selected'));if(!wasSelected)card.classList.add('selected');document.querySelector('.bottom-command').classList.toggle('hidden-by-card',!wasSelected);});
+</button>`}
+const hand=document.querySelector('#card-hand');
+hand.innerHTML=cards.map(cardMarkup).join('');
+const bottomCommand=document.querySelector('.bottom-command');
+let cardDrag=null,suppressCardClick=false;
+function syncBottomCommand(){bottomCommand.classList.toggle('hidden-by-card',Boolean(cardDrag||hand.querySelector('.game-card:hover')||hand.querySelector('.game-card.selected')))}
+hand.addEventListener('pointerover',e=>{if(e.target.closest('.game-card'))syncBottomCommand()});
+hand.addEventListener('pointerout',e=>{if(e.target.closest('.game-card'))requestAnimationFrame(syncBottomCommand)});
+hand.addEventListener('click',e=>{const card=e.target.closest('.game-card');if(!card||suppressCardClick)return;const wasSelected=card.classList.contains('selected');hand.querySelectorAll('.game-card').forEach(el=>el.classList.remove('selected'));if(!wasSelected)card.classList.add('selected');syncBottomCommand()});
+
+function cardTileAtPointer(e){
+  const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;ray.setFromCamera(pointer,camera);
+  if(!ray.ray.intersectPlane(boardPlane,dragPoint)||Math.abs(dragPoint.x)>half+tile/2||Math.abs(dragPoint.z)>half+tile/2)return null;
+  const x=snapToTile(dragPoint.x),z=snapToTile(dragPoint.z),occupied=units.some(u=>Math.abs(u.position.x-x)<.1&&Math.abs(u.position.z-z)<.1);
+  return{x,z,valid:!occupied};
+}
+function makeSummonedUnit(cardIndex){
+  const c=cards[cardIndex],factories=[makeMage,makeWarrior,makeArcher];let unit;
+  if(factories[cardIndex])unit=factories[cardIndex]();
+  else{
+    const colors={common:0x858a85,uncommon:0x628c67,rare:0x5186a8,epic:0x8d5ab0,legendary:0xc68a34},color=colors[c.rarityClass];unit=new THREE.Group();unitBase(unit,color);
+    const rig=new THREE.Group();rig.name='rig';rig.position.y=.18;unit.add(rig);const tokenMat=new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.12,roughness:.55,metalness:.35});
+    add(new THREE.CylinderGeometry(.32,.44,.95,18),M.darkLeather,rig,[0,.68,0]);add(new THREE.OctahedronGeometry(.38,1),tokenMat,rig,[0,1.5,0]);add(new THREE.TorusGeometry(.35,.045,10,32),M.gold,rig,[0,1.5,0],[Math.PI/2,0,0]);
+  }
+  unit.name=c.name;unit.userData={...unit.userData,selectable:true,hoverable:true,cardIndex,name:c.name,role:c.info,hp:c.hp,maxHp:c.hp,damage:c.damage,move:c.move,cost:c.cost,ability:c.ability,abilityUsed:false,description:c.abilityText};unit.scale.setScalar(.64);return unit;
+}
+function summonCard(cardIndex,x,z){const unit=makeSummonedUnit(cardIndex);unit.position.set(x,.06,z);units.push(unit);hoverables.push(unit);scene.add(unit);selectUnit(unit)}
+hand.addEventListener('pointerdown',e=>{
+  const card=e.target.closest('.game-card');if(!card||e.button!==0)return;e.preventDefault();card.setPointerCapture(e.pointerId);controls.enabled=false;
+  cardDrag={card,index:Number(card.dataset.card),startX:e.clientX,startY:e.clientY,moved:false,ghost:null,tile:null};syncBottomCommand();
+});
+addEventListener('pointermove',e=>{
+  if(!cardDrag)return;const distance=Math.hypot(e.clientX-cardDrag.startX,e.clientY-cardDrag.startY);if(!cardDrag.moved&&distance<7)return;
+  if(!cardDrag.moved){cardDrag.moved=true;cardDrag.card.classList.add('summoning');cardDrag.ghost=cardDrag.card.cloneNode(true);cardDrag.ghost.classList.remove('selected');cardDrag.ghost.classList.add('summon-card-ghost');document.body.appendChild(cardDrag.ghost)}
+  cardDrag.ghost.style.left=`${e.clientX}px`;cardDrag.ghost.style.top=`${e.clientY}px`;cardDrag.tile=cardTileAtPointer(e);tileMarker.visible=Boolean(cardDrag.tile);if(cardDrag.tile){tileMarker.position.set(cardDrag.tile.x,.075,cardDrag.tile.z);tileMarker.material.color.setHex(cardDrag.tile.valid?0x6cad78:0xa54239)}
+});
+addEventListener('pointerup',e=>{
+  if(!cardDrag)return;const drag=cardDrag;cardDrag=null;controls.enabled=true;tileMarker.visible=false;drag.ghost?.remove();drag.card.classList.remove('summoning');
+  if(drag.moved){suppressCardClick=true;if(drag.tile?.valid){summonCard(drag.index,drag.tile.x,drag.tile.z);drag.card.remove();document.querySelector('#hand-count').textContent=`${hand.querySelectorAll('.game-card').length} CARTAS`}setTimeout(()=>{suppressCardClick=false;syncBottomCommand()},0)}else syncBottomCommand();
+});
 
 let drawingCard=false,handShift=0,deckRemaining=28,deckHover=false,deckPreviewIndex=3;
 const deckScreenPoint=new THREE.Vector3();
@@ -337,6 +365,6 @@ document.querySelector('#tray-prev').addEventListener('click',()=>moveTray(1));d
 const clock=new THREE.Clock();
 const enemyBaseTag=document.querySelector('.enemy-base-tag');
 const baseTagPoint=new THREE.Vector3();
-function positionEnemyStatus(){enemyKeep.getWorldPosition(baseTagPoint);baseTagPoint.y+=4.35;baseTagPoint.project(camera);enemyBaseTag.style.left=`${(baseTagPoint.x*.5+.5)*innerWidth}px`;enemyBaseTag.style.top=`${(-baseTagPoint.y*.5+.5)*innerHeight}px`;enemyBaseTag.style.visibility=baseTagPoint.z<1?'visible':'hidden';}
+function positionEnemyStatus(){enemyKeep.getWorldPosition(baseTagPoint);baseTagPoint.y+=4.9;baseTagPoint.project(camera);enemyBaseTag.style.left=`${(baseTagPoint.x*.5+.5)*innerWidth}px`;enemyBaseTag.style.top=`${(-baseTagPoint.y*.5+.5)*innerHeight}px`;enemyBaseTag.style.visibility=baseTagPoint.z<1?'visible':'hidden';}
 function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();controls.update();positionEnemyStatus();topDeckCard.position.y=THREE.MathUtils.lerp(topDeckCard.position.y,deckHover ? .98 : .766,.14);topDeckCard.rotation.z=THREE.MathUtils.lerp(topDeckCard.rotation.z,deckHover ? -.08 : 0,.12);units.forEach((u,i)=>{const rig=u.getObjectByName('rig');rig.position.y=.18+Math.sin(t*1.35+i*1.7)*.012;rig.rotation.z=Math.sin(t*.8+i)*.006;u.traverse(o=>{if(o.userData.magic){o.rotation.y=t*1.5;o.position.y=2.23+Math.sin(t*2.5)*.045;}})});wisps.forEach((w,i)=>{w.position.x=w.userData.baseX+Math.sin(t*.12+i)*.55;w.material.opacity=.012+i*.003+Math.sin(t*.35+i)*.004;});renderer.render(scene,camera)}
 function resize(){const aspect=innerWidth/innerHeight,view=innerWidth<700?11.2:10.2;camera.left=-view*aspect;camera.right=view*aspect;camera.top=view;camera.bottom=-view;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7))}addEventListener('resize',resize);resize();animate();setTimeout(()=>document.querySelector('.loading').classList.add('done'),500);
