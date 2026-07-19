@@ -208,16 +208,7 @@ function hoverableAtPointer(e){
   const hits=ray.intersectObjects(hoverables,true);if(!hits.length)return null;let o=hits[0].object;while(o.parent&&!o.userData.hoverable)o=o.parent;return o.userData.hoverable?o:null;
 }
 function snapToTile(value){return THREE.MathUtils.clamp(Math.round((value+half)/tile)*tile-half,-half,half)}
-function showUnit(u){
-  const d=u.userData,panel=document.querySelector('#unit-panel');
-  document.querySelector('#unit-role').textContent=d.role;document.querySelector('#unit-name').textContent=d.name;
-  document.querySelector('#stat-hp').textContent=`${d.hp} / ${d.maxHp}`;document.querySelector('#hp-fill').style.width=`${d.hp/d.maxHp*100}%`;
-  document.querySelector('#stat-damage').textContent=d.damage;document.querySelector('#stat-move').textContent=d.move;document.querySelector('#stat-cost').textContent=d.cost;
-  document.querySelector('#stat-ability').textContent=d.ability;document.querySelector('#ability-description').textContent=d.description;
-  const state=document.querySelector('#ability-state');state.textContent=d.abilityUsed?'JÁ USADA':'DISPONÍVEL';state.classList.toggle('used',d.abilityUsed);
-  panel.classList.add('open');panel.setAttribute('aria-hidden','false');
-}
-function selectUnit(u){if(selected)selected.getObjectByName('selectionRing').material.emissiveIntensity=.18;selected=u;selected.getObjectByName('selectionRing').material.emissiveIntensity=1.3;showUnit(u)}
+function selectUnit(u){if(selected)selected.getObjectByName('selectionRing').material.emissiveIntensity=.18;selected=u;selected.getObjectByName('selectionRing').material.emissiveIntensity=1.3}
 function pick(e){if(justDragged){justDragged=false;return}const u=unitAtPointer(e);if(u)selectUnit(u)}
 function startDrag(e){
   if(e.button!==0)return;const u=unitAtPointer(e);if(!u)return;
@@ -251,7 +242,6 @@ renderer.domElement.addEventListener('pointermove',showHover);
 renderer.domElement.addEventListener('pointerup',finishDrag,true);
 renderer.domElement.addEventListener('pointercancel',finishDrag,true);
 renderer.domElement.addEventListener('pointerleave',()=>hoverCard.classList.remove('visible'));
-document.querySelector('.panel-close').addEventListener('click',()=>{const panel=document.querySelector('#unit-panel');panel.classList.remove('open');panel.setAttribute('aria-hidden','true');if(selected){selected.getObjectByName('selectionRing').material.emissiveIntensity=.18;selected=null;}});
 
 let activePlayer=1,round=1;
 function roman(n){return ['I','II','III','IV','V','VI','VII','VIII','IX','X'][Math.min(n,10)-1]||n}
