@@ -272,31 +272,31 @@ document.querySelector('#end-turn').addEventListener('click',endTurn);addEventLi
 // Fictional card hand. All gameplay fields live in data so new cards can be
 // added without changing the HUD markup.
 const cards=[
-  {name:'Vael do Véu',description:'Um conjurador exilado que transforma as sombras do campo em poder arcano.',hp:55,damage:18,move:3,cost:5,ability:'Ruptura Arcana',abilityText:'Causa 12 de dano em uma área de duas casas e ignora proteção mágica.',rarity:'ÉPICA',rarityClass:'epic',info:'HUMANO · ARCANO',glyph:'✦'},
-  {name:'Sir Aldren',description:'Cavaleiro juramentado ao Reino do Corvo e último guardião da muralha norte.',hp:85,damage:14,move:3,cost:3,ability:'Muralha de Ferro',abilityText:'Reduz pela metade o próximo dano recebido por tropas adjacentes.',rarity:'RARA',rarityClass:'rare',info:'HUMANO · GUARDIÃO',glyph:'⚔'},
-  {name:'Lyra Folha-Cinza',description:'Batedora das florestas mortas, capaz de atingir inimigos antes de ser vista.',hp:62,damage:16,move:4,cost:4,ability:'Chuva de Flechas',abilityText:'Atinge até três casas adjacentes ao alvo com 8 de dano.',rarity:'INCOMUM',rarityClass:'uncommon',info:'HUMANA · ATIRADORA',glyph:'➶'},
-  {name:'Vharok, o Cinzento',description:'Um dragão ancestral despertado pelas guerras entre os reinos mortais.',hp:120,damage:28,move:5,cost:10,ability:'Inferno Antigo',abilityText:'Incendeia uma linha de quatro casas; o fogo permanece por um turno.',rarity:'LENDÁRIA',rarityClass:'legendary',info:'DRAGÃO · VOADOR',glyph:'♞'},
-  {name:'Saqueador Grik',description:'Pequeno, veloz e traiçoeiro. Grik luta apenas pelo que consegue roubar.',hp:32,damage:9,move:5,cost:2,ability:'Pilhagem',abilityText:'Ao eliminar uma unidade, devolve 1 ponto de custo ao seu rei.',rarity:'COMUM',rarityClass:'common',info:'GOBLIN · SAQUEADOR',glyph:'♟'},
-  {name:'Guardião de Ossos',description:'Uma sentinela reanimada que ainda protege as criptas de um reino esquecido.',hp:78,damage:17,move:2,cost:6,ability:'Juramento da Cripta',abilityText:'Retorna com 25 de vida uma vez após ser eliminado.',rarity:'ÉPICA',rarityClass:'epic',info:'MORTO-VIVO · GUARDIÃO',glyph:'☠'}
+  {name:'Vael do Véu',level:4,description:'Um conjurador exilado que transforma as sombras do campo em poder arcano.',hp:55,damage:18,move:3,cost:5,abilityCost:2,ability:'Ruptura Arcana',abilityText:'Causa 12 de dano em uma área de duas casas e ignora proteção mágica.',rarity:'ÉPICA',rarityClass:'epic',info:'HUMANO · ARCANO',glyph:'✦'},
+  {name:'Sir Aldren',level:3,description:'Cavaleiro juramentado ao Reino do Corvo e último guardião da muralha norte.',hp:85,damage:14,move:3,cost:3,abilityCost:1,ability:'Muralha de Ferro',abilityText:'Reduz pela metade o próximo dano recebido por tropas adjacentes.',rarity:'RARA',rarityClass:'rare',info:'HUMANO · GUARDIÃO',glyph:'⚔'},
+  {name:'Lyra Folha-Cinza',level:3,description:'Batedora das florestas mortas, capaz de atingir inimigos antes de ser vista.',hp:62,damage:16,move:4,cost:4,abilityCost:2,ability:'Chuva de Flechas',abilityText:'Atinge até três casas adjacentes ao alvo com 8 de dano.',rarity:'INCOMUM',rarityClass:'uncommon',info:'HUMANA · ATIRADORA',glyph:'➶'},
+  {name:'Vharok, o Cinzento',level:5,description:'Um dragão ancestral despertado pelas guerras entre os reinos mortais.',hp:120,damage:28,move:5,cost:10,abilityCost:4,ability:'Inferno Antigo',abilityText:'Incendeia uma linha de quatro casas; o fogo permanece por um turno.',rarity:'LENDÁRIA',rarityClass:'legendary',info:'DRAGÃO · VOADOR',glyph:'♞'},
+  {name:'Saqueador Grik',level:2,description:'Pequeno, veloz e traiçoeiro. Grik luta apenas pelo que consegue roubar.',hp:32,damage:9,move:5,cost:2,abilityCost:1,ability:'Pilhagem',abilityText:'Ao eliminar uma unidade, devolve 1 ponto de custo ao seu rei.',rarity:'COMUM',rarityClass:'common',info:'GOBLIN · SAQUEADOR',glyph:'♟'},
+  {name:'Guardião de Ossos',level:4,description:'Uma sentinela reanimada que ainda protege as criptas de um reino esquecido.',hp:78,damage:17,move:2,cost:6,abilityCost:3,ability:'Juramento da Cripta',abilityText:'Retorna com 25 de vida uma vez após ser eliminado.',rarity:'ÉPICA',rarityClass:'epic',info:'MORTO-VIVO · GUARDIÃO',glyph:'☠'}
 ];
 const deckPreview=document.querySelector('#deck-preview');
 function previewDeckCard(index){
   const c=cards[index];deckPreview.className=`deck-preview rarity-${c.rarityClass}`;deckPreview.innerHTML=`
-    <div class="preview-top"><b class="preview-cost">${c.cost}</b><strong>${c.name}</strong><i class="preview-gem"></i></div>
+    <div class="preview-top"><b class="preview-cost">${c.cost}</b><strong>${c.name} · NV. ${c.level}</strong><i class="preview-gem"></i></div>
     <div class="preview-art"><span>${c.glyph}</span></div><p class="preview-description">${c.description}</p>
     <div class="preview-stats"><span><small>VIDA</small><b>${c.hp}</b></span><span><small>DANO</small><b>${c.damage}</b></span><span><small>MOVIMENTO</small><b>${c.move}</b></span></div>
-    <div class="preview-ability"><small>HABILIDADE ESPECIAL</small><strong>${c.ability}</strong><p>${c.abilityText}</p></div>
+    <div class="preview-ability"><small>HABILIDADE ESPECIAL · CUSTO ${c.abilityCost}</small><strong>${c.ability}</strong><p>${c.abilityText}</p></div>
     <div class="preview-info"><span>${c.info}</span><b>${c.rarity}</b></div>`;
   deckPreview.classList.add('visible');deckPreview.setAttribute('aria-hidden','false');
 }
 function hideDeckPreview(){deckPreview.classList.remove('visible');deckPreview.setAttribute('aria-hidden','true')}
 const hand=document.querySelector('#card-hand');
 hand.innerHTML=cards.map((c,i)=>`<button class="game-card rarity-${c.rarityClass}" data-card="${i}" aria-label="Carta ${c.name}, ${c.rarity}">
-  <span class="card-top"><b class="card-cost">${c.cost}</b><strong class="card-name">${c.name}</strong><i class="card-rarity-gem"></i></span>
+  <span class="card-top"><strong class="card-name">${c.name}</strong><b class="card-level">NV. ${c.level}</b></span>
   <span class="card-art"><span>${c.glyph}</span></span>
   <p class="card-description">${c.description}</p>
-  <span class="card-stats"><span><small>VIDA</small><b>${c.hp}</b></span><span><small>DANO</small><b>${c.damage}</b></span><span><small>MOV.</small><b>${c.move}</b></span></span>
-  <span class="card-ability"><small>HABILIDADE</small><strong>${c.ability}</strong><p>${c.abilityText}</p></span>
+  <span class="card-main-row"><span class="card-combat-stats"><span><small>VIDA</small><b>${c.hp}</b></span><span><small>DANO</small><b>${c.damage}</b></span><span><small>MOVIMENTO</small><b>${c.move}</b></span></span><span class="card-cast-cost"><small>CUSTO</small><b>${c.cost}</b></span></span>
+  <span class="card-ability"><span><small>HABILIDADE</small><strong>${c.ability}</strong></span><b class="ability-cost"><small>CUSTO</small>${c.abilityCost}</b><p>${c.abilityText}</p></span>
   <span class="card-info"><span>${c.info}</span><b>${c.rarity}</b></span>
 </button>`).join('');
 hand.addEventListener('click',e=>{const card=e.target.closest('.game-card');if(!card)return;const wasSelected=card.classList.contains('selected');hand.querySelectorAll('.game-card').forEach(el=>el.classList.remove('selected'));if(!wasSelected)card.classList.add('selected');});
