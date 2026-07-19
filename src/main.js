@@ -143,7 +143,7 @@ function makeKeep(accent,enemy=false){
   return keep;
 }
 const alliedKeep=makeKeep(0x3d5974),enemyKeep=makeKeep(0x7b2825,true);
-alliedKeep.position.set(0,.06,half-tile*2);enemyKeep.position.set(0,.06,-half+tile*2);board.add(alliedKeep,enemyKeep);
+alliedKeep.position.set(0,.06,half-tile);enemyKeep.position.set(0,.06,-half+tile);board.add(alliedKeep,enemyKeep);
 
 // A ruined, misty valley frames the game board while keeping every tile clear.
 const environment=new THREE.Group(),wisps=[];
@@ -245,7 +245,7 @@ renderer.domElement.addEventListener('pointerleave',()=>hoverCard.classList.remo
 
 let activePlayer=1,round=1;
 function roman(n){return ['I','II','III','IV','V','VI','VII','VIII','IX','X'][Math.min(n,10)-1]||n}
-function endTurn(){activePlayer=activePlayer===1?2:1;if(activePlayer===1)round++;document.querySelector('#player-one').classList.toggle('active',activePlayer===1);document.querySelector('#player-two').classList.toggle('active',activePlayer===2);document.querySelector('#round-number').textContent=roman(round);document.querySelector('#turn-label').textContent=activePlayer===1?'TURNO DE REI ALDRIC':'TURNO DE REI VAROS';}
+function endTurn(){activePlayer=activePlayer===1?2:1;if(activePlayer===1)round++;document.querySelector('#player-one').classList.toggle('active',activePlayer===1);document.querySelector('#round-number').textContent=roman(round);document.querySelector('#turn-label').textContent=activePlayer===1?'TURNO DE REI ALDRIC':'TURNO DE REI VAROS';}
 document.querySelector('#end-turn').addEventListener('click',endTurn);addEventListener('keydown',e=>{if(e.key==='Enter')endTurn()});
 
 // Fictional card hand. All gameplay fields live in data so new cards can be
@@ -296,5 +296,8 @@ function moveTray(direction){handShift=THREE.MathUtils.clamp(handShift+direction
 document.querySelector('#tray-prev').addEventListener('click',()=>moveTray(1));document.querySelector('#tray-next').addEventListener('click',()=>moveTray(-1));
 
 const clock=new THREE.Clock();
-function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();controls.update();units.forEach((u,i)=>{const rig=u.getObjectByName('rig');rig.position.y=.18+Math.sin(t*1.35+i*1.7)*.012;rig.rotation.z=Math.sin(t*.8+i)*.006;u.traverse(o=>{if(o.userData.magic){o.rotation.y=t*1.5;o.position.y=2.23+Math.sin(t*2.5)*.045;}})});wisps.forEach((w,i)=>{w.position.x=w.userData.baseX+Math.sin(t*.12+i)*.55;w.material.opacity=.012+i*.003+Math.sin(t*.35+i)*.004;});renderer.render(scene,camera)}
+const enemyBaseTag=document.querySelector('.enemy-base-tag');
+const baseTagPoint=new THREE.Vector3();
+function positionEnemyStatus(){enemyKeep.getWorldPosition(baseTagPoint);baseTagPoint.y+=4.35;baseTagPoint.project(camera);enemyBaseTag.style.left=`${(baseTagPoint.x*.5+.5)*innerWidth}px`;enemyBaseTag.style.top=`${(-baseTagPoint.y*.5+.5)*innerHeight}px`;enemyBaseTag.style.visibility=baseTagPoint.z<1?'visible':'hidden';}
+function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();controls.update();positionEnemyStatus();units.forEach((u,i)=>{const rig=u.getObjectByName('rig');rig.position.y=.18+Math.sin(t*1.35+i*1.7)*.012;rig.rotation.z=Math.sin(t*.8+i)*.006;u.traverse(o=>{if(o.userData.magic){o.rotation.y=t*1.5;o.position.y=2.23+Math.sin(t*2.5)*.045;}})});wisps.forEach((w,i)=>{w.position.x=w.userData.baseX+Math.sin(t*.12+i)*.55;w.material.opacity=.012+i*.003+Math.sin(t*.35+i)*.004;});renderer.render(scene,camera)}
 function resize(){const aspect=innerWidth/innerHeight,view=innerWidth<700?11.2:10.2;camera.left=-view*aspect;camera.right=view*aspect;camera.top=view;camera.bottom=-view;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7))}addEventListener('resize',resize);resize();animate();setTimeout(()=>document.querySelector('.loading').classList.add('done'),500);
