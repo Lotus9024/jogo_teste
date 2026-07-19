@@ -86,34 +86,64 @@ for(const x of [-1,1])for(const z of [-1,1]){
 // Compact keeps mark each king's side without hiding the board from the
 // top-down camera. They are presentation pieces only in this visual build.
 function makeKeep(accent,enemy=false){
-  const keep=new THREE.Group(),bannerMat=new THREE.MeshStandardMaterial({color:accent,roughness:.72,side:THREE.DoubleSide});
-  add(new THREE.CylinderGeometry(.86,1.0,.18,32),M.base,keep,[0,.05,0]);
-  add(new THREE.BoxGeometry(1.08,.72,.88,4,3,3),M.stone,keep,[0,.47,0]);
-  for(const x of [-.46,.46])for(const z of [-.36,.36]){
-    add(new THREE.CylinderGeometry(.25,.3,.82,16),M.stoneDark,keep,[x,.51,z]);
-    add(new THREE.ConeGeometry(.31,.34,16),M.iron,keep,[x,1.09,z]);
+  const keep=new THREE.Group();
+  const themeStone=new THREE.MeshStandardMaterial({color:enemy?0x3b2323:0x2b3438,roughness:.84,metalness:.08});
+  const themeDark=new THREE.MeshStandardMaterial({color:enemy?0x1e0d0f:0x121a1e,roughness:.92,metalness:.12});
+  const roofMat=new THREE.MeshStandardMaterial({color:enemy?0x57191b:0x263a46,roughness:.46,metalness:.48});
+  const bannerMat=new THREE.MeshStandardMaterial({color:accent,roughness:.72,side:THREE.DoubleSide});
+  const glowMat=new THREE.MeshBasicMaterial({color:enemy?0xd34b38:0x6fa9c7});
+
+  // The square foundation is 3 tiles wide (3 × 1.08), leaving a tiny seam
+  // around the footprint so the occupied cells remain readable.
+  add(new THREE.BoxGeometry(tile*3-.07,.2,tile*3-.07),M.base,keep,[0,.03,0]);
+  add(new THREE.BoxGeometry(tile*3-.18,.12,tile*3-.18),themeDark,keep,[0,.18,0]);
+  add(new THREE.BoxGeometry(2.86,.78,.26),themeStone,keep,[0,.64,-1.38]);
+  add(new THREE.BoxGeometry(2.86,.78,.26),themeStone,keep,[0,.64,1.38]);
+  add(new THREE.BoxGeometry(.26,.78,2.86),themeStone,keep,[-1.38,.64,0]);
+  add(new THREE.BoxGeometry(.26,.78,2.86),themeStone,keep,[1.38,.64,0]);
+
+  // Gate, murder-hole and an illuminated crest on the front wall.
+  add(new THREE.BoxGeometry(.68,.62,.08),M.void,keep,[0,.48,1.53]);
+  add(new THREE.TorusGeometry(.34,.08,10,24,Math.PI),themeDark,keep,[0,.79,1.55],[0,0,Math.PI]);
+  add(new THREE.OctahedronGeometry(.1,0),glowMat,keep,[0,1.04,1.55]);
+
+  for(const p of [-1.12,-.56,0,.56,1.12]){
+    add(new THREE.BoxGeometry(.26,.22,.3),themeDark,keep,[p,1.12,-1.4]);add(new THREE.BoxGeometry(.26,.22,.3),themeDark,keep,[p,1.12,1.4]);
+    if(Math.abs(p)>.2){add(new THREE.BoxGeometry(.3,.22,.26),themeDark,keep,[-1.4,1.12,p]);add(new THREE.BoxGeometry(.3,.22,.26),themeDark,keep,[1.4,1.12,p]);}
   }
-  for(const x of [-.42,0,.42])add(new THREE.BoxGeometry(.22,.22,.2),M.stoneDark,keep,[x,.94,0]);
-  add(new THREE.CylinderGeometry(.025,.025,1.15,10),M.iron,keep,[0,1.44,0]);
-  add(new THREE.PlaneGeometry(.42,.5,2,2),bannerMat,keep,[.22,1.7,0],[0,enemy?Math.PI:0,0]);
-  const crown=add(new THREE.OctahedronGeometry(.1,0),M.gold,keep,[0,1.04,.48]);crown.rotation.z=Math.PI/4;
+
+  // Central keep and four corner towers create a true castle silhouette.
+  add(new THREE.BoxGeometry(1.18,1.5,1.18,3,4,3),themeStone,keep,[0,1.02,0]);
+  for(const x of [-.46,0,.46])for(const z of [-.46,.46])add(new THREE.BoxGeometry(.22,.25,.22),themeDark,keep,[x,1.9,z]);
+  for(const x of [-1.23,1.23])for(const z of [-1.23,1.23]){
+    if(enemy){
+      add(new THREE.BoxGeometry(.62,1.58,.62,2,4,2),themeStone,keep,[x,1.02,z]);
+      add(new THREE.ConeGeometry(.5,.88,4),roofMat,keep,[x,2.24,z],[0,Math.PI/4,0]);
+      for(const s of [-1,1])add(new THREE.ConeGeometry(.07,.55,6),glowMat,keep,[x+s*.2,2.52,z],[0,0,s*.2]);
+    }else{
+      add(new THREE.CylinderGeometry(.39,.45,1.48,10),themeStone,keep,[x,.98,z]);
+      add(new THREE.ConeGeometry(.52,.72,10),roofMat,keep,[x,2.08,z]);
+      add(new THREE.OctahedronGeometry(.09,0),glowMat,keep,[x,2.48,z]);
+    }
+  }
+
+  add(new THREE.CylinderGeometry(.035,.035,1.3,10),M.iron,keep,[0,2.48,.12]);
+  add(new THREE.PlaneGeometry(.58,.76,3,3),bannerMat,keep,[.31,2.68,.13],[0,enemy?Math.PI:0,0]);
   if(enemy){
-    const bloodStone=new THREE.MeshStandardMaterial({color:0x4f1718,roughness:.68,metalness:.16});
-    for(const x of [-.34,0,.34])add(new THREE.ConeGeometry(.08,.55,8),bloodStone,keep,[x,1.25,-.12],[0,0,x*.7]);
-    add(new THREE.TorusGeometry(.31,.045,8,28),bloodStone,keep,[0,.68,.46],[Math.PI/2,0,0]);
+    add(new THREE.ConeGeometry(.34,1.42,5),roofMat,keep,[0,2.52,0],[0,Math.PI/5,0]);
+    for(const s of [-1,1])add(new THREE.TorusGeometry(.28,.045,7,24,Math.PI*1.25),M.iron,keep,[s*.72,1.32,.64],[Math.PI/2,s*.3,0]);
   }else{
-    const ravenGlow=new THREE.MeshBasicMaterial({color:0x668da5});
-    for(const x of [-.31,.31])add(new THREE.OctahedronGeometry(.075,0),ravenGlow,keep,[x,1.3,.18]);
-    add(new THREE.ConeGeometry(.19,.62,4),M.iron,keep,[0,1.3,-.12],[0,Math.PI/4,0]);
+    add(new THREE.ConeGeometry(.42,1.05,8),roofMat,keep,[0,2.42,0]);
+    for(const s of [-1,1])add(new THREE.BoxGeometry(.78,.1,.22),roofMat,keep,[s*.47,2.05,.03],[0,s*.22,s*.28]);
+    add(new THREE.OctahedronGeometry(.17,0),glowMat,keep,[0,3.02,0]);
   }
   keep.name=enemy?'Castelo Carmesim':'Fortaleza do Corvo';
-  keep.userData={hoverable:true,name:keep.name,role:'BASE · NÍVEL 1',hp:enemy?16:18,maxHp:20,damage:0,move:0,cost:'—',ability:enemy?'Pacto de Sangue':'Vigia do Corvo',abilityUsed:false,description:enemy?'As torres carmesins fortalecem tropas feridas próximas.':'As sentinelas do corvo revelam invasores nas casas vizinhas.'};
+  keep.userData={hoverable:true,name:keep.name,role:'BASE 3×3 · NÍVEL 1',hp:enemy?16:18,maxHp:20,damage:0,move:0,cost:'—',ability:enemy?'Pacto de Sangue':'Vigia do Corvo',abilityUsed:false,description:enemy?'As torres carmesins fortalecem tropas feridas próximas.':'As sentinelas do corvo revelam invasores nas casas vizinhas.'};
   keep.rotation.y=enemy?Math.PI:0;
-  keep.scale.setScalar(.68);
   return keep;
 }
 const alliedKeep=makeKeep(0x3d5974),enemyKeep=makeKeep(0x7b2825,true);
-alliedKeep.position.set(0,.06,half-tile);enemyKeep.position.set(0,.06,-half+tile);board.add(alliedKeep,enemyKeep);
+alliedKeep.position.set(0,.06,half-tile*2);enemyKeep.position.set(0,.06,-half+tile*2);board.add(alliedKeep,enemyKeep);
 
 // A ruined, misty valley frames the game board while keeping every tile clear.
 const environment=new THREE.Group(),wisps=[];
