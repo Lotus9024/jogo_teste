@@ -8,7 +8,7 @@ const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-per
 renderer.setPixelRatio(Math.min(devicePixelRatio,1.7)); renderer.setSize(innerWidth,innerHeight); renderer.shadowMap.enabled=false; renderer.outputColorSpace=THREE.SRGBColorSpace; renderer.toneMapping=THREE.ACESFilmicToneMapping; renderer.toneMappingExposure=1.22; app.prepend(renderer.domElement);
 
 const camera=new THREE.OrthographicCamera(-6,6,6,-6,.1,80); camera.position.set(0,16,5.2); camera.lookAt(0,0,0);
-const controls=new OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.dampingFactor=.07; controls.enablePan=false; controls.minZoom=.75; controls.maxZoom=1.65; controls.minPolarAngle=.12; controls.maxPolarAngle=.52; controls.target.set(0,.2,0); controls.mouseButtons.LEFT=THREE.MOUSE.ROTATE; controls.update();
+const controls=new OrbitControls(camera,renderer.domElement); controls.enableDamping=true; controls.dampingFactor=.07; controls.enablePan=false; controls.minZoom=.75; controls.maxZoom=1.65; controls.minPolarAngle=.08; controls.maxPolarAngle=Math.PI/2-.16; controls.target.set(0,.2,0); controls.mouseButtons.LEFT=THREE.MOUSE.ROTATE; controls.update();
 
 scene.add(new THREE.HemisphereLight(0xa9a79d,0x111513,1.65));
 const sun=new THREE.DirectionalLight(0xe2c69c,3.7); sun.position.set(-6,13,7); sun.castShadow=false;scene.add(sun);
@@ -147,7 +147,7 @@ alliedKeep.position.set(0,.06,half-tile);enemyKeep.position.set(0,.06,-half+tile
 
 // A physical deck sits beside the board. Every layer has real thickness and a
 // slightly different angle, so it reads as a handled stack from the game camera.
-const deck3D=new THREE.Group();deck3D.name='Baralho 3D do Corvo';deck3D.position.set(-half-1.42,-.34,2.55);deck3D.rotation.y=-.11;
+const deck3D=new THREE.Group();deck3D.name='Baralho 3D do Corvo';deck3D.position.set(-half-1.4,-.34,-half+.95);deck3D.rotation.y=-.11;
 const deckSideMat=new THREE.MeshStandardMaterial({color:0x6d6049,roughness:.82,metalness:.05});
 const deckBackMat=new THREE.MeshStandardMaterial({color:0x172326,emissive:0x071012,emissiveIntensity:.4,roughness:.58,metalness:.18});
 const deckEdgeMat=new THREE.MeshStandardMaterial({color:0xa98545,emissive:0x231606,emissiveIntensity:.25,roughness:.36,metalness:.72});
