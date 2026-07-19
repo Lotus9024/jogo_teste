@@ -285,7 +285,7 @@ function previewDeckCard(index){
     <div class="preview-top"><b class="preview-cost">${c.cost}</b><strong>${c.name} · NV. ${c.level}</strong><i class="preview-gem"></i></div>
     <div class="preview-art"><span>${c.glyph}</span></div><p class="preview-description">${c.description}</p>
     <div class="preview-stats"><span aria-label="Vida"><small aria-hidden="true">♥</small><b>${c.hp}</b></span><span aria-label="Dano"><small aria-hidden="true">⚔</small><b>${c.damage}</b></span><span aria-label="Movimento"><small aria-hidden="true"><svg class="stat-boot" viewBox="0 0 24 24"><path d="M5 2h8v9.5c0 1.5 1.2 2.5 2.8 2.5H20c1.1 0 2 .9 2 2v4H9a6 6 0 0 1-6-6V9h2V2Z"/></svg></small><b>${c.move}</b></span></div>
-    <div class="preview-ability"><small>HABILIDADE ESPECIAL · CUSTO ${c.abilityCost}</small><strong>${c.ability}</strong><p>${c.abilityText}</p></div>
+    <div class="preview-ability" aria-label="Habilidade ${c.ability}"><strong>${c.ability}</strong><b class="preview-ability-cost">CUSTO ${c.abilityCost}</b><p>${c.abilityText}</p></div>
     <div class="preview-info"><span>${c.info}</span><b>${c.rarity}</b></div>`;
   deckPreview.classList.add('visible');deckPreview.setAttribute('aria-hidden','false');
 }
@@ -295,7 +295,7 @@ hand.innerHTML=cards.map((c,i)=>`<button class="game-card rarity-${c.rarityClass
   <span class="card-top"><strong class="card-name">${c.name}</strong><b class="card-level">NV. ${c.level}</b></span>
   <span class="card-art"><span>${c.glyph}</span></span>
   <span class="card-main-row"><span class="card-combat-stats"><span aria-label="Vida"><small aria-hidden="true">♥</small><b>${c.hp}</b></span><span aria-label="Dano"><small aria-hidden="true">⚔</small><b>${c.damage}</b></span><span aria-label="Movimento"><small aria-hidden="true"><svg class="stat-boot" viewBox="0 0 24 24"><path d="M5 2h8v9.5c0 1.5 1.2 2.5 2.8 2.5H20c1.1 0 2 .9 2 2v4H9a6 6 0 0 1-6-6V9h2V2Z"/></svg></small><b>${c.move}</b></span></span><span class="card-cast-cost"><small>CUSTO</small><b>${c.cost}</b></span></span>
-  <span class="card-ability"><span><small>HABILIDADE</small><strong>${c.ability}</strong></span><b class="ability-cost"><small>CUSTO</small>${c.abilityCost}</b><p>${c.abilityText}</p></span>
+  <span class="card-ability" aria-label="Habilidade ${c.ability}"><span><strong>${c.ability}</strong></span><b class="ability-cost"><small>CUSTO</small>${c.abilityCost}</b><p>${c.abilityText}</p></span>
   <span class="card-info"><span>${c.info}</span><b>${c.rarity}</b></span>
 </button>`).join('');
 hand.addEventListener('click',e=>{const card=e.target.closest('.game-card');if(!card)return;const wasSelected=card.classList.contains('selected');hand.querySelectorAll('.game-card').forEach(el=>el.classList.remove('selected'));if(!wasSelected)card.classList.add('selected');});
