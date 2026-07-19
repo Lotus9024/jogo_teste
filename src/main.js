@@ -145,6 +145,28 @@ function makeKeep(accent,enemy=false){
 const alliedKeep=makeKeep(0x3d5974),enemyKeep=makeKeep(0x7b2825,true);
 alliedKeep.position.set(0,.06,half-tile);enemyKeep.position.set(0,.06,-half+tile);board.add(alliedKeep,enemyKeep);
 
+// A physical deck sits beside the board. Every layer has real thickness and a
+// slightly different angle, so it reads as a handled stack from the game camera.
+const deck3D=new THREE.Group();deck3D.name='Baralho 3D do Corvo';deck3D.position.set(-half-1.42,-.34,2.55);deck3D.rotation.y=-.11;
+const deckSideMat=new THREE.MeshStandardMaterial({color:0x6d6049,roughness:.82,metalness:.05});
+const deckBackMat=new THREE.MeshStandardMaterial({color:0x172326,emissive:0x071012,emissiveIntensity:.4,roughness:.58,metalness:.18});
+const deckEdgeMat=new THREE.MeshStandardMaterial({color:0xa98545,emissive:0x231606,emissiveIntensity:.25,roughness:.36,metalness:.72});
+add(new THREE.BoxGeometry(1.62,.18,2.18),M.stoneDark,deck3D,[0,-.08,0]);
+add(new THREE.BoxGeometry(1.42,.08,1.98),M.iron,deck3D,[0,.05,0]);
+const deckCards=[];
+for(let i=0;i<18;i++){
+  const card=new THREE.Group();card.position.set(Math.sin(i*2.17)*.045,.12+i*.038,Math.cos(i*1.73)*.04);card.rotation.y=Math.sin(i*1.31)*.055;
+  add(new THREE.BoxGeometry(1.18,.045,1.72,5,1,7),[deckSideMat,deckSideMat,deckBackMat,deckSideMat,deckSideMat,deckSideMat],card);
+  if(i===17){
+    add(new THREE.BoxGeometry(1.02,.018,.025),deckEdgeMat,card,[0,.034,-.72]);add(new THREE.BoxGeometry(1.02,.018,.025),deckEdgeMat,card,[0,.034,.72]);
+    add(new THREE.BoxGeometry(.025,.018,1.42),deckEdgeMat,card,[-.5,.034,0]);add(new THREE.BoxGeometry(.025,.018,1.42),deckEdgeMat,card,[.5,.034,0]);
+    add(new THREE.CylinderGeometry(.2,.2,.022,4),deckEdgeMat,card,[0,.05,0],[0,Math.PI/4,0]);
+    add(new THREE.CylinderGeometry(.055,.055,.027,12),M.magic,card,[0,.068,0]);
+  }
+  deckCards.push(card);deck3D.add(card);
+}
+const topDeckCard=deckCards.at(-1);scene.add(deck3D);
+
 // A ruined, misty valley frames the game board while keeping every tile clear.
 const environment=new THREE.Group(),wisps=[];
 const earth=new THREE.MeshStandardMaterial({color:0x0c110e,emissive:0x010201,emissiveIntensity:.25,roughness:1}),ashStone=new THREE.MeshStandardMaterial({color:0x353c36,roughness:.98}),deadWood=new THREE.MeshStandardMaterial({color:0x463126,emissive:0x080504,emissiveIntensity:.28,roughness:1});
@@ -258,7 +280,7 @@ const cards=[
   {name:'Saqueador Grik',description:'Pequeno, veloz e traiçoeiro. Grik luta apenas pelo que consegue roubar.',hp:32,damage:9,move:5,cost:2,ability:'Pilhagem',abilityText:'Ao eliminar uma unidade, devolve 1 ponto de custo ao seu rei.',rarity:'COMUM',rarityClass:'common',info:'GOBLIN · SAQUEADOR',glyph:'♟'},
   {name:'Guardião de Ossos',description:'Uma sentinela reanimada que ainda protege as criptas de um reino esquecido.',hp:78,damage:17,move:2,cost:6,ability:'Juramento da Cripta',abilityText:'Retorna com 25 de vida uma vez após ser eliminado.',rarity:'ÉPICA',rarityClass:'epic',info:'MORTO-VIVO · GUARDIÃO',glyph:'☠'}
 ];
-const deckPreview=document.querySelector('#deck-preview'),deckPile=document.querySelector('.deck-pile');
+const deckPreview=document.querySelector('#deck-preview');
 function previewDeckCard(index){
   const c=cards[index];deckPreview.className=`deck-preview rarity-${c.rarityClass}`;deckPreview.innerHTML=`
     <div class="preview-top"><b class="preview-cost">${c.cost}</b><strong>${c.name}</strong><i class="preview-gem"></i></div>
@@ -269,9 +291,6 @@ function previewDeckCard(index){
   deckPreview.classList.add('visible');deckPreview.setAttribute('aria-hidden','false');
 }
 function hideDeckPreview(){deckPreview.classList.remove('visible');deckPreview.setAttribute('aria-hidden','true')}
-deckPile.querySelectorAll('[data-deck-card]').forEach(card=>{card.addEventListener('pointerenter',()=>previewDeckCard(Number(card.dataset.deckCard)));card.addEventListener('focus',()=>previewDeckCard(Number(card.dataset.deckCard)))});
-deckPile.addEventListener('pointerleave',hideDeckPreview);deckPile.addEventListener('focusout',e=>{if(!deckPile.contains(e.relatedTarget))hideDeckPreview()});
-document.addEventListener('pointermove',e=>{if(!deckPile.contains(e.target))hideDeckPreview()});
 const hand=document.querySelector('#card-hand');
 hand.innerHTML=cards.map((c,i)=>`<button class="game-card rarity-${c.rarityClass}" data-card="${i}" aria-label="Carta ${c.name}, ${c.rarity}">
   <span class="card-top"><b class="card-cost">${c.cost}</b><strong class="card-name">${c.name}</strong><i class="card-rarity-gem"></i></span>
@@ -283,21 +302,32 @@ hand.innerHTML=cards.map((c,i)=>`<button class="game-card rarity-${c.rarityClass
 </button>`).join('');
 hand.addEventListener('click',e=>{const card=e.target.closest('.game-card');if(!card)return;const wasSelected=card.classList.contains('selected');hand.querySelectorAll('.game-card').forEach(el=>el.classList.remove('selected'));if(!wasSelected)card.classList.add('selected');});
 
-let drawingCard=false,handShift=0;
+let drawingCard=false,handShift=0,deckRemaining=28,deckHover=false,deckPreviewIndex=3;
+const deckScreenPoint=new THREE.Vector3();
+function deckScreenPosition(y=.8){deck3D.getWorldPosition(deckScreenPoint);deckScreenPoint.y+=y;deckScreenPoint.project(camera);return{x:(deckScreenPoint.x*.5+.5)*innerWidth,y:(-deckScreenPoint.y*.5+.5)*innerHeight}}
 function drawCardPreview(){
-  if(drawingCard)return;drawingCard=true;const deck=document.querySelector('.deck-pile').getBoundingClientRect(),target=hand.getBoundingClientRect();
-  const ghost=document.createElement('div');ghost.className='draw-card-ghost';ghost.textContent='♜';ghost.style.left=`${deck.left}px`;ghost.style.top=`${deck.top}px`;document.body.appendChild(ghost);
-  const dx=target.left+target.width/2-deck.left-36,dy=Math.min(innerHeight-125,target.top+40)-deck.top-53;
+  if(drawingCard||deckRemaining<=0)return;drawingCard=true;const deck=deckScreenPosition(),target=hand.getBoundingClientRect();
+  const ghost=document.createElement('div');ghost.className='draw-card-ghost';ghost.textContent='♜';ghost.style.left=`${deck.x-36}px`;ghost.style.top=`${deck.y-53}px`;document.body.appendChild(ghost);
+  const dx=target.left+target.width/2-deck.x,dy=Math.min(innerHeight-125,target.top+40)-deck.y;
   const motion=ghost.animate([{transform:'translate(0,0) rotate(-8deg) scale(.72)',opacity:.35},{offset:.48,transform:`translate(${dx*.52}px,${dy*.35}px) rotate(7deg) scale(1.15)`,opacity:1},{transform:`translate(${dx}px,${dy}px) rotate(0) scale(.9)`,opacity:.15}],{duration:980,easing:'cubic-bezier(.2,.75,.2,1)'});
-  motion.onfinish=()=>{const source=hand.querySelector('.game-card');if(source){const clone=source.cloneNode(true);clone.classList.remove('selected');hand.appendChild(clone)}ghost.remove();const count=hand.children.length;document.querySelector('#hand-count').textContent=`${count} CARTAS`;const deckCount=document.querySelector('#deck-count');deckCount.textContent=Math.max(0,Number(deckCount.textContent)-1);hand.classList.add('reflow');setTimeout(()=>hand.classList.remove('reflow'),600);drawingCard=false;};
+  motion.onfinish=()=>{const source=hand.querySelector('.game-card');if(source){const clone=source.cloneNode(true);clone.classList.remove('selected');hand.appendChild(clone)}ghost.remove();const count=hand.children.length;document.querySelector('#hand-count').textContent=`${count} CARTAS`;deckRemaining--;document.querySelector('#deck-count').textContent=deckRemaining;deckPreviewIndex=(deckPreviewIndex+1)%cards.length;hand.classList.add('reflow');setTimeout(()=>hand.classList.remove('reflow'),600);drawingCard=false;};
 }
 document.querySelector('#draw-card').addEventListener('click',drawCardPreview);
+function deckAtPointer(e){const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;ray.setFromCamera(pointer,camera);return ray.intersectObject(deck3D,true).length>0}
+function hoverDeck(e){const over=deckAtPointer(e);if(over!==deckHover){deckHover=over;renderer.domElement.style.cursor=over?'pointer':'';document.querySelector('#deck-label').classList.toggle('hovered',over);if(over)previewDeckCard(deckPreviewIndex);else hideDeckPreview()}}
+let deckPressed=false;
+renderer.domElement.addEventListener('pointermove',hoverDeck);
+renderer.domElement.addEventListener('pointerdown',e=>{if(e.button!==0||!deckAtPointer(e))return;e.preventDefault();e.stopPropagation();deckPressed=true;controls.enabled=false},true);
+renderer.domElement.addEventListener('pointerup',e=>{if(!deckPressed)return;e.preventDefault();e.stopPropagation();deckPressed=false;controls.enabled=true;if(deckAtPointer(e))drawCardPreview()},true);
+renderer.domElement.addEventListener('pointerleave',()=>{deckHover=false;deckPressed=false;controls.enabled=true;renderer.domElement.style.cursor='';document.querySelector('#deck-label').classList.remove('hovered');hideDeckPreview()});
 function moveTray(direction){handShift=THREE.MathUtils.clamp(handShift+direction*120,-360,360);hand.style.setProperty('--hand-shift',`${handShift}px`)}
 document.querySelector('#tray-prev').addEventListener('click',()=>moveTray(1));document.querySelector('#tray-next').addEventListener('click',()=>moveTray(-1));
 
 const clock=new THREE.Clock();
 const enemyBaseTag=document.querySelector('.enemy-base-tag');
+const deckLabel=document.querySelector('#deck-label');
 const baseTagPoint=new THREE.Vector3();
 function positionEnemyStatus(){enemyKeep.getWorldPosition(baseTagPoint);baseTagPoint.y+=4.35;baseTagPoint.project(camera);enemyBaseTag.style.left=`${(baseTagPoint.x*.5+.5)*innerWidth}px`;enemyBaseTag.style.top=`${(-baseTagPoint.y*.5+.5)*innerHeight}px`;enemyBaseTag.style.visibility=baseTagPoint.z<1?'visible':'hidden';}
-function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();controls.update();positionEnemyStatus();units.forEach((u,i)=>{const rig=u.getObjectByName('rig');rig.position.y=.18+Math.sin(t*1.35+i*1.7)*.012;rig.rotation.z=Math.sin(t*.8+i)*.006;u.traverse(o=>{if(o.userData.magic){o.rotation.y=t*1.5;o.position.y=2.23+Math.sin(t*2.5)*.045;}})});wisps.forEach((w,i)=>{w.position.x=w.userData.baseX+Math.sin(t*.12+i)*.55;w.material.opacity=.012+i*.003+Math.sin(t*.35+i)*.004;});renderer.render(scene,camera)}
+function positionDeckLabel(){const p=deckScreenPosition(-.02);deckLabel.style.left=`${p.x}px`;deckLabel.style.top=`${p.y}px`}
+function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();controls.update();positionEnemyStatus();positionDeckLabel();topDeckCard.position.y=THREE.MathUtils.lerp(topDeckCard.position.y,deckHover ? .98 : .766,.14);topDeckCard.rotation.z=THREE.MathUtils.lerp(topDeckCard.rotation.z,deckHover ? -.08 : 0,.12);units.forEach((u,i)=>{const rig=u.getObjectByName('rig');rig.position.y=.18+Math.sin(t*1.35+i*1.7)*.012;rig.rotation.z=Math.sin(t*.8+i)*.006;u.traverse(o=>{if(o.userData.magic){o.rotation.y=t*1.5;o.position.y=2.23+Math.sin(t*2.5)*.045;}})});wisps.forEach((w,i)=>{w.position.x=w.userData.baseX+Math.sin(t*.12+i)*.55;w.material.opacity=.012+i*.003+Math.sin(t*.35+i)*.004;});renderer.render(scene,camera)}
 function resize(){const aspect=innerWidth/innerHeight,view=innerWidth<700?11.2:10.2;camera.left=-view*aspect;camera.right=view*aspect;camera.top=view;camera.bottom=-view;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7))}addEventListener('resize',resize);resize();animate();setTimeout(()=>document.querySelector('.loading').classList.add('done'),500);

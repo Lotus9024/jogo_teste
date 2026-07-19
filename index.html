@@ -16,16 +16,8 @@
         <article class="player active" id="player-one"><span class="crown">♛</span><div class="player-name"><small>REINO DO CORVO</small><strong>REI ALDRIC</strong></div><div class="player-vitals"><span class="energy"><small>ENERGIA</small><b>8/10</b></span><span class="health"><small>HP</small><b>18/20</b></span></div></article>
         <div class="turn"><small>RODADA</small><strong id="round-number">I</strong><span class="turn-timer">◷ <b id="turn-clock">02:47</b></span></div>
       </section>
-      <aside class="deck-panel" aria-label="Baralho do Reino do Corvo">
-        <div class="deck-pile" aria-label="Cartas embaralhadas">
-          <button data-deck-card="3" aria-label="Examinar carta do dragão"><span>♜</span></button>
-          <button data-deck-card="4" aria-label="Examinar carta do goblin"><span>♜</span></button>
-          <button data-deck-card="1" aria-label="Examinar carta do guerreiro"><span>♜</span></button>
-          <button data-deck-card="5" aria-label="Examinar carta do guardião"><span>♜</span></button>
-          <button data-deck-card="2" aria-label="Examinar carta da arqueira"><span>♜</span></button>
-        </div>
-        <div><small>BARALHO DO CORVO</small><strong><b id="deck-count">28</b> CARTAS</strong><button id="draw-card">SIMULAR COMPRA <span>＋</span></button></div>
-      </aside>
+      <button id="draw-card" class="sr-only" aria-label="Comprar carta do baralho 3D">Comprar carta</button>
+      <div id="deck-label" class="deck-label" aria-hidden="true"><span>BARALHO DO CORVO</span><b id="deck-count">28</b><small>CARTAS · CLIQUE PARA COMPRAR</small></div>
       <section id="deck-preview" class="deck-preview" aria-live="polite" aria-hidden="true"></section>
       <aside id="hover-card" class="hover-card" aria-hidden="true">
         <div class="hover-heading"><span id="hover-role">UNIDADE</span><b id="hover-used">DISPONÍVEL</b></div>
