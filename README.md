@@ -1,31 +1,51 @@
-# Mesa de Guerra — tabuleiro 3D
+# Tronos em Ruínas
 
-Protótipo de tabuleiro medieval 3D 15×15 criado com Three.js. Inclui três miniaturas procedurais de alta tesselação — mago, guerreiro e arqueira — com materiais de pedra, metal, couro, tecido e madeira. O HUD permanece em HTML/CSS, separado da cena WebGL. As sombras projetadas estão desativadas para manter a leitura limpa da grade.
+Jogo de tabuleiro dark fantasy 3D para navegador. O repositório usa um monorepo com frontend Three.js, servidor WebSocket autoritativo e PostgreSQL.
 
-As miniaturas usam escala de tabuleiro e estão centralizadas na grade: a silhueta completa de cada unidade cabe em uma única casa de 1,08 × 1,08 unidade.
+## Estrutura
 
-O HUD dark fantasy mostra os dois reinos, jogador ativo e rodada. Ao selecionar uma unidade, exibe HP, dano, movimento, custo, disponibilidade e descrição da habilidade especial. O botão **Encerrar turno** alterna o jogador ativo.
+```text
+apps/
+  client/                 # Vite, Three.js e HUD 2D
+    src/network/          # Cliente WebSocket
+  server/                 # HTTP, WebSocket e regras autoritativas
+    src/database/         # Pool PostgreSQL e migrations
+    src/game/             # Estado e regras das partidas
+    src/realtime/         # Protocolo e conexões WebSocket
+packages/
+  shared/                 # Eventos e configurações usados pelos dois lados
+```
 
-A bandeja inferior contém seis cartas fictícias completas. Cada carta informa nome, descrição, vida, dano, movimento, custo, habilidade, raridade e tipo. No hover a carta sobe para leitura; no clique permanece selecionada.
+O cliente nunca deve decidir sozinho o resultado de movimentos, ataques, compras ou gastos de energia. Ele envia uma intenção; o servidor valida, altera o estado e transmite o novo estado aos jogadores.
 
-## Executar
+## Desenvolvimento local
 
-```powershell
-npm install
+```bash
+npm ci
 npm run dev
 ```
 
-Abra o endereço HTTP exibido pelo Vite (normalmente `http://localhost:5173`).
+- Cliente: `http://localhost:4173`
+- Servidor e health check: `http://localhost:3001/health`
+- WebSocket: `ws://localhost:3001/ws`
 
-## Interação
+## PostgreSQL
 
-- Arrastar: girar a câmera mantendo a visão superior
-- Scroll: zoom
-- Clique: selecionar uma tropa
+Para iniciar o banco local com Docker:
 
-## Build de produção
-
-```powershell
-npm run build
-npm run preview
+```bash
+docker compose up -d postgres
+copy apps\server\.env.example apps\server\.env
+npm run db:migrate
 ```
+
+O servidor pode iniciar sem PostgreSQL durante o desenvolvimento visual. O endpoint `/health` informa se o banco está configurado e conectado.
+
+## Comandos
+
+- `npm run dev`: cliente e servidor juntos.
+- `npm run dev:client`: somente o frontend.
+- `npm run dev:server`: somente o backend.
+- `npm run build`: valida todos os workspaces e gera o cliente.
+- `npm test`: testes do protocolo e das salas.
+- `npm run db:migrate`: aplica migrations pendentes.

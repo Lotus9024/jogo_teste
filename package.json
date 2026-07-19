@@ -1,17 +1,22 @@
 {
-  "name": "mago-isometrico",
-  "version": "1.0.0",
+  "name": "tronos-em-ruinas",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
-    "build": "vite build",
-    "preview": "vite preview --host 0.0.0.0"
-  },
-  "dependencies": {
-    "three": "^0.179.1"
+    "dev": "concurrently -n CLIENT,SERVER -c cyan,magenta \"npm run dev:client\" \"npm run dev:server\"",
+    "dev:client": "npm run dev --workspace @tronos/client",
+    "dev:server": "npm run dev --workspace @tronos/server",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "start": "npm run start --workspace @tronos/server",
+    "db:migrate": "npm run db:migrate --workspace @tronos/server"
   },
   "devDependencies": {
-    "vite": "^7.0.5"
+    "concurrently": "^9.2.1"
   }
 }

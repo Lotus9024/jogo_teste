@@ -1,0 +1,14 @@
+{
+  "name": "@tronos/shared",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./protocol": "./src/protocol.js",
+    "./game-config": "./src/gameConfig.js"
+  },
+  "scripts": {
+    "build": "node --check src/protocol.js && node --check src/gameConfig.js",
+    "test": "node --test"
+  }
+}

@@ -1,0 +1,18 @@
+import pg from 'pg';
+import { config } from '../config.js';
+
+const { Pool } = pg;
+
+export const pool = config.databaseUrl
+  ? new Pool({ connectionString: config.databaseUrl, ssl: config.databaseSsl ? { rejectUnauthorized: false } : false })
+  : null;
+
+export async function databaseHealth() {
+  if (!pool) return { configured: false, connected: false };
+  try {
+    await pool.query('select 1');
+    return { configured: true, connected: true };
+  } catch (error) {
+    return { configured: true, connected: false, error: error.message };
+  }
+}
