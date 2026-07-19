@@ -41,6 +41,10 @@ Abra o cliente em duas abas. Na primeira, escolha **Criar sala**; na segunda, in
 
 O estado decisivo vive somente no servidor. A interface pode prever o destino de um arraste, mas energia, alcance, turno, propriedade, dano, compra e vitória sempre são recalculados e validados pelo backend.
 
+## DEV MODE
+
+O botão **DEV MODE** no menu abre uma mesa local livre para testar cartas e miniaturas sem criar sala. É possível comprar no baralho 3D, invocar em qualquer casa livre, visualizar movimentos válidos em azul e atacar unidades destacadas em vermelho arrastando uma tropa sobre o alvo.
+
 ## PostgreSQL
 
 O Windows local usa um cluster isolado em `127.0.0.1:55432`. As credenciais ficam em `apps/server/.env`, que é ignorado pelo Git.
