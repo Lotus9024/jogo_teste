@@ -7,7 +7,13 @@ Jogo de tabuleiro dark fantasy 3D para navegador. O repositório usa um monorepo
 ```text
 apps/
   client/                 # Vite, Three.js e HUD 2D
+    src/core/             # Cena, câmera, renderer e controles
+    src/models/           # Miniaturas e materiais 3D
     src/network/          # Cliente WebSocket
+    src/styles/           # CSS separado por responsabilidade
+    src/ui/               # Estrutura do HUD e componentes de cartas
+    src/world/            # Tabuleiro, castelos, cenário e baralho 3D
+    src/main.js           # Orquestra interação, partida e renderização
   server/                 # HTTP, WebSocket e regras autoritativas
     src/database/         # Pool PostgreSQL e migrations
     src/game/             # Estado e regras das partidas
