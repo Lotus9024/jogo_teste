@@ -4,6 +4,7 @@ const ISLAND_RADIUS_X = 16.8;
 const ISLAND_RADIUS_Z = 14.25;
 const SURFACE_Y = -0.58;
 const EDGE_SEGMENTS = 128;
+const ISLAND_GROUND_TEXTURE = '/assets/textures/grass/coast_sand_rocks_02_diff_4k.jpg';
 const CLIFF_COLORS = Object.freeze({
   topsoil: new THREE.Color(0x4a3121),
   earth: new THREE.Color(0x795438),
@@ -81,6 +82,22 @@ function createGroundTexture(renderer) {
   texture.repeat.set(8, 7);
   texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   return texture;
+}
+
+function loadIslandGroundTexture(renderer, material) {
+  new THREE.TextureLoader().load(
+    ISLAND_GROUND_TEXTURE,
+    texture => {
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(3.5, 3);
+      texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+      material.map = texture;
+      material.bumpMap = texture;
+      material.bumpScale = 0.075;
+      material.needsUpdate = true;
+    }
+  );
 }
 
 function createCliffTexture(renderer) {
@@ -594,6 +611,7 @@ export function createMagicTerrain(renderer) {
     roughness: 0.96,
     metalness: 0
   });
+  loadIslandGroundTexture(renderer, terrainMaterial);
   const cliffMaterial = new THREE.MeshStandardMaterial({
     vertexColors: true,
     map: cliffTexture,
