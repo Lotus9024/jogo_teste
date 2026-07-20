@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { CARD_BY_ID } from '@tronos/shared/cards';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
+import { createCinematicCamera } from './core/createCinematicCamera.js';
 import { createGameScene } from './core/createGameScene.js';
 import { M, add, makeArcher, makeMage, makeWarrior, unitBase } from './models/unitModels.js';
 import { GameSocketClient, SERVER_EVENTS } from './network/gameSocket.js';
@@ -13,6 +14,7 @@ mountGameShell();
 const app = document.querySelector('#game');
 app.focus({ preventScroll: true });
 const { scene, renderer, camera, controls, updateDynamicLighting } = createGameScene(app);
+const cameraTransition = createCinematicCamera({ camera, controls, app });
 const { board, tile, half, alliedKeep, enemyKeep, deck3D, topDeckCard, wisps, fireLights, updateTerrain } = createWorld(scene, renderer);
 
 // Each miniature is snapped to the exact center of a tile. Scale 0.64 keeps
@@ -50,12 +52,12 @@ function hoverableAtPointer(e){
   const hits=ray.intersectObjects(hoverables,true);if(!hits.length)return null;let o=hits[0].object;while(o.parent&&!o.userData.hoverable)o=o.parent;return o.userData.hoverable?o:null;
 }
 function snapToTile(value){return THREE.MathUtils.clamp(Math.round((value+half)/tile)*tile-half,-half,half)}
-function selectUnit(u){if(selected)selected.getObjectByName('selectionRing').material.emissiveIntensity=.18;selected=u;selected.getObjectByName('selectionRing').material.emissiveIntensity=1.3;showMovementGrid(u)}
+function selectUnit(u,{cinematic=true}={}){if(selected)selected.getObjectByName('selectionRing').material.emissiveIntensity=.18;selected=u;selected.getObjectByName('selectionRing').material.emissiveIntensity=1.3;showMovementGrid(u);if(cinematic)cameraTransition.focusBoard({side:selfSeat===2?-1:1})}
 function pick(e){if(justDragged){justDragged=false;return}const u=unitAtPointer(e);if(u)selectUnit(u)}
 function startDrag(e){
   if(e.button!==0)return;const u=unitAtPointer(e);if(!u)return;
   if(onlineState&&(u.userData.ownerSeat!==selfSeat||onlineState.state.activeSeat!==selfSeat||u.userData.actionUsed))return;
-  e.preventDefault();e.stopPropagation();dragged=u;dragMoved=false;controls.enabled=false;selectUnit(u);renderer.domElement.setPointerCapture(e.pointerId);
+  e.preventDefault();e.stopPropagation();cameraTransition.cancel({restoreControls:false});dragged=u;dragMoved=false;controls.enabled=false;selectUnit(u,{cinematic:false});renderer.domElement.setPointerCapture(e.pointerId);
   dragged.userData.dragOrigin=dragged.position.clone();
   dragged.position.y=.18;tileMarker.position.set(dragged.position.x,.075,dragged.position.z);tileMarker.visible=true;app.dataset.dragging=dragged.userData.name;
 }
@@ -75,8 +77,8 @@ function finishDrag(e){
       else if(moveDistance>dragged.userData.move){dragged.position.copy(dragged.userData.dragOrigin);showGameError('Movimento fora de alcance.');}
     }
   }
-  app.dataset.lastMoved=`${dragged.userData.name}:${dragged.position.x.toFixed(2)},${dragged.position.z.toFixed(2)}`;delete app.dataset.dragging;justDragged=dragMoved;dragged=null;
-  if(dragMoved)clearMovementGrid();
+  app.dataset.lastMoved=`${dragged.userData.name}:${dragged.position.x.toFixed(2)},${dragged.position.z.toFixed(2)}`;delete app.dataset.dragging;const wasDrag=dragMoved;justDragged=true;setTimeout(()=>{justDragged=false},0);dragged=null;
+  if(wasDrag)clearMovementGrid();else cameraTransition.focusBoard({side:selfSeat===2?-1:1});
   if(renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.releasePointerCapture(e.pointerId);
 }
 const hoverCard=document.querySelector('#hover-card');
@@ -129,9 +131,9 @@ function makeSummonedUnit(cardIndex){
   }
   unit.name=c.name;unit.userData={...unit.userData,selectable:true,hoverable:true,cardIndex,name:c.name,role:c.info,hp:c.hp,maxHp:c.hp,damage:c.damage,move:c.move,attackRange:c.attackRange,cost:c.cost,ability:c.ability,abilityUsed:false,description:c.abilityText};unit.scale.setScalar(.64);return unit;
 }
-function summonCard(cardIndex,x,z){const unit=makeSummonedUnit(cardIndex);unit.position.set(x,.06,z);units.push(unit);hoverables.push(unit);scene.add(unit);selectUnit(unit)}
+function summonCard(cardIndex,x,z){const unit=makeSummonedUnit(cardIndex);unit.position.set(x,.06,z);units.push(unit);hoverables.push(unit);scene.add(unit);selectUnit(unit,{cinematic:false})}
 hand.addEventListener('pointerdown',e=>{
-  const card=e.target.closest('.game-card');if(!card||e.button!==0||onlineState&&onlineState.state.activeSeat!==selfSeat)return;e.preventDefault();card.setPointerCapture(e.pointerId);controls.enabled=false;
+  const card=e.target.closest('.game-card');if(!card||e.button!==0||onlineState&&onlineState.state.activeSeat!==selfSeat)return;e.preventDefault();cameraTransition.cancel({restoreControls:false});card.setPointerCapture(e.pointerId);controls.enabled=false;
   cardDrag={card,index:Number(card.dataset.card),instanceId:card.dataset.instance,startX:e.clientX,startY:e.clientY,moved:false,ghost:null,tile:null};syncBottomCommand();
 });
 addEventListener('pointermove',e=>{
@@ -160,7 +162,7 @@ function deckAtPointer(e){const rect=renderer.domElement.getBoundingClientRect()
 function hoverDeck(e){const over=deckAtPointer(e);if(over!==deckHover){deckHover=over;renderer.domElement.style.cursor=over?'pointer':'';if(over)previewDeckCard(deckPreviewIndex);else hideDeckPreview()}}
 let deckPressed=false;
 renderer.domElement.addEventListener('pointermove',hoverDeck);
-renderer.domElement.addEventListener('pointerdown',e=>{if(e.button!==0||!deckAtPointer(e))return;e.preventDefault();e.stopPropagation();deckPressed=true;controls.enabled=false},true);
+renderer.domElement.addEventListener('pointerdown',e=>{if(e.button!==0||!deckAtPointer(e))return;e.preventDefault();e.stopPropagation();cameraTransition.cancel({restoreControls:false});deckPressed=true;controls.enabled=false},true);
 renderer.domElement.addEventListener('pointerup',e=>{if(!deckPressed)return;e.preventDefault();e.stopPropagation();deckPressed=false;controls.enabled=true;if(deckAtPointer(e))drawCardPreview()},true);
 renderer.domElement.addEventListener('pointerleave',()=>{deckHover=false;deckPressed=false;controls.enabled=true;renderer.domElement.style.cursor='';hideDeckPreview()});
 function moveTray(direction){handShift=THREE.MathUtils.clamp(handShift+direction*120,-360,360);hand.style.setProperty('--hand-shift',`${handShift}px`)}
@@ -184,7 +186,7 @@ function reconcileOnlineUnits(serverUnits){
   serverUnits.forEach(data=>{const unit=onlineUnit(data);units.push(unit);hoverables.push(unit);scene.add(unit)});
   app.dataset.onlineUnits=String(serverUnits.length);
 }
-function setOnlinePerspective(){camera.position.set(0,16,selfSeat===1?5.2:-5.2);camera.lookAt(0,0,0);controls.target.set(0,.2,0);controls.update();app.dataset.seat=String(selfSeat);app.dataset.perspectiveResets=String(Number(app.dataset.perspectiveResets??0)+1)}
+function setOnlinePerspective(){cameraTransition.cancel();camera.position.set(0,16,selfSeat===1?5.2:-5.2);camera.lookAt(0,0,0);controls.target.set(0,.2,0);controls.update();app.dataset.seat=String(selfSeat);app.dataset.perspectiveResets=String(Number(app.dataset.perspectiveResets??0)+1)}
 function animateServerDraw(){const deck=deckScreenPosition(),target=hand.getBoundingClientRect(),ghost=document.createElement('div');ghost.className='draw-card-ghost';ghost.textContent='♜';ghost.style.left=`${deck.x-36}px`;ghost.style.top=`${deck.y-53}px`;document.body.appendChild(ghost);const dx=target.left+target.width/2-deck.x,dy=Math.min(innerHeight-125,target.top+40)-deck.y;ghost.animate([{transform:'translate(0,0) scale(.72)',opacity:.35},{transform:`translate(${dx}px,${dy}px) scale(.9)`,opacity:.1}],{duration:800,easing:'cubic-bezier(.2,.75,.2,1)'}).onfinish=()=>ghost.remove()}
 function applyOnlineState(payload){
   const previous=onlineState,shouldSetPerspective=!previous||previous.self.seat!==payload.self.seat||previous.state.phase==='waiting';onlineState=payload;selfSeat=payload.self.seat;
@@ -214,5 +216,5 @@ const clock=new THREE.Clock();
 const enemyBaseTag=document.querySelector('.enemy-base-tag');
 const baseTagPoint=new THREE.Vector3();
 function positionEnemyStatus(){const target=selfSeat===2?alliedKeep:enemyKeep;target.getWorldPosition(baseTagPoint);baseTagPoint.y+=4.9;baseTagPoint.project(camera);enemyBaseTag.style.left=`${(baseTagPoint.x*.5+.5)*innerWidth}px`;enemyBaseTag.style.top=`${(-baseTagPoint.y*.5+.5)*innerHeight}px`;enemyBaseTag.style.visibility=baseTagPoint.z<1?'visible':'hidden';}
-function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();controls.update();updateDynamicLighting(t);updateTerrain(t);positionEnemyStatus();topDeckCard.position.y=THREE.MathUtils.lerp(topDeckCard.position.y,deckHover ? .98 : .766,.14);topDeckCard.rotation.z=THREE.MathUtils.lerp(topDeckCard.rotation.z,deckHover ? -.08 : 0,.12);units.forEach((u,i)=>{const rig=u.getObjectByName('rig');rig.position.y=.18+Math.sin(t*1.35+i*1.7)*.012;rig.rotation.z=Math.sin(t*.8+i)*.006;u.traverse(o=>{if(o.userData.magic){o.rotation.y=t*1.5;o.position.y=2.23+Math.sin(t*2.5)*.045;}})});wisps.forEach((w,i)=>{w.position.x=w.userData.baseX+Math.sin(t*.12+i)*.55;w.material.opacity=.012+i*.003+Math.sin(t*.35+i)*.004;});fireLights.forEach((light,i)=>{const pulse=.91+Math.sin(t*7.4+light.userData.phase)*.065+Math.sin(t*13.1+i)*.025;light.intensity=light.userData.baseIntensity*pulse;});renderer.render(scene,camera)}
+function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();controls.update();cameraTransition.update();updateDynamicLighting(t);updateTerrain(t);positionEnemyStatus();topDeckCard.position.y=THREE.MathUtils.lerp(topDeckCard.position.y,deckHover ? .98 : .766,.14);topDeckCard.rotation.z=THREE.MathUtils.lerp(topDeckCard.rotation.z,deckHover ? -.08 : 0,.12);units.forEach((u,i)=>{const rig=u.getObjectByName('rig');rig.position.y=.18+Math.sin(t*1.35+i*1.7)*.012;rig.rotation.z=Math.sin(t*.8+i)*.006;u.traverse(o=>{if(o.userData.magic){o.rotation.y=t*1.5;o.position.y=2.23+Math.sin(t*2.5)*.045;}})});wisps.forEach((w,i)=>{w.position.x=w.userData.baseX+Math.sin(t*.12+i)*.55;w.material.opacity=.012+i*.003+Math.sin(t*.35+i)*.004;});fireLights.forEach((light,i)=>{const pulse=.91+Math.sin(t*7.4+light.userData.phase)*.065+Math.sin(t*13.1+i)*.025;light.intensity=light.userData.baseIntensity*pulse;});renderer.render(scene,camera)}
 function resize(){const aspect=innerWidth/innerHeight,view=innerWidth<700?12.6:11.45;camera.left=-view*aspect;camera.right=view*aspect;camera.top=view;camera.bottom=-view;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7))}addEventListener('resize',resize);resize();animate();setTimeout(()=>document.querySelector('.loading').classList.add('done'),500);
