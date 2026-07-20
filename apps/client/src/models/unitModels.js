@@ -10,7 +10,7 @@ export const M={
   gold:new THREE.MeshStandardMaterial({color:0xb08a43,roughness:.32,metalness:.76}), void:new THREE.MeshStandardMaterial({color:0x030405,roughness:1}),
   magic:new THREE.MeshBasicMaterial({color:0x9473ff}), base:new THREE.MeshStandardMaterial({color:0x181d1b,roughness:.72,metalness:.25})
 };
-export function add(geo,mat,parent,pos=[0,0,0],rot=[0,0,0],scale=[1,1,1]){const o=new THREE.Mesh(geo,mat);o.position.set(...pos);o.rotation.set(...rot);o.scale.set(...scale);o.castShadow=false;o.receiveShadow=false;parent.add(o);return o}
+export function add(geo,mat,parent,pos=[0,0,0],rot=[0,0,0],scale=[1,1,1]){const o=new THREE.Mesh(geo,mat);o.position.set(...pos);o.rotation.set(...rot);o.scale.set(...scale);const materials=Array.isArray(mat)?mat:[mat],lit=materials.some(material=>material?.isMeshStandardMaterial||material?.isMeshPhysicalMaterial||material?.isMeshLambertMaterial||material?.isMeshPhongMaterial);o.castShadow=lit;o.receiveShadow=lit;parent.add(o);return o}
 function capsule(r,l,mat,parent,pos,rot=[0,0,0]){return add(new THREE.CapsuleGeometry(r,l,12,20),mat,parent,pos,rot)}
 export function unitBase(parent,color=0xb08a43){add(new THREE.CylinderGeometry(.54,.59,.15,48),M.base,parent,[0,.08,0]); const ringMat=new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.18,metalness:.6,roughness:.34}); const ring=add(new THREE.TorusGeometry(.49,.027,12,48),ringMat,parent,[0,.17,0],[-Math.PI/2,0,0]);ring.name='selectionRing'}
 function humanoidBase(name,role,color,stats){const root=new THREE.Group();root.name=name;root.userData={selectable:true,name,role,color,...stats};unitBase(root,color);const rig=new THREE.Group();rig.name='rig';rig.position.y=.18;root.add(rig);return{root,rig}}

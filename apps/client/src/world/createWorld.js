@@ -4,9 +4,9 @@ import { M, add } from '../models/unitModels.js';
 export function createWorld(scene) {
   // 15x15 raised stone board with alternating slabs.
   const board=new THREE.Group();const N=15,tile=1.08,half=(N-1)*tile/2;
-  add(new THREE.BoxGeometry(N*tile+1.0,.45,N*tile+1.0),M.stoneDark,board,[0,-.32,0]);
+  const boardBase=add(new THREE.BoxGeometry(N*tile+1.0,.45,N*tile+1.0),M.stoneDark,board,[0,-.32,0]);boardBase.castShadow=false;
   for(let z=0;z<N;z++)for(let x=0;x<N;x++){
-    const mat=(x+z)%2===0?M.stone:M.stoneDark;const slab=add(new THREE.BoxGeometry(tile-.025,.18,tile-.025),mat,board,[x*tile-half,-.04,z*tile-half]);slab.position.y+=((x*17+z*11)%5)*.004;slab.rotation.y=((x*7+z*3)%3-1)*.003;
+    const mat=(x+z)%2===0?M.stone:M.stoneDark;const slab=add(new THREE.BoxGeometry(tile-.025,.18,tile-.025),mat,board,[x*tile-half,-.04,z*tile-half]);slab.castShadow=false;slab.position.y+=((x*17+z*11)%5)*.004;slab.rotation.y=((x*7+z*3)%3-1)*.003;
   }
   // Iron braziers anchor the four corners of the ruined board.
   for(const x of [-1,1])for(const z of [-1,1]){
@@ -103,8 +103,8 @@ export function createWorld(scene) {
   // A ruined, misty valley frames the game board while keeping every tile clear.
   const environment=new THREE.Group(),wisps=[];
   const earth=new THREE.MeshStandardMaterial({color:0x444846,emissive:0x080909,emissiveIntensity:.1,roughness:1}),ashStone=new THREE.MeshStandardMaterial({color:0x353c36,roughness:.98}),deadWood=new THREE.MeshStandardMaterial({color:0x463126,emissive:0x080504,emissiveIntensity:.28,roughness:1});
-  add(new THREE.CircleGeometry(19,72),earth,environment,[0,-.58,0],[-Math.PI/2,0,0],[1,.78,1]);
-  add(new THREE.RingGeometry(8.8,11.8,72),new THREE.MeshStandardMaterial({color:0x3a3e3c,roughness:1}),environment,[0,-.55,0],[-Math.PI/2,0,0],[1,.82,1]);
+  const ground=add(new THREE.CircleGeometry(19,72),earth,environment,[0,-.58,0],[-Math.PI/2,0,0],[1,.78,1]);ground.castShadow=false;
+  const groundRing=add(new THREE.RingGeometry(8.8,11.8,72),new THREE.MeshStandardMaterial({color:0x3a3e3c,roughness:1}),environment,[0,-.55,0],[-Math.PI/2,0,0],[1,.82,1]);groundRing.castShadow=false;
   
   function deadTree(x,z,scale=1,twist=0){
     const tree=new THREE.Group();tree.position.set(x,-.52,z);tree.rotation.y=twist;tree.scale.setScalar(scale);

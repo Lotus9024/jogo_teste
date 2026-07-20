@@ -9,11 +9,14 @@ export function createGameScene(app) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.7));
   renderer.setSize(innerWidth, innerHeight);
-  renderer.shadowMap.enabled = false;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.autoUpdate = true;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.22;
+  renderer.toneMappingExposure = 1.18;
   app.prepend(renderer.domElement);
+  app.dataset.shadows = 'dynamic-soft';
 
   const camera = new THREE.OrthographicCamera(-6, 6, 6, -6, 0.1, 80);
   camera.position.set(0, 16, 5.2);
@@ -31,13 +34,47 @@ export function createGameScene(app) {
   controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
   controls.update();
 
-  scene.add(new THREE.HemisphereLight(0xa9a79d, 0x111513, 1.65));
-  const sun = new THREE.DirectionalLight(0xe2c69c, 3.7);
-  sun.position.set(-6, 13, 7);
+  scene.add(new THREE.HemisphereLight(0xa9a79d, 0x101411, 1.18));
+
+  // One real-time directional light behaves like Unity's global sun. The
+  // orthographic shadow camera tightly covers the board so the 2048px map is
+  // spent on gameplay instead of the distant scenery.
+  const sunTarget = new THREE.Object3D();
+  sunTarget.position.set(0, 0, 0);
+  scene.add(sunTarget);
+
+  const sun = new THREE.DirectionalLight(0xe7cda5, 3.45);
+  sun.position.set(-6.5, 13.5, 7.5);
+  sun.target = sunTarget;
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.camera.left = -13;
+  sun.shadow.camera.right = 13;
+  sun.shadow.camera.top = 13;
+  sun.shadow.camera.bottom = -13;
+  sun.shadow.camera.near = 0.5;
+  sun.shadow.camera.far = 36;
+  sun.shadow.bias = -0.00018;
+  sun.shadow.normalBias = 0.045;
+  sun.shadow.radius = 3;
   scene.add(sun);
-  const cool = new THREE.DirectionalLight(0x596b78, 1.35);
+
+  const cool = new THREE.DirectionalLight(0x596b78, 0.92);
   cool.position.set(7, 7, -8);
   scene.add(cool);
 
-  return { scene, renderer, camera, controls };
+  function updateDynamicLighting(elapsed) {
+    // A subtle orbit keeps the shadows alive without making the board appear
+    // to spin through a full day/night cycle during a match.
+    const angle = elapsed * 0.035;
+    sun.position.set(
+      -6.5 + Math.sin(angle) * 1.15,
+      13.5 + Math.sin(angle * 0.63) * 0.28,
+      7.5 + Math.cos(angle) * 1.15
+    );
+    sunTarget.position.y = Math.sin(angle * 0.41) * 0.08;
+    sunTarget.updateMatrixWorld();
+  }
+
+  return { scene, renderer, camera, controls, updateDynamicLighting };
 }
