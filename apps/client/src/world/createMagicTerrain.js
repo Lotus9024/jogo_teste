@@ -200,17 +200,25 @@ export function createIslandGeometry() {
     }
   }
 
-  // Keep the cliff UVs independent from the top surface. Reusing the outer
-  // ground ring here interpolated planar top UVs into cylindrical cliff UVs,
-  // which stretched the underside into bright horizontal bands.
+  // Keep cylindrical cliff UVs while joining them to the actual top ring with
+  // a narrow soil collar. The collar makes the mesh watertight instead of
+  // leaving two coincident, disconnected boundary loops at the island rim.
+  const outerRingStart = 1 + (rings - 1) * EDGE_SEGMENTS;
   let upperRingStart = positions.length / 3;
   for (let segment = 0; segment < EDGE_SEGMENTS; segment += 1) {
     const angle = segment / EDGE_SEGMENTS * Math.PI * 2;
-    const point = boundaryPoint(angle);
-    positions.push(point.x, cliffProfileY(0, angle), point.z);
+    const point = boundaryPoint(angle, 0.997);
+    const topY = positions[(outerRingStart + segment) * 3 + 1];
+    const soilDepth = 0.075 + Math.sin(angle * 7 + 0.4) * 0.01;
+    positions.push(point.x, topY - soilDepth, point.z);
     uvs.push(segment / EDGE_SEGMENTS, 0);
     cliffColor(0, angle, color);
     colors.push(color.r, color.g, color.b);
+  }
+  for (let segment = 0; segment < EDGE_SEGMENTS; segment += 1) {
+    const next = (segment + 1) % EDGE_SEGMENTS;
+    cliffIndices.push(outerRingStart + segment, outerRingStart + next, upperRingStart + segment);
+    cliffIndices.push(outerRingStart + next, upperRingStart + next, upperRingStart + segment);
   }
   for (let level = 1; level <= cliffLevels; level += 1) {
     const t = level / cliffLevels;
@@ -225,8 +233,8 @@ export function createIslandGeometry() {
     }
     for (let segment = 0; segment < EDGE_SEGMENTS; segment += 1) {
       const next = (segment + 1) % EDGE_SEGMENTS;
-      cliffIndices.push(upperRingStart + segment, lowerRingStart + segment, upperRingStart + next);
-      cliffIndices.push(upperRingStart + next, lowerRingStart + segment, lowerRingStart + next);
+      cliffIndices.push(upperRingStart + segment, upperRingStart + next, lowerRingStart + segment);
+      cliffIndices.push(upperRingStart + next, lowerRingStart + next, lowerRingStart + segment);
     }
     upperRingStart = lowerRingStart;
   }
