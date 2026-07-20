@@ -5,6 +5,7 @@ const ISLAND_RADIUS_Z = 14.25;
 const SURFACE_Y = -0.58;
 const EDGE_SEGMENTS = 128;
 const ISLAND_GROUND_TEXTURE = '/assets/textures/grass/coast_sand_rocks_02_diff_4k.jpg';
+const ISLAND_ROCK_TEXTURE = '/assets/textures/rock-island/rock_face_03_diff_4k.jpg';
 const CLIFF_COLORS = Object.freeze({
   topsoil: new THREE.Color(0x4a3121),
   earth: new THREE.Color(0x795438),
@@ -148,6 +149,28 @@ function createCliffTexture(renderer) {
   texture.repeat.set(5, 3.25);
   texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   return texture;
+}
+
+function loadIslandRockTexture(renderer, materials) {
+  new THREE.TextureLoader().load(
+    ISLAND_ROCK_TEXTURE,
+    texture => {
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(5, 2.4);
+      texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+
+      const bumpTexture = texture.clone();
+      bumpTexture.colorSpace = THREE.NoColorSpace;
+      bumpTexture.needsUpdate = true;
+
+      materials.forEach(material => {
+        material.map = texture;
+        material.bumpMap = bumpTexture;
+        material.needsUpdate = true;
+      });
+    }
+  );
 }
 
 function cliffProfileScale(t, angle) {
@@ -584,7 +607,7 @@ export function createMagicTerrain(renderer) {
   });
   loadIslandGroundTexture(renderer, terrainMaterial);
   const cliffMaterial = new THREE.MeshStandardMaterial({
-    vertexColors: true,
+    color: 0xffffff,
     map: cliffTexture,
     bumpMap: cliffTexture,
     bumpScale: 0.11,
@@ -596,7 +619,7 @@ export function createMagicTerrain(renderer) {
     side: THREE.FrontSide
   });
   const earthCoreMaterial = new THREE.MeshStandardMaterial({
-    color: 0x7a5539,
+    color: 0xffffff,
     map: cliffTexture,
     bumpMap: cliffTexture,
     bumpScale: 0.14,
@@ -606,6 +629,7 @@ export function createMagicTerrain(renderer) {
     metalness: 0,
     side: THREE.DoubleSide
   });
+  loadIslandRockTexture(renderer, [cliffMaterial, earthCoreMaterial]);
 
   const terrain = new THREE.Group();
   terrain.name = 'Ilha flutuante arcana';
