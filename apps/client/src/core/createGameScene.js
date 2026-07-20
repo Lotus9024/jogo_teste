@@ -4,8 +4,8 @@ import { createMagicSky } from './createMagicSky.js';
 
 export function createGameScene(app) {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x10071c);
-  scene.fog = new THREE.FogExp2(0x0c0915, 0.0215);
+  scene.background = new THREE.Color(0x070b11);
+  scene.fog = new THREE.FogExp2(0x111923, 0.0185);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.7));
@@ -15,11 +15,14 @@ export function createGameScene(app) {
   renderer.shadowMap.autoUpdate = true;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.46;
+  renderer.toneMappingExposure = 1.2;
   app.prepend(renderer.domElement);
   app.dataset.shadows = 'dynamic-soft';
 
-  const camera = new THREE.OrthographicCamera(-6, 6, 6, -6, 0.1, 80);
+  // The HDRI is rendered on a 68-unit sphere. Its rear hemisphere can sit
+  // farther than 80 units from the elevated camera, especially on wide views,
+  // so keep the far plane beyond the complete sky dome.
+  const camera = new THREE.OrthographicCamera(-6, 6, 6, -6, 0.1, 180);
   camera.position.set(0, 16, 5.2);
   camera.lookAt(0, 0, 0);
   scene.add(camera);
@@ -37,8 +40,8 @@ export function createGameScene(app) {
   controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
   controls.update();
 
-  scene.add(new THREE.HemisphereLight(0xd8caef, 0x42384d, 1.9));
-  scene.add(new THREE.AmbientLight(0x9c90ae, 0.42));
+  scene.add(new THREE.HemisphereLight(0xaec8dc, 0x39434a, 2.15));
+  scene.add(new THREE.AmbientLight(0x8799a9, 0.46));
 
   // One real-time directional light behaves like Unity's global sun. The
   // orthographic shadow camera tightly covers the board so the 2048px map is
@@ -47,8 +50,8 @@ export function createGameScene(app) {
   sunTarget.position.set(0, 0, 0);
   scene.add(sunTarget);
 
-  const sun = new THREE.DirectionalLight(0xf1dbb8, 4.15);
-  sun.position.set(-6.5, 13.5, 7.5);
+  const sun = new THREE.DirectionalLight(0xddeaf4, 3.65);
+  sun.position.set(-7.8, 14.2, -5.4);
   sun.target = sunTarget;
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
@@ -63,11 +66,11 @@ export function createGameScene(app) {
   sun.shadow.radius = 4;
   scene.add(sun);
 
-  const cool = new THREE.DirectionalLight(0x9380c8, 1.46);
+  const cool = new THREE.DirectionalLight(0x7898ae, 1.32);
   cool.position.set(7, 7, -8);
   scene.add(cool);
 
-  const indirectWarmth = new THREE.DirectionalLight(0xffbd85, 0.58);
+  const indirectWarmth = new THREE.DirectionalLight(0xd9b692, 0.5);
   indirectWarmth.position.set(-8, 4.5, 6);
   scene.add(indirectWarmth);
 
@@ -76,9 +79,9 @@ export function createGameScene(app) {
     // to spin through a full day/night cycle during a match.
     const angle = elapsed * 0.035;
     sun.position.set(
-      -6.5 + Math.sin(angle) * 1.15,
-      13.5 + Math.sin(angle * 0.63) * 0.28,
-      7.5 + Math.cos(angle) * 1.15
+      -7.8 + Math.sin(angle) * 0.9,
+      14.2 + Math.sin(angle * 0.63) * 0.22,
+      -5.4 + Math.cos(angle) * 0.9
     );
     sunTarget.position.y = Math.sin(angle * 0.41) * 0.08;
     sunTarget.updateMatrixWorld();

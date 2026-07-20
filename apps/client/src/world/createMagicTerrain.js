@@ -4,6 +4,13 @@ const ISLAND_RADIUS_X = 16.8;
 const ISLAND_RADIUS_Z = 14.25;
 const SURFACE_Y = -0.58;
 const EDGE_SEGMENTS = 128;
+const CLIFF_COLORS = Object.freeze({
+  topsoil: new THREE.Color(0x4a3121),
+  earth: new THREE.Color(0x795438),
+  packedEarth: new THREE.Color(0x624b3c),
+  upperRock: new THREE.Color(0x514d4c),
+  lowerRock: new THREE.Color(0x27272e)
+});
 
 function seededRandom(seed) {
   let state = seed >>> 0;
@@ -76,11 +83,92 @@ function createGroundTexture(renderer) {
   return texture;
 }
 
-function createIslandTopGeometry() {
+function createCliffTexture(renderer) {
+  const size = 512;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const context = canvas.getContext('2d');
+  const image = context.createImageData(size, size);
+  const random = seededRandom(4289);
+
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const index = (y * size + x) * 4;
+      const broad = Math.sin(x * 0.031 + Math.sin(y * 0.018) * 2.4) * 11;
+      const strata = Math.sin(y * 0.14 + Math.sin(x * 0.021) * 3.2) * 8;
+      const fractured = Math.sin((x + y) * 0.082) * 4 + Math.cos((x - y) * 0.047) * 5;
+      const grain = (random() - 0.5) * 18;
+      image.data[index] = 152 + broad + strata + fractured + grain;
+      image.data[index + 1] = 139 + broad * 0.82 + strata + fractured + grain;
+      image.data[index + 2] = 124 + broad * 0.58 + strata * 0.72 + fractured + grain;
+      image.data[index + 3] = 255;
+    }
+  }
+
+  context.putImageData(image, 0, 0);
+  context.globalAlpha = 0.2;
+  for (let index = 0; index < 170; index += 1) {
+    const x = random() * size;
+    const y = random() * size;
+    context.strokeStyle = random() > 0.5 ? '#4a4038' : '#b09a7d';
+    context.lineWidth = 1 + random() * 2.5;
+    context.beginPath();
+    context.moveTo(x, y);
+    context.bezierCurveTo(
+      x + 12 + random() * 34,
+      y + (random() - 0.5) * 8,
+      x + 38 + random() * 48,
+      y + (random() - 0.5) * 11,
+      x + 72 + random() * 54,
+      y + (random() - 0.5) * 7
+    );
+    context.stroke();
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(5, 3.25);
+  texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+  return texture;
+}
+
+function cliffProfileScale(t, angle) {
+  const taper = t * 0.16 + Math.pow(t, 1.68) * 0.6;
+  const organic = Math.sin(angle * 5 + t * 11) * 0.018
+    + Math.sin(angle * 11 - t * 7) * 0.011
+    + Math.sin(angle * 19 + t * 4) * 0.006;
+  return 1 - taper + organic * Math.sin(Math.PI * t);
+}
+
+function cliffProfileY(t, angle) {
+  const strata = Math.sin(angle * 6 + t * 18) * 0.055
+    + Math.sin(angle * 13 - t * 9) * 0.025;
+  return SURFACE_Y - 0.2 - Math.pow(t, 0.96) * 6.25 + strata * Math.sin(Math.PI * t);
+}
+
+function cliffColor(t, angle, target) {
+  if (t < 0.07) target.lerpColors(CLIFF_COLORS.topsoil, CLIFF_COLORS.earth, t / 0.07);
+  else if (t < 0.2) target.lerpColors(CLIFF_COLORS.earth, CLIFF_COLORS.packedEarth, (t - 0.07) / 0.13);
+  else if (t < 0.36) target.lerpColors(CLIFF_COLORS.packedEarth, CLIFF_COLORS.upperRock, (t - 0.2) / 0.16);
+  else target.lerpColors(CLIFF_COLORS.upperRock, CLIFF_COLORS.lowerRock, (t - 0.36) / 0.64);
+
+  const sedimentBand = Math.sin(t * 112 + angle * 7) * 0.022;
+  const rockVariation = Math.sin(angle * 17 + t * 31) * 0.018;
+  target.offsetHSL(0, 0, sedimentBand + rockVariation);
+  return target;
+}
+
+export function createIslandGeometry() {
   const rings = 42;
+  const cliffLevels = 30;
   const positions = [0, terrainHeight(0, 0), 0];
   const uvs = [0.5, 0.5];
-  const indices = [];
+  const colors = [1, 1, 1];
+  const topIndices = [];
+  const cliffIndices = [];
+  const bottomIndices = [];
+  const color = new THREE.Color();
 
   for (let ring = 1; ring <= rings; ring += 1) {
     const radial = ring / rings;
@@ -93,73 +181,76 @@ function createIslandTopGeometry() {
       const edgeDrop = THREE.MathUtils.smoothstep(radial, 0.86, 1) * 0.2;
       positions.push(x, terrainHeight(x, z) - edgeDrop, z);
       uvs.push(x / (ISLAND_RADIUS_X * 2) + 0.5, z / (ISLAND_RADIUS_Z * 2) + 0.5);
+      if (ring === rings) cliffColor(0, angle, color);
+      else color.setRGB(1, 1, 1);
+      colors.push(color.r, color.g, color.b);
     }
   }
 
   for (let segment = 0; segment < EDGE_SEGMENTS; segment += 1) {
-    indices.push(0, 1 + (segment + 1) % EDGE_SEGMENTS, 1 + segment);
+    topIndices.push(0, 1 + (segment + 1) % EDGE_SEGMENTS, 1 + segment);
   }
   for (let ring = 1; ring < rings; ring += 1) {
     const inner = 1 + (ring - 1) * EDGE_SEGMENTS;
     const outer = inner + EDGE_SEGMENTS;
     for (let segment = 0; segment < EDGE_SEGMENTS; segment += 1) {
       const next = (segment + 1) % EDGE_SEGMENTS;
-      indices.push(inner + segment, inner + next, outer + segment);
-      indices.push(inner + next, outer + next, outer + segment);
+      topIndices.push(inner + segment, inner + next, outer + segment);
+      topIndices.push(inner + next, outer + next, outer + segment);
     }
   }
 
+  // Keep the cliff UVs independent from the top surface. Reusing the outer
+  // ground ring here interpolated planar top UVs into cylindrical cliff UVs,
+  // which stretched the underside into bright horizontal bands.
+  let upperRingStart = positions.length / 3;
+  for (let segment = 0; segment < EDGE_SEGMENTS; segment += 1) {
+    const angle = segment / EDGE_SEGMENTS * Math.PI * 2;
+    const point = boundaryPoint(angle);
+    positions.push(point.x, cliffProfileY(0, angle), point.z);
+    uvs.push(segment / EDGE_SEGMENTS, 0);
+    cliffColor(0, angle, color);
+    colors.push(color.r, color.g, color.b);
+  }
+  for (let level = 1; level <= cliffLevels; level += 1) {
+    const t = level / cliffLevels;
+    const lowerRingStart = positions.length / 3;
+    for (let segment = 0; segment < EDGE_SEGMENTS; segment += 1) {
+      const angle = segment / EDGE_SEGMENTS * Math.PI * 2;
+      const point = boundaryPoint(angle, cliffProfileScale(t, angle));
+      positions.push(point.x, cliffProfileY(t, angle), point.z);
+      uvs.push(segment / EDGE_SEGMENTS, t);
+      cliffColor(t, angle, color);
+      colors.push(color.r, color.g, color.b);
+    }
+    for (let segment = 0; segment < EDGE_SEGMENTS; segment += 1) {
+      const next = (segment + 1) % EDGE_SEGMENTS;
+      cliffIndices.push(upperRingStart + segment, lowerRingStart + segment, upperRingStart + next);
+      cliffIndices.push(upperRingStart + next, lowerRingStart + segment, lowerRingStart + next);
+    }
+    upperRingStart = lowerRingStart;
+  }
+
+  const bottomCenter = positions.length / 3;
+  positions.push(0, SURFACE_Y - 7.12, 0);
+  uvs.push(0.5, 1);
+  cliffColor(1, 0, color);
+  colors.push(color.r, color.g, color.b);
+  for (let segment = 0; segment < EDGE_SEGMENTS; segment += 1) {
+    const next = (segment + 1) % EDGE_SEGMENTS;
+    bottomIndices.push(upperRingStart + segment, upperRingStart + next, bottomCenter);
+  }
+
+  const indices = [...topIndices, ...cliffIndices, ...bottomIndices];
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-  geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-  geometry.computeBoundingSphere();
-  return geometry;
-}
-
-function createIslandCliffGeometry() {
-  const levels = 26;
-  const positions = [];
-  const colors = [];
-  const indices = [];
-  const upper = new THREE.Color(0x59483a);
-  const middle = new THREE.Color(0x454344);
-  const lower = new THREE.Color(0x24242b);
-  const color = new THREE.Color();
-
-  for (let level = 0; level <= levels; level += 1) {
-    const t = level / levels;
-    const scale = 1 - t * 0.17 - Math.pow(t, 1.62) * 0.6;
-    for (let segment = 0; segment < EDGE_SEGMENTS; segment += 1) {
-      const angle = segment / EDGE_SEGMENTS * Math.PI * 2;
-      const ripple = 1 + Math.sin(angle * 9 + t * 8) * 0.018 * (0.25 + t);
-      const point = boundaryPoint(angle, scale * ripple);
-      const verticalStrata = Math.sin(angle * 5 + t * 19) * 0.075 * t;
-      const y = SURFACE_Y - 0.26 - Math.pow(t, 1.1) * 6.05 + verticalStrata;
-      positions.push(point.x, y, point.z);
-      if (t < 0.32) color.lerpColors(upper, middle, t / 0.32);
-      else color.lerpColors(middle, lower, (t - 0.32) / 0.68);
-      const variation = 0.88 + Math.sin(angle * 17 + level * 1.7) * 0.08;
-      colors.push(color.r * variation, color.g * variation, color.b * variation);
-    }
-  }
-
-  for (let level = 0; level < levels; level += 1) {
-    const current = level * EDGE_SEGMENTS;
-    const below = current + EDGE_SEGMENTS;
-    for (let segment = 0; segment < EDGE_SEGMENTS; segment += 1) {
-      const next = (segment + 1) % EDGE_SEGMENTS;
-      indices.push(current + segment, below + segment, current + next);
-      indices.push(current + next, below + segment, below + next);
-    }
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   geometry.setIndex(indices);
+  geometry.addGroup(0, topIndices.length, 0);
+  geometry.addGroup(topIndices.length, cliffIndices.length + bottomIndices.length, 1);
   geometry.computeVertexNormals();
+  geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
   return geometry;
 }
@@ -245,7 +336,7 @@ function createGrass() {
 }
 
 function createUndersideRocks() {
-  const count = 156;
+  const count = 180;
   const geometry = new THREE.DodecahedronGeometry(0.62, 0);
   const material = new THREE.MeshStandardMaterial({
     color: 0x48474b,
@@ -265,11 +356,11 @@ function createUndersideRocks() {
 
   for (let i = 0; i < count; i += 1) {
     const angle = random() * Math.PI * 2;
-    const depth = 0.05 + random() * 0.92;
-    const scaleRadius = 1 - depth * 0.2 - Math.pow(depth, 1.55) * 0.57;
-    const point = boundaryPoint(angle, scaleRadius * (0.94 + random() * 0.08));
-    const size = 0.2 + random() * 0.58 * (1 - depth * 0.28);
-    dummy.position.set(point.x, SURFACE_Y - 0.42 - Math.pow(depth, 1.08) * 5.72, point.z);
+    const depth = i < 52 ? 0.1 + random() * 0.2 : 0.24 + random() * 0.72;
+    const profileScale = cliffProfileScale(depth, angle);
+    const point = boundaryPoint(angle, profileScale * (1.005 + random() * 0.025));
+    const size = 0.24 + random() * 0.52 * (1 - depth * 0.24);
+    dummy.position.set(point.x, cliffProfileY(depth, angle), point.z);
     dummy.rotation.set(random() * Math.PI, random() * Math.PI, random() * Math.PI);
     dummy.scale.set(size * (0.72 + random() * 0.5), size * (0.8 + random() * 0.8), size * (0.72 + random() * 0.5));
     dummy.updateMatrix();
@@ -566,6 +657,7 @@ function createMagicDust() {
 
 export function createMagicTerrain(renderer) {
   const texture = createGroundTexture(renderer);
+  const cliffTexture = createCliffTexture(renderer);
   const terrainMaterial = new THREE.MeshStandardMaterial({
     color: 0xa2aa98,
     map: texture,
@@ -576,31 +668,53 @@ export function createMagicTerrain(renderer) {
   });
   const cliffMaterial = new THREE.MeshStandardMaterial({
     vertexColors: true,
-    emissive: 0x15111b,
-    emissiveIntensity: 0.58,
-    roughness: 0.93,
-    metalness: 0.03,
+    map: cliffTexture,
+    bumpMap: cliffTexture,
+    bumpScale: 0.11,
+    emissive: 0x120d0b,
+    emissiveIntensity: 0.24,
+    roughness: 0.98,
+    metalness: 0.01,
     flatShading: true,
+    side: THREE.FrontSide
+  });
+  const earthCoreMaterial = new THREE.MeshStandardMaterial({
+    color: 0x7a5539,
+    map: cliffTexture,
+    bumpMap: cliffTexture,
+    bumpScale: 0.14,
+    emissive: 0x120a05,
+    emissiveIntensity: 0.18,
+    roughness: 1,
+    metalness: 0,
     side: THREE.DoubleSide
   });
 
   const terrain = new THREE.Group();
   terrain.name = 'Ilha flutuante arcana';
-  const top = new THREE.Mesh(createIslandTopGeometry(), terrainMaterial);
-  top.name = 'Superfície gramada da ilha';
-  top.castShadow = false;
-  top.receiveShadow = true;
-  const cliffs = new THREE.Mesh(createIslandCliffGeometry(), cliffMaterial);
-  cliffs.name = 'Camadas de terra e rocha';
-  cliffs.castShadow = true;
-  cliffs.receiveShadow = true;
+  const islandBody = new THREE.Mesh(createIslandGeometry(), [terrainMaterial, cliffMaterial]);
+  islandBody.name = 'Corpo fechado de terra e rocha da ilha';
+  islandBody.castShadow = true;
+  islandBody.receiveShadow = true;
+  // A second, opaque mass sits just behind the sculpted cliff shell. Besides
+  // giving the underside a warmer soil layer, it guarantees that steep camera
+  // angles never reveal the sky through the narrow bottom cap.
+  const earthCore = new THREE.Mesh(
+    new THREE.CylinderGeometry(ISLAND_RADIUS_X * 0.78, ISLAND_RADIUS_X * 0.21, 6.15, EDGE_SEGMENTS, 12, false),
+    earthCoreMaterial
+  );
+  earthCore.name = 'Núcleo maciço de terra da ilha';
+  earthCore.position.y = SURFACE_Y - 3.65;
+  earthCore.scale.z = ISLAND_RADIUS_Z / ISLAND_RADIUS_X;
+  earthCore.castShadow = true;
+  earthCore.receiveShadow = true;
   const undersideRocks = createUndersideRocks();
   const roots = createRoots();
   const strataVeins = createStrataVeins();
   const topDetails = createMossAndPlants();
   const hanging = createHangingLanterns();
   const crystals = createCrystals();
-  terrain.add(top, cliffs, undersideRocks, roots, strataVeins, topDetails, hanging.group, crystals.group);
+  terrain.add(earthCore, islandBody, undersideRocks, roots, strataVeins, topDetails, hanging.group, crystals.group);
   const magicalLift = new THREE.PointLight(0x7569c7, 7.4, 19, 2);
   magicalLift.name = 'Luz de sustentação arcana';
   magicalLift.position.set(0, -7.2, 0);
