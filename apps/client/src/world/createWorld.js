@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { M, add } from '../models/unitModels.js';
+import { createIslandTrees } from './createIslandTrees.js';
 import { createMagicTerrain } from './createMagicTerrain.js';
 
 export function createWorld(scene, renderer) {
@@ -107,16 +108,9 @@ export function createWorld(scene, renderer) {
   // A ruined, misty valley frames the game board while keeping every tile clear.
   const environment=new THREE.Group(),wisps=[];
   const {terrain,grass,magicDust,update:updateTerrain}=createMagicTerrain(renderer);
-  environment.add(terrain,grass,magicDust);
-  const ashStone=new THREE.MeshStandardMaterial({color:0x353c36,roughness:.98}),deadWood=new THREE.MeshStandardMaterial({color:0x463126,emissive:0x080504,emissiveIntensity:.28,roughness:1});
-  
-  function deadTree(x,z,scale=1,twist=0){
-    const tree=new THREE.Group();tree.position.set(x,-.52,z);tree.rotation.y=twist;tree.scale.setScalar(scale);
-    add(new THREE.CylinderGeometry(.09,.18,1.65,9),deadWood,tree,[0,.82,0],[0,0,.08]);
-    [[-.42,1.2,.35],[.4,1.05,-.45],[-.3,.72,-.62]].forEach(([bx,by,rz],i)=>{add(new THREE.CylinderGeometry(.035,.075,.85-i*.12,7),deadWood,tree,[bx*.48,by,0],[0,0,rz]);add(new THREE.ConeGeometry(.025,.28,6),deadWood,tree,[bx,by+.28,0],[0,0,rz]);});
-    environment.add(tree);
-  }
-  [[-11.2,-1.2,.85,-.5],[-10.1,4.6,1.05,.7],[10.5,-5.2,1,.1],[11.1,.2,1.2,-.35],[9.9,5.7,.88,.8],[-5.8,-9.5,.78,.4],[6.4,9.3,.92,-.2]].forEach(p=>deadTree(...p));
+  const islandTrees=createIslandTrees();
+  environment.add(terrain,grass,magicDust,islandTrees);
+  const ashStone=new THREE.MeshStandardMaterial({color:0x353c36,roughness:.98});
   
   function brokenPillar(x,z,height=1.35,lean=0){
     const ruin=new THREE.Group();ruin.position.set(x,-.53,z);ruin.rotation.z=lean;
