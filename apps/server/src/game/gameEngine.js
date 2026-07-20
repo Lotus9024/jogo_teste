@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { CARD_BY_ID, movementDistance } from '@tronos/shared/cards';
+import { CARD_BY_ID, isAttackDistanceValid, movementDistance } from '@tronos/shared/cards';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { drawCard } from './createInitialState.js';
 
@@ -23,7 +23,12 @@ function unitAt(state, x, z) { return state.units.find(unit => unit.x === x && u
 
 function endTurn(state) {
   state.activeSeat = state.activeSeat === 1 ? 2 : 1;
-  if (state.activeSeat === 1) state.round += 1;
+  if (state.activeSeat === 1) {
+    state.round += 1;
+    state.units.forEach(unit => {
+      if (unit.underConstruction && unit.buildReadyRound <= state.round) unit.underConstruction = false;
+    });
+  }
   const player = state.players.find(item => item.seat === state.activeSeat);
   player.energy = Math.min(GAME_CONFIG.maxEnergy, player.energy + GAME_CONFIG.energyPerTurn);
   drawCard(player);
@@ -57,12 +62,17 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     const instance = player.hand[index], card = CARD_BY_ID[instance.cardId];
     if (!card || player.energy < card.cost) fail('Energia insuficiente.');
     player.energy -= card.cost; player.hand.splice(index, 1); player.discard.push(instance.cardId);
-    state.units.push({ id: randomUUID(), ownerSeat: player.seat, cardId: card.id, x, z, hp: card.hp, shield: 0, actionUsed: true, abilityUsed: false, instantUsedRound: 0, empowered: false });
+    state.units.push({
+      id: randomUUID(), ownerSeat: player.seat, cardId: card.id, x, z, hp: card.hp, shield: 0,
+      actionUsed: true, abilityUsed: false, instantUsedRound: 0, empowered: false,
+      underConstruction: card.type === 'construction', buildReadyRound: card.type === 'construction' ? state.round + card.buildRounds : null
+    });
   } else if (action.type === 'move') {
     requireTurn(state, player);
     const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
     const x = integer(action.x), z = integer(action.z), card = CARD_BY_ID[unit.cardId];
     if (unit.actionUsed) fail('Esta unidade já agiu neste turno.');
+    if (unit.underConstruction || card.type === 'construction') fail('Esta construção não pode se mover.');
     if (!validCell(x, z) || inBase(x, z) || unitAt(state, x, z) || movementDistance(card.movementType, unit, { x, z }) > card.move) fail('Movimento inválido.');
     unit.x = x; unit.z = z; unit.actionUsed = true;
   } else if (action.type === 'attack') {
@@ -70,14 +80,16 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
     const card = CARD_BY_ID[unit.cardId];
     if (unit.actionUsed) fail('Esta unidade já agiu neste turno.');
+    if (unit.underConstruction) fail('A construção ainda não foi concluída.');
+    if (card.damage <= 0 || card.attackRange <= 0) fail('Esta carta não pode atacar.');
     const damage = card.damage + (unit.empowered ? 8 : 0);
     if (action.targetUnitId) {
       const target = state.units.find(item => item.id === action.targetUnitId && item.ownerSeat !== player.seat) ?? fail('Alvo inválido.');
-      if (distance(unit, target) > card.attackRange) fail('Alvo fora de alcance.');
+      if (!isAttackDistanceValid(card, distance(unit, target))) fail('Alvo fora de alcance.');
       const absorbed = Math.min(target.shield ?? 0, damage); target.shield -= absorbed; target.hp -= damage - absorbed;
       if (target.hp <= 0) state.units.splice(state.units.indexOf(target), 1);
     } else if (action.targetBaseSeat === opponent.seat) {
-      if (Math.min(...baseCells(opponent.seat).map(cell => distance(unit, cell))) > card.attackRange) fail('Base fora de alcance.');
+      if (!isAttackDistanceValid(card, Math.min(...baseCells(opponent.seat).map(cell => distance(unit, cell))))) fail('Base fora de alcance.');
       opponent.baseHp = Math.max(0, opponent.baseHp - damage);
       if (!opponent.baseHp) { state.phase = 'finished'; state.winnerSeat = player.seat; state.turnEndsAt = null; }
     } else fail('Alvo inválido.');

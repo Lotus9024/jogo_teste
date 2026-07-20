@@ -43,6 +43,30 @@ export function makeArcher(){
   root.rotation.y=.26;return root;
 }
 
+export function makeWoodBarrier(){
+  const root=new THREE.Group();root.name='Barreira de madeira';root.userData={selectable:true,name:root.name,role:'CONSTRUÇÃO · BARREIRA'};unitBase(root,0x9a6a38);
+  const rig=new THREE.Group();rig.name='rig';rig.position.y=.18;root.add(rig);
+  const posts=new THREE.Group();posts.name='barrierPosts';rig.add(posts);
+  [-.61,.61].forEach(x=>{
+    add(new THREE.BoxGeometry(.16,1.35,.2),M.wood,posts,[x,.78,0]);
+    add(new THREE.ConeGeometry(.13,.28,4),M.wood,posts,[x,1.58,0],[0,Math.PI/4,0]);
+  });
+  const builtParts=new THREE.Group();builtParts.name='barrierBuiltParts';rig.add(builtParts);
+  [-.42,-.12,.18,.48].forEach((y,index)=>add(new THREE.BoxGeometry(1.38,.19,.18),index%2?M.leather:M.wood,builtParts,[0,.85+y,0],[0,0,index%2?.035:-.025]));
+  const constructionParts=new THREE.Group();constructionParts.name='barrierConstructionParts';rig.add(constructionParts);
+  add(new THREE.BoxGeometry(1.12,.13,.14),M.wood,constructionParts,[0,.43,.18],[0,0,.42]);
+  add(new THREE.BoxGeometry(1.12,.13,.14),M.wood,constructionParts,[0,.43,-.18],[0,0,-.42]);
+  const signalMaterial=new THREE.MeshStandardMaterial({color:0xc58a3d,emissive:0x8b4e16,emissiveIntensity:.7,roughness:.55,metalness:.12});
+  add(new THREE.TorusGeometry(.32,.035,8,28),signalMaterial,constructionParts,[0,1.25,.02],[-Math.PI/2,0,0]);
+  setWoodBarrierConstructionState(root,false);return root;
+}
+
+export function setWoodBarrierConstructionState(root,underConstruction){
+  const builtParts=root.getObjectByName('barrierBuiltParts'),constructionParts=root.getObjectByName('barrierConstructionParts');
+  if(builtParts)builtParts.visible=!underConstruction;if(constructionParts)constructionParts.visible=underConstruction;
+  root.userData.underConstruction=underConstruction;
+}
+
 export function makeMage(){
   const {root,rig}=humanoidBase('Vael do Véu','MAGO',0x7869bd,{hp:55,maxHp:55,damage:18,move:3,cost:'5',ability:'Ruptura Arcana',abilityUsed:true,description:'Rompe as defesas mágicas e causa dano em uma área de duas casas.'});
   add(new THREE.ConeGeometry(.54,1.55,28,5),M.blue,rig,[0,.88,0]);capsule(.25,.55,M.cloth,rig,[0,1.46,0]);
