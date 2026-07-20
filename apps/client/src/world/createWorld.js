@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { M, add } from '../models/unitModels.js';
 import { createIslandGrass } from './createIslandGrass.js';
+import { createIslandRocks } from './createIslandRocks.js';
 import { createIslandTrees } from './createIslandTrees.js';
 import { createMagicTerrain } from './createMagicTerrain.js';
 
@@ -110,8 +111,9 @@ export function createWorld(scene, renderer) {
   const environment=new THREE.Group(),wisps=[];
   const {terrain,magicDust,update:updateMagicTerrain}=createMagicTerrain(renderer);
   const islandGrass=createIslandGrass(renderer);
+  const islandRocks=createIslandRocks(renderer);
   const islandTrees=createIslandTrees();
-  environment.add(terrain,islandGrass.group,magicDust,islandTrees);
+  environment.add(terrain,islandGrass.group,islandRocks,magicDust,islandTrees);
   const ashStone=new THREE.MeshStandardMaterial({color:0x353c36,roughness:.98});
   
   function brokenPillar(x,z,height=1.35,lean=0){
@@ -120,9 +122,6 @@ export function createWorld(scene, renderer) {
     add(new THREE.CylinderGeometry(.3,.23,.15,10),ashStone,ruin,[0,height+.2,0],[.12,.08,0]);environment.add(ruin);
   }
   [[-9.25,-3.4,1.5,.08],[-9.6,2.8,.9,-.13],[9.35,-2.6,1.2,.12],[9.7,3.7,1.65,-.06],[-4.2,9.2,.75,.16],[4.7,-9.15,1.05,-.12]].forEach(p=>brokenPillar(...p));
-  
-  const rockSpots=[[-11,7,.55],[-7.6,9.3,.75],[-3.1,-9.4,.42],[2.2,9.6,.5],[8.7,-8.8,.72],[11.8,-6,.48],[11.5,6.8,.65],[-12.2,2.8,.45],[12,-1.6,.52]];
-  rockSpots.forEach(([x,z,s],i)=>{const rock=add(new THREE.DodecahedronGeometry(s,0),ashStone,environment,[x,-.42+s*.35,z],[i*.17,i*.31,i*.11],[1,.55,.8]);rock.rotation.y=i*.74;});
   
   function graveStone(x,z,rotation=0){
     const grave=new THREE.Group();grave.position.set(x,-.5,z);grave.rotation.y=rotation;
