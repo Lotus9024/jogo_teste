@@ -4,8 +4,9 @@ const TRANSITION_DURATION = 820;
 const FINAL_HEIGHT = 17.2;
 const FINAL_DEPTH = 5.4;
 const FINAL_ZOOM = 1.05;
-const POSITION_EPSILON_SQ = 0.000001;
-const ZOOM_EPSILON = 0.0001;
+const FOCUS_POSITION_RANGE = 1.5;
+const FOCUS_TARGET_RANGE = 0.35;
+const FOCUS_ZOOM_RANGE = 0.12;
 
 function smootherStep(value) {
   return value * value * value * (value * (value * 6 - 15) + 10);
@@ -36,16 +37,26 @@ export function createCinematicCamera({ camera, controls, app }) {
     app.dataset.cameraProgress = '1.000';
   }
 
-  function isAtFinalFrame() {
-    return camera.position.distanceToSquared(finalPosition) <= POSITION_EPSILON_SQ
-      && controls.target.distanceToSquared(finalTarget) <= POSITION_EPSILON_SQ
-      && Math.abs(camera.zoom - FINAL_ZOOM) <= ZOOM_EPSILON;
+  function isWithinFocusRange() {
+    return camera.position.distanceToSquared(finalPosition) <= FOCUS_POSITION_RANGE ** 2
+      && controls.target.distanceToSquared(finalTarget) <= FOCUS_TARGET_RANGE ** 2
+      && Math.abs(camera.zoom - FINAL_ZOOM) <= FOCUS_ZOOM_RANGE;
+  }
+
+  function completeWithoutTransition() {
+    active = false;
+    controls.enabled = true;
+    app.classList.remove('camera-transitioning');
+    app.style.removeProperty('--camera-motion-blur');
+    app.dataset.cameraTransition = 'complete';
+    app.dataset.cameraFinal = 'top-down';
+    app.dataset.cameraProgress = '1.000';
   }
 
   function focusBoard({ side = 1 } = {}) {
     finalPosition.set(0, FINAL_HEIGHT, FINAL_DEPTH * Math.sign(side || 1));
-    if (isAtFinalFrame()) {
-      finish();
+    if (isWithinFocusRange()) {
+      completeWithoutTransition();
       return false;
     }
 

@@ -45,12 +45,30 @@ test('does not restart the camera animation when it is already above the board',
   assert.equal(app.dataset.cameraProgress, '1.000');
 });
 
+test('keeps small camera adjustments inside the focus range without animation', () => {
+  globalThis.matchMedia = () => ({ matches: false });
+  const camera = new THREE.OrthographicCamera();
+  const controls = createControls();
+  const app = createApp();
+  camera.position.set(0.5, 17.1, 5.5);
+  camera.zoom = 1.03;
+  const expectedPosition = camera.position.clone();
+
+  const transition = createCinematicCamera({ camera, controls, app });
+  transition.focusBoard({ side: 1 });
+
+  assert.equal(transition.active, false);
+  assert.deepEqual(camera.position.toArray(), expectedPosition.toArray());
+  assert.equal(camera.zoom, 1.03);
+  assert.equal(app.classList.contains('camera-transitioning'), false);
+});
+
 test('still animates when the camera has not reached the final frame', () => {
   globalThis.matchMedia = () => ({ matches: false });
   const camera = new THREE.OrthographicCamera();
   const controls = createControls();
   const app = createApp();
-  camera.position.set(0, 16, 5.2);
+  camera.position.set(0, 14, 4);
   camera.zoom = 1;
 
   const transition = createCinematicCamera({ camera, controls, app });
