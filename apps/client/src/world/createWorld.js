@@ -2,6 +2,10 @@ import * as THREE from 'three';
 import { M, add } from '../models/unitModels.js';
 
 export function createWorld(scene) {
+  const fireLights=[];
+  const flameOuter=new THREE.MeshBasicMaterial({color:0xff6b2d,toneMapped:false});
+  const flameCore=new THREE.MeshBasicMaterial({color:0xffd37a,toneMapped:false});
+
   // 15x15 raised stone board with alternating slabs.
   const board=new THREE.Group();const N=15,tile=1.08,half=(N-1)*tile/2;
   const boardBase=add(new THREE.BoxGeometry(N*tile+1.0,.45,N*tile+1.0),M.stoneDark,board,[0,-.32,0]);boardBase.castShadow=false;
@@ -11,8 +15,9 @@ export function createWorld(scene) {
   // Iron braziers anchor the four corners of the ruined board.
   for(const x of [-1,1])for(const z of [-1,1]){
     const bx=x*(half+.39),bz=z*(half+.39);add(new THREE.CylinderGeometry(.12,.16,.24,12),M.iron,board,[bx,.12,bz]);
-    add(new THREE.ConeGeometry(.08,.22,10),new THREE.MeshBasicMaterial({color:0xc06932}),board,[bx,.34,bz]);
-    const ember=new THREE.PointLight(0x9c3f1d,2.2,2.4,2);ember.position.set(bx,.55,bz);scene.add(ember);
+    add(new THREE.ConeGeometry(.11,.3,10),flameOuter,board,[bx,.39,bz]);
+    add(new THREE.ConeGeometry(.055,.2,10),flameCore,board,[bx,.43,bz]);
+    const ember=new THREE.PointLight(0xff7636,10,4.4,2);ember.position.set(bx,.68,bz);ember.userData={baseIntensity:10,phase:fireLights.length*1.73};fireLights.push(ember);scene.add(ember);
   }
   
   // Compact keeps mark each king's side without hiding the board from the
@@ -55,7 +60,6 @@ export function createWorld(scene) {
       }else{
         add(new THREE.CylinderGeometry(.39,.45,1.48,10),themeStone,keep,[x,.98,z]);
         add(new THREE.ConeGeometry(.52,.72,10),roofMat,keep,[x,2.08,z]);
-        add(new THREE.OctahedronGeometry(.09,0),glowMat,keep,[x,2.48,z]);
       }
     }
   
@@ -68,7 +72,6 @@ export function createWorld(scene) {
     }else{
       add(new THREE.ConeGeometry(.42,1.05,8),roofMat,keep,[0,2.42,0]);
       for(const s of [-1,1])add(new THREE.BoxGeometry(.78,.1,.22),roofMat,keep,[s*.47,2.05,.03],[0,s*.22,s*.28]);
-      add(new THREE.OctahedronGeometry(.17,0),glowMat,keep,[0,3.02,0]);
     }
     keep.name=enemy?'Castelo Carmesim':'Fortaleza do Corvo';
     keep.userData={hoverable:true,name:keep.name,role:'BASE 3×3 · NÍVEL 1',hp:enemy?16:18,maxHp:20,damage:0,move:0,cost:'—',ability:enemy?'Pacto de Sangue':'Vigia do Corvo',abilityUsed:false,description:enemy?'As torres carmesins fortalecem tropas feridas próximas.':'As sentinelas do corvo revelam invasores nas casas vizinhas.'};
@@ -129,12 +132,14 @@ export function createWorld(scene) {
     add(new THREE.BoxGeometry(.48,.55,.16,2,2,1),ashStone,grave,[0,.3,0],[0,0,.04]);add(new THREE.SphereGeometry(.24,12,7,0,Math.PI*2,0,Math.PI/2),ashStone,grave,[0,.58,0]);
     add(new THREE.BoxGeometry(.24,.035,.018),M.iron,grave,[0,.37,.09]);add(new THREE.BoxGeometry(.035,.25,.018),M.iron,grave,[0,.37,.09]);environment.add(grave);
   }
-  [[-8.8,-5.7,.2],[-8.9,1.1,-.1],[-8.7,6.3,.15],[8.7,-6.2,-.2],[8.9,.9,.12],[8.75,5.4,-.08]].forEach(p=>graveStone(...p));
+  [[-8.9,1.1,-.1],[-8.7,6.3,.15],[8.7,-6.2,-.2],[8.9,.9,.12],[8.75,5.4,-.08]].forEach(p=>graveStone(...p));
   
   // Two ruined watchfires create warm landmarks in the otherwise cold valley.
   for(const [x,z] of [[-9.2,0],[9.2,0]]){
-    add(new THREE.CylinderGeometry(.22,.29,.3,12),M.iron,environment,[x,-.35,z]);add(new THREE.ConeGeometry(.14,.38,9),new THREE.MeshBasicMaterial({color:0xb65a2b}),environment,[x,.02,z]);
-    const fire=new THREE.PointLight(0xb5532c,3.1,4.2,2);fire.position.set(x,.35,z);scene.add(fire);
+    add(new THREE.CylinderGeometry(.22,.29,.3,12),M.iron,environment,[x,-.35,z]);
+    add(new THREE.ConeGeometry(.19,.52,9),flameOuter,environment,[x,.03,z]);
+    add(new THREE.ConeGeometry(.1,.34,9),flameCore,environment,[x,.09,z]);
+    const fire=new THREE.PointLight(0xff682d,15,6.5,2);fire.position.set(x,.58,z);fire.userData={baseIntensity:15,phase:fireLights.length*1.73};fireLights.push(fire);scene.add(fire);
   }
   for(let i=0;i<6;i++){
     const mistMat=new THREE.MeshBasicMaterial({color:0x718379,transparent:true,opacity:.012+i*.003,depthWrite:false,side:THREE.DoubleSide});
@@ -143,5 +148,5 @@ export function createWorld(scene) {
   scene.add(environment);
   scene.add(board);
 
-  return { board, N, tile, half, alliedKeep, enemyKeep, deck3D, topDeckCard, wisps };
+  return { board, N, tile, half, alliedKeep, enemyKeep, deck3D, topDeckCard, wisps, fireLights };
 }

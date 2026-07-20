@@ -14,7 +14,7 @@ export function createGameScene(app) {
   renderer.shadowMap.autoUpdate = true;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.18;
+  renderer.toneMappingExposure = 1.3;
   app.prepend(renderer.domElement);
   app.dataset.shadows = 'dynamic-soft';
 
@@ -34,7 +34,8 @@ export function createGameScene(app) {
   controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
   controls.update();
 
-  scene.add(new THREE.HemisphereLight(0xa9a79d, 0x101411, 1.18));
+  scene.add(new THREE.HemisphereLight(0xb9b7aa, 0x1b211d, 1.5));
+  scene.add(new THREE.AmbientLight(0x697069, 0.24));
 
   // One real-time directional light behaves like Unity's global sun. The
   // orthographic shadow camera tightly covers the board so the 2048px map is
@@ -43,7 +44,7 @@ export function createGameScene(app) {
   sunTarget.position.set(0, 0, 0);
   scene.add(sunTarget);
 
-  const sun = new THREE.DirectionalLight(0xe7cda5, 3.45);
+  const sun = new THREE.DirectionalLight(0xedd6b0, 3.7);
   sun.position.set(-6.5, 13.5, 7.5);
   sun.target = sunTarget;
   sun.castShadow = true;
@@ -59,7 +60,7 @@ export function createGameScene(app) {
   sun.shadow.radius = 3;
   scene.add(sun);
 
-  const cool = new THREE.DirectionalLight(0x596b78, 0.92);
+  const cool = new THREE.DirectionalLight(0x637a8c, 1.15);
   cool.position.set(7, 7, -8);
   scene.add(cool);
 
