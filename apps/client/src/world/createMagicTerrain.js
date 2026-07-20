@@ -374,9 +374,9 @@ function createStrataVeins() {
   return group;
 }
 
-function createMossAndPlants() {
+function createMossPatches() {
   const group = new THREE.Group();
-  group.name = 'Musgo e vegetação das bordas';
+  group.name = 'Musgo das bordas';
   const random = seededRandom(2197);
   const dummy = new THREE.Object3D();
   const color = new THREE.Color();
@@ -410,36 +410,7 @@ function createMossAndPlants() {
   moss.instanceMatrix.needsUpdate = true;
   moss.instanceColor.needsUpdate = true;
 
-  const plantCount = 96;
-  const plantMaterial = new THREE.MeshStandardMaterial({
-    color: 0x7f9271,
-    emissive: 0x1d291e,
-    emissiveIntensity: 0.34,
-    roughness: 0.94,
-    side: THREE.DoubleSide,
-    vertexColors: true
-  });
-  const plants = new THREE.InstancedMesh(new THREE.ConeGeometry(0.11, 0.38, 5), plantMaterial, plantCount);
-  plants.name = 'Pequenas plantas silvestres';
-  plants.castShadow = false;
-  plants.receiveShadow = true;
-  for (let i = 0; i < plantCount; i += 1) {
-    const angle = random() * Math.PI * 2;
-    const radial = 0.77 + random() * 0.17;
-    const x = Math.cos(angle) * ISLAND_RADIUS_X * radial * edgeVariation(angle);
-    const z = Math.sin(angle) * ISLAND_RADIUS_Z * radial * edgeVariation(angle);
-    dummy.position.set(x, terrainHeight(x, z) + 0.18, z);
-    dummy.rotation.set((random() - 0.5) * 0.18, random() * Math.PI, (random() - 0.5) * 0.18);
-    const scale = 0.58 + random() * 0.72;
-    dummy.scale.set(scale, scale, scale);
-    dummy.updateMatrix();
-    plants.setMatrixAt(i, dummy.matrix);
-    color.setHSL(0.25 + (random() - 0.5) * 0.055, 0.24 + random() * 0.18, 0.31 + random() * 0.12);
-    plants.setColorAt(i, color);
-  }
-  plants.instanceMatrix.needsUpdate = true;
-  plants.instanceColor.needsUpdate = true;
-  group.add(moss, plants);
+  group.add(moss);
   return group;
 }
 
@@ -657,7 +628,7 @@ export function createMagicTerrain(renderer) {
   const undersideRocks = createUndersideRocks();
   const roots = createRoots();
   const strataVeins = createStrataVeins();
-  const topDetails = createMossAndPlants();
+  const topDetails = createMossPatches();
   const hanging = createHangingLanterns();
   const crystals = createCrystals();
   terrain.add(earthCore, islandBody, undersideRocks, roots, strataVeins, topDetails, hanging.group, crystals.group);
