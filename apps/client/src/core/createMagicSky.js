@@ -144,7 +144,7 @@ export function createMagicSky(scene, renderer, app, camera) {
     texture => {
       const environment = pmrem.fromEquirectangular(texture).texture;
       scene.environment = environment;
-      scene.environmentIntensity = 0.12;
+      scene.environmentIntensity = 0.28;
       pmrem.dispose();
     },
     undefined,
