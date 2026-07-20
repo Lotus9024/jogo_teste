@@ -1,7 +1,7 @@
 import { CLIENT_EVENTS, SERVER_EVENTS, parseMessage } from '@tronos/shared/protocol';
 
 export class GameSocketClient extends EventTarget {
-  constructor(url = import.meta.env.VITE_WS_URL ?? 'ws://localhost:3001/ws') {
+  constructor(url = import.meta.env.VITE_WS_URL ?? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.hostname}:3001/ws`) {
     super();
     this.url = url;
     this.socket = null;

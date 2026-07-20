@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { CARD_BY_ID } from '@tronos/shared/cards';
+import { CARD_BY_ID, movementDistance } from '@tronos/shared/cards';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { drawCard } from './createInitialState.js';
 
@@ -63,7 +63,7 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
     const x = integer(action.x), z = integer(action.z), card = CARD_BY_ID[unit.cardId];
     if (unit.actionUsed) fail('Esta unidade já agiu neste turno.');
-    if (!validCell(x, z) || inBase(x, z) || unitAt(state, x, z) || distance(unit, { x, z }) > card.move) fail('Movimento inválido.');
+    if (!validCell(x, z) || inBase(x, z) || unitAt(state, x, z) || movementDistance(card.movementType, unit, { x, z }) > card.move) fail('Movimento inválido.');
     unit.x = x; unit.z = z; unit.actionUsed = true;
   } else if (action.type === 'attack') {
     requireTurn(state, player);
@@ -86,7 +86,7 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     requireTurn(state, player);
     const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
     const card = CARD_BY_ID[unit.cardId];
-    if (unit.abilityUsed || player.energy < card.ability.cost) fail('Habilidade indisponível.');
+    if (!card.ability?.enabled || unit.abilityUsed || player.energy < card.ability.cost) fail('Habilidade indisponível.');
     let archerTargets = null;
     if (card.id === 'archer') {
       const target = state.units.find(item => item.id === action.targetUnitId && item.ownerSeat !== player.seat) ?? fail('Alvo inválido.');
@@ -104,7 +104,7 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     if (state.phase !== 'playing') fail('A partida ainda não começou.');
     const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
     const card = CARD_BY_ID[unit.cardId];
-    if (unit.instantUsedRound === state.round || player.energy < card.instant.cost) fail('Habilidade instantânea indisponível.');
+    if (!card.instant?.enabled || unit.instantUsedRound === state.round || player.energy < card.instant.cost) fail('Habilidade instantânea indisponível.');
     if (card.id === 'warrior') unit.shield = (unit.shield ?? 0) + 8;
     if (card.id === 'guard') {
       const target = state.units.find(item => item.id === action.targetUnitId && item.ownerSeat === player.seat) ?? fail('Aliado inválido.');

@@ -47,13 +47,39 @@ test('passar turno compra carta, entrega energia e reinicia o relógio', () => {
   assert.ok(room.state.turnEndsAt >= previousDeadline);
 });
 
-test('habilidade instantânea funciona fora do próprio turno apenas uma vez por rodada', () => {
+test('cartas usam os novos atributos sem habilidades', () => {
+  assert.deepEqual(
+    Object.fromEntries(Object.values(CARD_BY_ID).map(card => [card.id, {
+      hp: card.hp, damage: card.damage, move: card.move, movementType: card.movementType, cost: card.cost
+    }])),
+    {
+      warrior: { hp: 3, damage: 2, move: 2, movementType: 'straight', cost: 3 },
+      guard: { hp: 4, damage: 1, move: 1, movementType: 'any', cost: 3 },
+      archer: { hp: 2, damage: 2, move: 2, movementType: 'any', cost: 4 }
+    }
+  );
+  Object.values(CARD_BY_ID).forEach(card => {
+    assert.equal(card.ability.enabled, false);
+    assert.equal(card.instant.enabled, false);
+  });
+});
+
+test('guerreiro só anda reto e guarda pode andar na diagonal', () => {
   const { rooms, room, first } = match();
-  room.state.units.push({ id: 'warrior-1', ownerSeat: 1, cardId: 'warrior', x: 4, z: 9, hp: 70, shield: 0, actionUsed: false, abilityUsed: false, instantUsedRound: 0, empowered: false });
-  rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
-  const energy = room.state.players[0].energy;
-  rooms.action(room.code, first.id, { type: 'use_instant', unitId: 'warrior-1' }, room.state.version);
-  assert.equal(room.state.units[0].shield, 8);
-  assert.equal(room.state.players[0].energy, energy - CARD_BY_ID.warrior.instant.cost);
+  room.state.units.push({ id: 'warrior-1', ownerSeat: 1, cardId: 'warrior', x: 4, z: 9, hp: 3, shield: 0, actionUsed: false, abilityUsed: false, instantUsedRound: 0, empowered: false });
+  assert.throws(() => rooms.action(room.code, first.id, { type: 'move', unitId: 'warrior-1', x: 5, z: 10 }, room.state.version), /Movimento inválido/);
+  rooms.action(room.code, first.id, { type: 'move', unitId: 'warrior-1', x: 6, z: 9 }, room.state.version);
+  assert.deepEqual({ x: room.state.units[0].x, z: room.state.units[0].z }, { x: 6, z: 9 });
+
+  const other = match();
+  other.room.state.units.push({ id: 'guard-1', ownerSeat: 1, cardId: 'guard', x: 4, z: 9, hp: 4, shield: 0, actionUsed: false, abilityUsed: false, instantUsedRound: 0, empowered: false });
+  other.rooms.action(other.room.code, other.first.id, { type: 'move', unitId: 'guard-1', x: 5, z: 10 }, other.room.state.version);
+  assert.deepEqual({ x: other.room.state.units[0].x, z: other.room.state.units[0].z }, { x: 5, z: 10 });
+});
+
+test('habilidades normais e instantâneas estão indisponíveis', () => {
+  const { rooms, room, first } = match();
+  room.state.units.push({ id: 'warrior-1', ownerSeat: 1, cardId: 'warrior', x: 4, z: 9, hp: 3, shield: 0, actionUsed: false, abilityUsed: false, instantUsedRound: 0, empowered: false });
+  assert.throws(() => rooms.action(room.code, first.id, { type: 'use_ability', unitId: 'warrior-1' }, room.state.version), /indisponível/);
   assert.throws(() => rooms.action(room.code, first.id, { type: 'use_instant', unitId: 'warrior-1' }, room.state.version), /indisponível/);
 });

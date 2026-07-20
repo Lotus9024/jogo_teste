@@ -6,7 +6,8 @@ import { createSocketServer } from './realtime/createSocketServer.js';
 
 const rooms = new RoomManager();
 const server = createServer(async (request, response) => {
-  response.setHeader('Access-Control-Allow-Origin', config.clientOrigin);
+  const origin = request.headers.origin;
+  if (origin && config.clientOrigins.includes(origin)) response.setHeader('Access-Control-Allow-Origin', origin);
   response.setHeader('Vary', 'Origin');
   response.setHeader('X-Content-Type-Options', 'nosniff');
   response.setHeader('X-Frame-Options', 'DENY');

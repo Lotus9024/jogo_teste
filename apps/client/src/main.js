@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CARD_BY_ID } from '@tronos/shared/cards';
+import { CARD_BY_ID, movementDistance } from '@tronos/shared/cards';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { createCinematicCamera } from './core/createCinematicCamera.js';
 import { createGameScene } from './core/createGameScene.js';
@@ -19,7 +19,7 @@ const { board, tile, half, alliedKeep, enemyKeep, deck3D, topDeckCard, wisps, fi
 
 // Each miniature is snapped to the exact center of a tile. Scale 0.64 keeps
 // even the outermost weapon silhouette inside the 1.08 × 1.08 footprint.
-const units=[makeMage(),makeWarrior(),makeArcher()]; units[0].position.set(-2.16,.06,0);units[1].position.set(0,.06,0);units[2].position.set(2.16,.06,0);units.forEach((u,cardIndex)=>{u.scale.setScalar(.64);u.userData.hoverable=true;u.userData.cardIndex=cardIndex;scene.add(u)});
+const units=[makeMage(),makeWarrior(),makeArcher()]; units[0].position.set(-2.16,.06,0);units[1].position.set(0,.06,0);units[2].position.set(2.16,.06,0);units.forEach((u,cardIndex)=>{const card=cards[cardIndex];u.scale.setScalar(.64);Object.assign(u.userData,{hoverable:true,cardIndex,hp:card.hp,maxHp:card.hp,damage:card.damage,move:card.move,movementType:card.movementType,cost:card.cost,ability:card.ability,abilityUsed:false,description:card.abilityText});scene.add(u)});
 const hoverables=[...units];
 
 // Selection and unit status HUD.
@@ -35,7 +35,7 @@ function showMovementGrid(unit){
   clearMovementGrid();const onlineAllowed=onlineState&&unit.userData.ownerSeat===selfSeat&&onlineState.state.activeSeat===selfSeat&&!unit.userData.actionUsed;if(!devMode&&!onlineAllowed)return;
   const originX=Math.round((unit.position.x+half)/tile),originZ=Math.round((unit.position.z+half)/tile),range=unit.userData.move;
   for(let dx=-range;dx<=range;dx++)for(let dz=-range;dz<=range;dz++){
-    const x=originX+dx,z=originZ+dz,distance=Math.abs(dx)+Math.abs(dz),inCastle=x>=6&&x<=8&&(z<=2||z>=12),occupied=units.some(other=>other!==unit&&Math.round((other.position.x+half)/tile)===x&&Math.round((other.position.z+half)/tile)===z);
+    const x=originX+dx,z=originZ+dz,distance=movementDistance(unit.userData.movementType,{x:0,z:0},{x:dx,z:dz}),inCastle=x>=6&&x<=8&&(z<=2||z>=12),occupied=units.some(other=>other!==unit&&Math.round((other.position.x+half)/tile)===x&&Math.round((other.position.z+half)/tile)===z);
     if(!distance||distance>range||x<0||x>=15||z<0||z>=15||inCastle||occupied)continue;
     addMovementMarker(x,z,movementMaterial);
   }
@@ -72,7 +72,7 @@ function finishDrag(e){
     const destination={x:Math.round((dragged.position.x+half)/tile),z:Math.round((dragged.position.z+half)/tile)},origin={x:Math.round((dragged.userData.dragOrigin.x+half)/tile),z:Math.round((dragged.userData.dragOrigin.z+half)/tile)};dragged.visible=false;const target=unitAtPointer(e),opponentKeep=selfSeat===1?enemyKeep:alliedKeep,baseTarget=onlineState&&ray.intersectObject(opponentKeep,true).length>0;dragged.visible=true;
     if(onlineState){dragged.position.copy(dragged.userData.dragOrigin);if(target&&target.userData.ownerSeat!==selfSeat)sendOnlineAction({type:'attack',unitId:dragged.userData.serverUnitId,targetUnitId:target.userData.serverUnitId});else if(baseTarget)sendOnlineAction({type:'attack',unitId:dragged.userData.serverUnitId,targetBaseSeat:selfSeat===1?2:1});else sendOnlineAction({type:'move',unitId:dragged.userData.serverUnitId,...destination});}
     else if(devMode){
-      const moveDistance=Math.abs(destination.x-origin.x)+Math.abs(destination.z-origin.z),attackRange=dragged.userData.attackRange??(['ARQUEIRA','MAGO'].includes(dragged.userData.role)?3:1);
+      const moveDistance=movementDistance(dragged.userData.movementType,origin,destination),attackRange=dragged.userData.attackRange??(['ARQUEIRA','MAGO'].includes(dragged.userData.role)?3:1);
       if(target&&target!==dragged){const targetDistance=Math.abs(target.position.x-dragged.userData.dragOrigin.x)/tile+Math.abs(target.position.z-dragged.userData.dragOrigin.z)/tile;dragged.position.copy(dragged.userData.dragOrigin);if(targetDistance<=attackRange){target.userData.hp-=dragged.userData.damage;app.dataset.lastAttack=`${dragged.userData.name}->${target.userData.name}:${Math.max(0,target.userData.hp)}`;if(target.userData.hp<=0){units.splice(units.indexOf(target),1);hoverables.splice(hoverables.indexOf(target),1);scene.remove(target)}}else showGameError('Alvo fora de alcance.');}
       else if(moveDistance>dragged.userData.move){dragged.position.copy(dragged.userData.dragOrigin);showGameError('Movimento fora de alcance.');}
     }
@@ -129,7 +129,7 @@ function makeSummonedUnit(cardIndex){
     const rig=new THREE.Group();rig.name='rig';rig.position.y=.18;unit.add(rig);const tokenMat=new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.12,roughness:.55,metalness:.35});
     add(new THREE.CylinderGeometry(.32,.44,.95,18),M.darkLeather,rig,[0,.68,0]);add(new THREE.OctahedronGeometry(.38,1),tokenMat,rig,[0,1.5,0]);add(new THREE.TorusGeometry(.35,.045,10,32),M.gold,rig,[0,1.5,0],[Math.PI/2,0,0]);
   }
-  unit.name=c.name;unit.userData={...unit.userData,selectable:true,hoverable:true,cardIndex,name:c.name,role:c.info,hp:c.hp,maxHp:c.hp,damage:c.damage,move:c.move,attackRange:c.attackRange,cost:c.cost,ability:c.ability,abilityUsed:false,description:c.abilityText};unit.scale.setScalar(.64);return unit;
+  unit.name=c.name;unit.userData={...unit.userData,selectable:true,hoverable:true,cardIndex,name:c.name,role:c.info,hp:c.hp,maxHp:c.hp,damage:c.damage,move:c.move,movementType:c.movementType,attackRange:c.attackRange,cost:c.cost,ability:c.ability,abilityUsed:false,description:c.abilityText};unit.scale.setScalar(.64);return unit;
 }
 function summonCard(cardIndex,x,z){const unit=makeSummonedUnit(cardIndex);unit.position.set(x,.06,z);units.push(unit);hoverables.push(unit);scene.add(unit);selectUnit(unit,{cinematic:false})}
 hand.addEventListener('pointerdown',e=>{

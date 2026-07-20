@@ -6,7 +6,10 @@ import { config } from '../config.js';
 export function createSocketServer(server, rooms) {
   const websocket = new WebSocketServer({
     server, path: '/ws', maxPayload: GAME_CONFIG.maxMessageBytes,
-    verifyClient: ({ origin }, done) => done(origin === config.clientOrigin, origin === config.clientOrigin ? 200 : 403, 'Origin denied')
+    verifyClient: ({ origin }, done) => {
+      const allowed = config.clientOrigins.includes(origin);
+      done(allowed, allowed ? 200 : 403, 'Origin denied');
+    }
   });
 
   websocket.on('connection', socket => {
