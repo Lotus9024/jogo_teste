@@ -84,7 +84,7 @@ export function createWorld(scene, renderer) {
   
   // A physical deck sits beside the board. Every layer has real thickness and a
   // slightly different angle, so it reads as a handled stack from the game camera.
-  const deck3D=new THREE.Group();deck3D.name='Baralho 3D do Corvo';deck3D.position.set(-half-1.4,-.34,-half+.95);deck3D.rotation.y=-.11;
+  const deck3D=new THREE.Group();deck3D.name='Baralho 3D do Corvo';deck3D.position.set(-half-2,-.34,-half+.95);deck3D.rotation.y=-.11;
   const deckSideMat=new THREE.MeshStandardMaterial({color:0x6d6049,roughness:.82,metalness:.05});
   const deckBackMat=new THREE.MeshStandardMaterial({color:0x172326,emissive:0x071012,emissiveIntensity:.4,roughness:.58,metalness:.18});
   const deckEdgeMat=new THREE.MeshStandardMaterial({color:0xa98545,emissive:0x231606,emissiveIntensity:.25,roughness:.36,metalness:.72});
