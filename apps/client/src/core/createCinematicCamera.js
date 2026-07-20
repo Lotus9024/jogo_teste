@@ -4,6 +4,8 @@ const TRANSITION_DURATION = 820;
 const FINAL_HEIGHT = 17.2;
 const FINAL_DEPTH = 5.4;
 const FINAL_ZOOM = 1.05;
+const POSITION_EPSILON_SQ = 0.000001;
+const ZOOM_EPSILON = 0.0001;
 
 function smootherStep(value) {
   return value * value * value * (value * (value * 6 - 15) + 10);
@@ -31,9 +33,22 @@ export function createCinematicCamera({ camera, controls, app }) {
     app.style.removeProperty('--camera-motion-blur');
     app.dataset.cameraTransition = 'complete';
     app.dataset.cameraFinal = 'top-down';
+    app.dataset.cameraProgress = '1.000';
+  }
+
+  function isAtFinalFrame() {
+    return camera.position.distanceToSquared(finalPosition) <= POSITION_EPSILON_SQ
+      && controls.target.distanceToSquared(finalTarget) <= POSITION_EPSILON_SQ
+      && Math.abs(camera.zoom - FINAL_ZOOM) <= ZOOM_EPSILON;
   }
 
   function focusBoard({ side = 1 } = {}) {
+    finalPosition.set(0, FINAL_HEIGHT, FINAL_DEPTH * Math.sign(side || 1));
+    if (isAtFinalFrame()) {
+      finish();
+      return false;
+    }
+
     const offset = camera.position.clone().sub(controls.target);
     const polarAngle = Math.atan2(Math.hypot(offset.x, offset.z), Math.max(0.001, offset.y));
     if (polarAngle <= 0.45) {
@@ -48,7 +63,6 @@ export function createCinematicCamera({ camera, controls, app }) {
     startPosition.copy(camera.position);
     startTarget.copy(controls.target);
     startZoom = camera.zoom;
-    finalPosition.set(0, FINAL_HEIGHT, FINAL_DEPTH * Math.sign(side || 1));
     startedAt = performance.now();
     duration = matchMedia('(prefers-reduced-motion: reduce)').matches ? 520 : TRANSITION_DURATION;
     active = true;
