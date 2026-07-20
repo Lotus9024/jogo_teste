@@ -4,7 +4,6 @@ const ISLAND_RADIUS_X = 16.8;
 const ISLAND_RADIUS_Z = 14.25;
 const SURFACE_Y = -0.58;
 const EDGE_SEGMENTS = 128;
-const ISLAND_GROUND_TEXTURE = '/assets/textures/grass/coast_sand_rocks_02_diff_4k.jpg';
 const CLIFF_COLORS = Object.freeze({
   topsoil: new THREE.Color(0x4a3121),
   earth: new THREE.Color(0x795438),
@@ -82,22 +81,6 @@ function createGroundTexture(renderer) {
   texture.repeat.set(8, 7);
   texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
   return texture;
-}
-
-function loadIslandGroundTexture(renderer, material) {
-  new THREE.TextureLoader().load(
-    ISLAND_GROUND_TEXTURE,
-    texture => {
-      texture.colorSpace = THREE.SRGBColorSpace;
-      texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-      texture.repeat.set(3.5, 3);
-      texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
-      material.map = texture;
-      material.bumpMap = texture;
-      material.bumpScale = 0.075;
-      material.needsUpdate = true;
-    }
-  );
 }
 
 function createCliffTexture(renderer) {
@@ -278,86 +261,6 @@ export function createIslandGeometry() {
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
   return geometry;
-}
-
-function createGrassGeometry() {
-  const width = 0.13;
-  const height = 0.46;
-  const positions = [
-    -width, 0, 0, width, 0, 0, -width * 0.28, height, 0, width * 0.28, height, 0,
-    0, 0, -width, 0, 0, width, 0, height, -width * 0.28, 0, height, width * 0.28
-  ];
-  const uvs = [0, 0, 1, 0, 0.35, 1, 0.65, 1, 0, 0, 1, 0, 0.35, 1, 0.65, 1];
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-  geometry.setIndex([0, 1, 2, 2, 1, 3, 4, 5, 6, 6, 5, 7]);
-  geometry.computeVertexNormals();
-  return geometry;
-}
-
-function createGrass() {
-  const count = 1760;
-  const material = new THREE.MeshStandardMaterial({
-    color: 0x73876a,
-    emissive: 0x1d2b20,
-    emissiveIntensity: 0.32,
-    roughness: 0.92,
-    metalness: 0,
-    side: THREE.DoubleSide,
-    vertexColors: true
-  });
-  const wind = { value: 0 };
-  material.onBeforeCompile = shader => {
-    shader.uniforms.windTime = wind;
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nuniform float windTime;')
-      .replace(
-        '#include <begin_vertex>',
-        `vec3 transformed = vec3(position);
-        float instancePhase = instanceMatrix[3].x * 1.71 + instanceMatrix[3].z * 1.29;
-        float bladeTip = clamp(position.y / 0.46, 0.0, 1.0);
-        transformed.x += sin(windTime * 1.12 + instancePhase + position.y * 2.3) * 0.055 * bladeTip * bladeTip;
-        transformed.z += cos(windTime * 0.78 + instancePhase * 0.73) * 0.026 * bladeTip * bladeTip;`
-      );
-  };
-  material.customProgramCacheKey = () => 'floating-island-grass-wind-v2';
-
-  const grass = new THREE.InstancedMesh(createGrassGeometry(), material, count);
-  grass.name = 'Grama baixa instanciada com vento';
-  grass.castShadow = false;
-  grass.receiveShadow = true;
-  grass.frustumCulled = false;
-  grass.instanceMatrix.setUsage(THREE.StaticDrawUsage);
-
-  const random = seededRandom(7319);
-  const dummy = new THREE.Object3D();
-  const color = new THREE.Color();
-  let placed = 0;
-  while (placed < count) {
-    const angle = random() * Math.PI * 2;
-    const radial = Math.sqrt(random()) * 0.92;
-    const organic = edgeVariation(angle);
-    const x = Math.cos(angle) * ISLAND_RADIUS_X * radial * organic;
-    const z = Math.sin(angle) * ISLAND_RADIUS_Z * radial * organic;
-    const insideBoardClearance = Math.abs(x) < 8.75 && Math.abs(z) < 8.75;
-    const besideDeck = Math.hypot(x + 8.96, z + 6.61) < 1.85;
-    if (insideBoardClearance || besideDeck) continue;
-
-    const horizontal = 0.72 + random() * 0.48;
-    const vertical = 0.55 + random() * 0.68;
-    dummy.position.set(x, terrainHeight(x, z) + 0.015, z);
-    dummy.rotation.set(0, random() * Math.PI, (random() - 0.5) * 0.08);
-    dummy.scale.set(horizontal, vertical, horizontal);
-    dummy.updateMatrix();
-    grass.setMatrixAt(placed, dummy.matrix);
-    color.setHSL(0.27 + (random() - 0.5) * 0.055, 0.18 + random() * 0.16, 0.27 + random() * 0.15);
-    grass.setColorAt(placed, color);
-    placed += 1;
-  }
-  grass.instanceMatrix.needsUpdate = true;
-  grass.instanceColor.needsUpdate = true;
-  return { grass, wind };
 }
 
 function createUndersideRocks() {
@@ -691,7 +594,6 @@ export function createMagicTerrain(renderer) {
     roughness: 0.96,
     metalness: 0
   });
-  loadIslandGroundTexture(renderer, terrainMaterial);
   const cliffMaterial = new THREE.MeshStandardMaterial({
     vertexColors: true,
     map: cliffTexture,
@@ -746,11 +648,9 @@ export function createMagicTerrain(renderer) {
   magicalLift.position.set(0, -7.2, 0);
   terrain.add(magicalLift);
 
-  const { grass, wind } = createGrass();
   const magicDust = createMagicDust();
 
   function update(elapsed) {
-    wind.value = elapsed;
     magicDust.rotation.y = elapsed * 0.014;
     magicDust.position.y = Math.sin(elapsed * 0.24) * 0.09;
     magicDust.material.opacity = 0.5 + Math.sin(elapsed * 0.47) * 0.1;
@@ -770,5 +670,5 @@ export function createMagicTerrain(renderer) {
     });
   }
 
-  return { terrain, grass, magicDust, update };
+  return { terrain, magicDust, update };
 }

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { M, add } from '../models/unitModels.js';
+import { createIslandGrass } from './createIslandGrass.js';
 import { createIslandTrees } from './createIslandTrees.js';
 import { createMagicTerrain } from './createMagicTerrain.js';
 
@@ -107,9 +108,10 @@ export function createWorld(scene, renderer) {
   
   // A ruined, misty valley frames the game board while keeping every tile clear.
   const environment=new THREE.Group(),wisps=[];
-  const {terrain,grass,magicDust,update:updateTerrain}=createMagicTerrain(renderer);
+  const {terrain,magicDust,update:updateMagicTerrain}=createMagicTerrain(renderer);
+  const islandGrass=createIslandGrass(renderer);
   const islandTrees=createIslandTrees();
-  environment.add(terrain,grass,magicDust,islandTrees);
+  environment.add(terrain,islandGrass.group,magicDust,islandTrees);
   const ashStone=new THREE.MeshStandardMaterial({color:0x353c36,roughness:.98});
   
   function brokenPillar(x,z,height=1.35,lean=0){
@@ -143,5 +145,6 @@ export function createWorld(scene, renderer) {
   scene.add(environment);
   scene.add(board);
 
+  const updateTerrain=elapsed=>{updateMagicTerrain(elapsed);islandGrass.update(elapsed);};
   return { board, N, tile, half, alliedKeep, enemyKeep, deck3D, topDeckCard, wisps, fireLights, updateTerrain };
 }
