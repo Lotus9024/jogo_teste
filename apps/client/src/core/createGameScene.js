@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { createMagicSky } from './createMagicSky.js';
 
 export function createGameScene(app) {
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x040606);
-  scene.fog = new THREE.FogExp2(0x040606, 0.028);
+  scene.background = new THREE.Color(0x10071c);
+  scene.fog = new THREE.FogExp2(0x090711, 0.025);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 1.7));
@@ -21,6 +22,8 @@ export function createGameScene(app) {
   const camera = new THREE.OrthographicCamera(-6, 6, 6, -6, 0.1, 80);
   camera.position.set(0, 16, 5.2);
   camera.lookAt(0, 0, 0);
+  scene.add(camera);
+  const magicSky = createMagicSky(scene, renderer, app, camera);
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -34,8 +37,8 @@ export function createGameScene(app) {
   controls.mouseButtons.LEFT = THREE.MOUSE.ROTATE;
   controls.update();
 
-  scene.add(new THREE.HemisphereLight(0xb9b7aa, 0x1b211d, 1.5));
-  scene.add(new THREE.AmbientLight(0x697069, 0.24));
+  scene.add(new THREE.HemisphereLight(0xc6b9da, 0x21192b, 1.46));
+  scene.add(new THREE.AmbientLight(0x776987, 0.25));
 
   // One real-time directional light behaves like Unity's global sun. The
   // orthographic shadow camera tightly covers the board so the 2048px map is
@@ -60,7 +63,7 @@ export function createGameScene(app) {
   sun.shadow.radius = 3;
   scene.add(sun);
 
-  const cool = new THREE.DirectionalLight(0x637a8c, 1.15);
+  const cool = new THREE.DirectionalLight(0x8269ad, 1.12);
   cool.position.set(7, 7, -8);
   scene.add(cool);
 
@@ -75,6 +78,7 @@ export function createGameScene(app) {
     );
     sunTarget.position.y = Math.sin(angle * 0.41) * 0.08;
     sunTarget.updateMatrixWorld();
+    magicSky.update(elapsed);
   }
 
   return { scene, renderer, camera, controls, updateDynamicLighting };

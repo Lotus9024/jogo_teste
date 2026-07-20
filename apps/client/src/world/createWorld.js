@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { M, add } from '../models/unitModels.js';
+import { createMagicTerrain } from './createMagicTerrain.js';
 
-export function createWorld(scene) {
+export function createWorld(scene, renderer) {
   const fireLights=[];
   const flameOuter=new THREE.MeshBasicMaterial({color:0xff6b2d,toneMapped:false});
   const flameCore=new THREE.MeshBasicMaterial({color:0xffd37a,toneMapped:false});
@@ -105,9 +106,9 @@ export function createWorld(scene) {
   
   // A ruined, misty valley frames the game board while keeping every tile clear.
   const environment=new THREE.Group(),wisps=[];
-  const earth=new THREE.MeshStandardMaterial({color:0x444846,emissive:0x080909,emissiveIntensity:.1,roughness:1}),ashStone=new THREE.MeshStandardMaterial({color:0x353c36,roughness:.98}),deadWood=new THREE.MeshStandardMaterial({color:0x463126,emissive:0x080504,emissiveIntensity:.28,roughness:1});
-  const ground=add(new THREE.CircleGeometry(19,72),earth,environment,[0,-.58,0],[-Math.PI/2,0,0],[1,.78,1]);ground.castShadow=false;
-  const groundRing=add(new THREE.RingGeometry(8.8,11.8,72),new THREE.MeshStandardMaterial({color:0x3a3e3c,roughness:1}),environment,[0,-.55,0],[-Math.PI/2,0,0],[1,.82,1]);groundRing.castShadow=false;
+  const {terrain,grass,magicDust,update:updateTerrain}=createMagicTerrain(renderer);
+  environment.add(terrain,grass,magicDust);
+  const ashStone=new THREE.MeshStandardMaterial({color:0x353c36,roughness:.98}),deadWood=new THREE.MeshStandardMaterial({color:0x463126,emissive:0x080504,emissiveIntensity:.28,roughness:1});
   
   function deadTree(x,z,scale=1,twist=0){
     const tree=new THREE.Group();tree.position.set(x,-.52,z);tree.rotation.y=twist;tree.scale.setScalar(scale);
@@ -148,5 +149,5 @@ export function createWorld(scene) {
   scene.add(environment);
   scene.add(board);
 
-  return { board, N, tile, half, alliedKeep, enemyKeep, deck3D, topDeckCard, wisps, fireLights };
+  return { board, N, tile, half, alliedKeep, enemyKeep, deck3D, topDeckCard, wisps, fireLights, updateTerrain };
 }
