@@ -23,7 +23,19 @@ function loadTree(loader, url) {
 function prepareTree(tree) {
   tree.traverse(part => {
     if (!part.isMesh) return;
-    part.castShadow = true;
+    const materials = Array.isArray(part.material) ? part.material : [part.material];
+    const hasLeaves = materials.some(material => material?.name.includes('leaves'));
+    materials.forEach(material => {
+      if (!material?.name.includes('leaves')) return;
+      material.transparent = false;
+      material.alphaTest = 0.42;
+      material.depthWrite = true;
+      material.side = THREE.DoubleSide;
+      material.emissive.setHex(0x183516);
+      material.emissiveIntensity = 0.34;
+      material.needsUpdate = true;
+    });
+    part.castShadow = !hasLeaves;
     part.receiveShadow = true;
     part.frustumCulled = true;
   });
@@ -38,16 +50,16 @@ function prepareTree(tree) {
 function createPlacements() {
   const random = seededRandom(6412);
   const placements = [];
-  const minDistanceSq = 16;
+  const minDistanceSq = 25;
 
-  while (placements.length < 14) {
+  while (placements.length < 12) {
     const angle = random() * Math.PI * 2;
     const radial = 0.73 + random() * 0.19;
     const candidate = {
       x: Math.cos(angle) * 16.8 * radial,
       z: Math.sin(angle) * 14.25 * radial,
       rotation: random() * Math.PI * 2,
-      scale: 0.4 + random() * 0.16,
+      scale: 0.85 + random() * 0.25,
       variant: placements.length % 2
     };
     const tooClose = placements.some(tree => {
