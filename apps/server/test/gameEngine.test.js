@@ -108,6 +108,18 @@ test('guerreiro só anda reto e guarda pode andar na diagonal', () => {
   assert.deepEqual({ x: other.room.state.units[0].x, z: other.room.state.units[0].z }, { x: 5, z: 10 });
 });
 
+test('não consome a ação ao tentar mover para a própria casa', () => {
+  const { rooms, room, first } = match();
+  const unit = { id: 'same-cell', ownerSeat: 1, cardId: 'guard', x: 4, z: 9, hp: 4, shield: 0, actionUsed: false, abilityUsed: false, instantUsedRound: 0, empowered: false };
+  room.state.units.push(unit);
+  assert.throws(
+    () => rooms.action(room.code, first.id, { type: 'move', unitId: unit.id, x: unit.x, z: unit.z }, room.state.version),
+    /Movimento inválido/
+  );
+  assert.equal(unit.actionUsed, false);
+  assert.deepEqual({ x: unit.x, z: unit.z }, { x: 4, z: 9 });
+});
+
 test('guerreiro ataca a até dois blocos de distância', () => {
   const { rooms, room, first } = match();
   room.state.units.push(

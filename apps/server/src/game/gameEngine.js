@@ -165,7 +165,8 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     } else {
     const tower = mountableTowerAt(state, player, card, x, z, unit.id);
     const movementRange = card.move + roadMovementBonus(unit.x, unit.z, state.roads);
-    if (!validCell(x, z) || inBase(x, z) || (unitAt(state, x, z, unit.id) && !tower) || movementDistance(card.movementType, unit, { x, z }) > movementRange) fail('Movimento inválido.');
+    const movementValue = movementDistance(card.movementType, unit, { x, z });
+    if (!validCell(x, z) || inBase(x, z) || movementValue < 1 || movementValue > movementRange || (unitAt(state, x, z, unit.id) && !tower)) fail('Movimento inválido.');
     if (unitBlocksLine(state, unit, { x, z }, unit.id)) fail('O caminho está bloqueado por outra tropa.');
     unit.x = x; unit.z = z; unit.mountedOnTowerId = tower?.id ?? null; unit.actionUsed = true;
     }

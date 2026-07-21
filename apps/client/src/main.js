@@ -169,11 +169,14 @@ function moveDrag(e){
 }
 function finishDrag(e){
   if(!dragged)return;e.preventDefault();e.stopPropagation();dragged.position.y=.06;controls.enabled=true;tileMarker.visible=false;
+  let changedCell=false;
   if(dragMoved){
     const destination={x:Math.round((dragged.position.x+half)/tile),z:Math.round((dragged.position.z+half)/tile),worldX:dragged.position.x,worldZ:dragged.position.z};
-    moveOrAttackUnit(dragged,destination,null,dragged.userData.dragOrigin);
+    const originCell={x:Math.round((dragged.userData.dragOrigin.x+half)/tile),z:Math.round((dragged.userData.dragOrigin.z+half)/tile)};
+    changedCell=destination.x!==originCell.x||destination.z!==originCell.z;
+    if(changedCell)moveOrAttackUnit(dragged,destination,null,dragged.userData.dragOrigin);else dragged.position.copy(dragged.userData.dragOrigin);
   }
-  app.dataset.lastMoved=`${dragged.userData.name}:${dragged.position.x.toFixed(2)},${dragged.position.z.toFixed(2)}`;delete app.dataset.dragging;const wasDrag=dragMoved;justDragged=true;setTimeout(()=>{justDragged=false},0);dragged=null;
+  app.dataset.lastMoved=`${dragged.userData.name}:${dragged.position.x.toFixed(2)},${dragged.position.z.toFixed(2)}`;delete app.dataset.dragging;const wasDrag=dragMoved&&changedCell;justDragged=true;setTimeout(()=>{justDragged=false},0);dragged=null;
   if(wasDrag)clearMovementGrid();else centerCamera();
   if(renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.releasePointerCapture(e.pointerId);
 }
@@ -218,7 +221,7 @@ const hand=document.querySelector('#card-hand');
 hand.innerHTML=cards.map(cardMarkup).join('');
 document.querySelector('#hand-count').textContent=`${hand.children.length} CARTAS`;
 const bottomCommand=document.querySelector('.bottom-command');
-let cardDrag=null,suppressCardClick=false;
+let cardDrag=null,suppressCardClick=false,cardCasting=false;
 function selectedCardElement(){return hand.querySelector('.game-card.selected')}
 function deploymentSeat(){return onlineState?selfSeat:activePlayer}
 function showDeploymentArea(emphasized=false){deploymentOverlay.show(deploymentSeat(),emphasized)}
@@ -243,27 +246,39 @@ function makeSummonedUnit(cardIndex){
   return createCardUnit(cards[cardIndex],cardIndex);
 }
 function summonCard(cardIndex,x,z,mountableTower=null){const card=cards[cardIndex];if(card.id==='road'){reconcileRoads([...roads,{id:`local-road-${roads.length+1}`,ownerSeat:activePlayer,x:Math.round((x+half)/tile),z:Math.round((z+half)/tile)}]);syncLocalKingdomHud();return}const unit=makeSummonedUnit(cardIndex);unit.position.set(x,.06,z);unit.userData.ownerSeat=activePlayer;unit.rotation.y=card.id==='cannon'&&activePlayer===2?Math.PI:0;units.push(unit);hoverables.push(unit);scene.add(unit);if(card.buildRounds){unit.userData.buildReadyRound=round+card.buildRounds;applyConstructionState(unit,true)}if(card.id==='archer'&&mountableTower)mountArcherLocally(unit,mountableTower);else selectUnit(unit,{cinematic:false});syncLocalKingdomHud()}
+const summonFlightPoint=new THREE.Vector3();
+function animateCardSummon(cardNode,tileInfo,onCommit){
+  if(cardCasting)return false;cardCasting=true;
+  const rect=cardNode.getBoundingClientRect(),flight=cardNode.cloneNode(true);flight.classList.remove('selected','aiming');flight.classList.add('summon-card-flight');flight.style.left=`${rect.left}px`;flight.style.top=`${rect.top}px`;flight.style.width=`${rect.width}px`;flight.style.height=`${rect.height}px`;document.body.appendChild(flight);cardNode.classList.remove('aiming');cardNode.classList.add('casting');
+  summonFlightPoint.set(tileInfo.worldX,.5,tileInfo.worldZ).project(camera);const targetX=(summonFlightPoint.x*.5+.5)*innerWidth,targetY=(-summonFlightPoint.y*.5+.5)*innerHeight,dx=targetX-(rect.left+rect.width/2),dy=targetY-(rect.top+rect.height/2),reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  app.dataset.cardFlight='active';let committed=false;const commit=()=>{if(committed)return;committed=true;onCommit()};
+  const keyframes=reduced
+    ? [{transform:'scale(1)',opacity:1},{transform:`translate(${dx}px,${dy}px) scale(.16)`,opacity:0}]
+    : [{transform:'translate(0,0) rotate(0) scale(1)',opacity:1},{offset:.08,transform:'translate(-5px,1px) rotate(-2.4deg) scale(1.015)'},{offset:.16,transform:'translate(5px,-1px) rotate(2.4deg) scale(1.015)'},{offset:.24,transform:'translate(-4px,0) rotate(-1.8deg) scale(1.02)'},{offset:.32,transform:'translate(3px,-8px) rotate(1.2deg) scale(1.03)'},{offset:.72,transform:`translate(${dx*.78}px,${dy*.68-42}px) rotate(-7deg) scale(.72)`,opacity:.95},{transform:`translate(${dx}px,${dy}px) rotate(-14deg) scale(.16)`,opacity:0}];
+  const duration=reduced?180:720,motion=flight.animate(keyframes,{duration,easing:'cubic-bezier(.2,.72,.18,1)',fill:'forwards'});setTimeout(commit,reduced?45:280);
+  motion.finished.catch(()=>{}).finally(()=>{commit();flight.remove();cardNode.classList.remove('casting');cardCasting=false;app.dataset.cardFlight='done';syncBottomCommand()});return true;
+}
 function playSelectedCardAtPointer(e){
   const cardNode=selectedCardElement();if(!cardNode)return false;
   if(onlineState&&onlineState.state.activeSeat!==selfSeat){showGameError('Aguarde o seu turno.');return true}
   const index=Number(cardNode.dataset.card),tileInfo=cardTileAtPointer(e,index);
   if(!tileInfo?.valid){showGameError(cards[index].id==='road'?'Conecte a Rua ao castelo ou a outra Rua do seu reino.':'Escolha uma casa livre a até 2 casas do seu reino.');return true}
-  if(onlineState)sendOnlineAction({type:'summon',cardInstanceId:cardNode.dataset.instance,x:tileInfo.x,z:tileInfo.z});
-  else{summonCard(index,tileInfo.worldX,tileInfo.worldZ,tileInfo.mountableTower);cardNode.remove();document.querySelector('#hand-count').textContent=`${hand.querySelectorAll('.game-card').length} CARTAS`}
+  const launched=animateCardSummon(cardNode,tileInfo,()=>{if(onlineState)sendOnlineAction({type:'summon',cardInstanceId:cardNode.dataset.instance,x:tileInfo.x,z:tileInfo.z});else{summonCard(index,tileInfo.worldX,tileInfo.worldZ,tileInfo.mountableTower);cardNode.remove();document.querySelector('#hand-count').textContent=`${hand.querySelectorAll('.game-card').length} CARTAS`}});if(!launched)return true;
   cardNode.classList.remove('selected');showDeploymentArea(false);syncBottomCommand();return true;
 }
+hand.addEventListener('dragstart',event=>event.preventDefault());
 hand.addEventListener('pointerdown',e=>{
-  const card=e.target.closest('.game-card');if(!card||e.button!==0||onlineState&&onlineState.state.activeSeat!==selfSeat)return;e.preventDefault();cameraTransition.cancel({restoreControls:false});card.setPointerCapture(e.pointerId);controls.enabled=false;
-  cardDrag={card,index:Number(card.dataset.card),instanceId:card.dataset.instance,startX:e.clientX,startY:e.clientY,moved:false,ghost:null,tile:null};showDeploymentArea(true);syncBottomCommand();
+  const card=e.target.closest('.game-card');if(!card||e.button!==0||cardCasting||onlineState&&onlineState.state.activeSeat!==selfSeat)return;e.preventDefault();cameraTransition.cancel({restoreControls:false});card.setPointerCapture(e.pointerId);controls.enabled=false;
+  cardDrag={card,index:Number(card.dataset.card),instanceId:card.dataset.instance,startX:e.clientX,startY:e.clientY,moved:false,tile:null};showDeploymentArea(true);syncBottomCommand();
 });
 addEventListener('pointermove',e=>{
   if(!cardDrag)return;const distance=Math.hypot(e.clientX-cardDrag.startX,e.clientY-cardDrag.startY);if(!cardDrag.moved&&distance<7)return;
-  if(!cardDrag.moved){cardDrag.moved=true;cardDrag.card.classList.add('summoning');cardDrag.ghost=cardDrag.card.cloneNode(true);cardDrag.ghost.classList.remove('selected');cardDrag.ghost.classList.add('summon-card-ghost');document.body.appendChild(cardDrag.ghost)}
-  cardDrag.ghost.style.left=`${e.clientX}px`;cardDrag.ghost.style.top=`${e.clientY}px`;cardDrag.tile=cardTileAtPointer(e,cardDrag.index);tileMarker.visible=Boolean(cardDrag.tile);if(cardDrag.tile){tileMarker.position.set(cardDrag.tile.worldX,.075,cardDrag.tile.worldZ);tileMarker.material.color.setHex(cardDrag.tile.valid?0x6cad78:0xa54239)}
+  if(!cardDrag.moved){cardDrag.moved=true;cardDrag.card.classList.add('aiming')}
+  cardDrag.tile=cardTileAtPointer(e,cardDrag.index);tileMarker.visible=Boolean(cardDrag.tile);if(cardDrag.tile){tileMarker.position.set(cardDrag.tile.worldX,.075,cardDrag.tile.worldZ);tileMarker.material.color.setHex(cardDrag.tile.valid?0x6cad78:0xa54239)}
 });
 addEventListener('pointerup',e=>{
-  if(!cardDrag)return;const drag=cardDrag;cardDrag=null;controls.enabled=true;tileMarker.visible=false;drag.ghost?.remove();drag.card.classList.remove('summoning');
-  if(drag.moved){suppressCardClick=true;if(drag.tile?.valid){if(onlineState)sendOnlineAction({type:'summon',cardInstanceId:drag.instanceId,x:drag.tile.x,z:drag.tile.z});else{summonCard(drag.index,drag.tile.worldX,drag.tile.worldZ,drag.tile.mountableTower);drag.card.remove();document.querySelector('#hand-count').textContent=`${hand.querySelectorAll('.game-card').length} CARTAS`}}setTimeout(()=>{suppressCardClick=false;showDeploymentArea(false);syncBottomCommand()},0)}else{showDeploymentArea(Boolean(selectedCardElement()));syncBottomCommand()}
+  if(!cardDrag)return;const drag=cardDrag;cardDrag=null;controls.enabled=true;tileMarker.visible=false;
+  if(drag.moved){suppressCardClick=true;if(drag.tile?.valid)animateCardSummon(drag.card,drag.tile,()=>{if(onlineState)sendOnlineAction({type:'summon',cardInstanceId:drag.instanceId,x:drag.tile.x,z:drag.tile.z});else{summonCard(drag.index,drag.tile.worldX,drag.tile.worldZ,drag.tile.mountableTower);drag.card.remove();document.querySelector('#hand-count').textContent=`${hand.querySelectorAll('.game-card').length} CARTAS`}});else drag.card.classList.remove('aiming');setTimeout(()=>{suppressCardClick=false;showDeploymentArea(false);syncBottomCommand()},0)}else{drag.card.classList.remove('aiming');showDeploymentArea(Boolean(selectedCardElement()));syncBottomCommand()}
 });
 
 let drawingCard=false,handShift=0,deckRemaining=28,deckHover=false,deckPreviewIndex=0;
