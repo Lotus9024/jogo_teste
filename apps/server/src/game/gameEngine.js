@@ -70,7 +70,7 @@ function damageUnit(state, target, damage) {
 function fireCannonAt(state, cannon, targetCell, card) {
   state.units
     .filter(unit => distance(unit, targetCell) <= card.areaRadius)
-    .forEach(unit => damageUnit(state, unit, card.damage));
+    .forEach(unit => damageUnit(state, unit, distance(unit, targetCell) === 0 ? card.damage : card.areaDamage));
 }
 
 function mountableTowerAt(state, player, card, x, z, movingUnitId = null) {

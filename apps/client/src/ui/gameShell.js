@@ -43,7 +43,7 @@ export function mountGameShell() {
         <div class="command-resource energy" aria-label="Energia"><small>ENERGIA</small><b id="self-energy">10<em>/${GAME_CONFIG.maxEnergy}</em></b></div>
         <button id="end-turn">PASSAR TURNO</button>
         <div class="command-resource health" aria-label="Vida"><small>VIDA</small><b id="self-health">${GAME_CONFIG.startingBaseHp}<em>/${GAME_CONFIG.startingBaseHp}</em></b></div>
-        <div class="command-resource citizens" id="citizen-resource" aria-label="Cidadãos" hidden><small>CIDADÃOS</small><b><span aria-hidden="true">☺</span> <strong id="self-citizens">0</strong></b></div>
+        <div class="command-resource citizens" id="citizen-resource" aria-label="Cidadãos"><small>CIDADÃOS</small><b><span aria-hidden="true">☺</span> <strong id="self-citizens">0</strong></b></div>
       </div>
       <div class="loading"><div class="loader-mark">✦</div><span>PREPARANDO O CAMPO</span></div>
     </main>`;

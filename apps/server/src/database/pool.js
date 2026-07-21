@@ -2,11 +2,16 @@ import pg from 'pg';
 import { config } from '../config.js';
 
 const { Pool } = pg;
+const databaseTls = config.databaseSsl
+  ? config.databaseCertificate
+    ? { cert: config.databaseCertificate, key: config.databaseCertificate, rejectUnauthorized: false }
+    : { rejectUnauthorized: false }
+  : false;
 
 export const pool = config.databaseUrl
   ? new Pool({
       connectionString: config.databaseUrl,
-      ssl: config.databaseSsl ? { rejectUnauthorized: false } : false,
+      ssl: databaseTls,
       max: 10,
       idleTimeoutMillis: 10_000,
       connectionTimeoutMillis: 3_000,

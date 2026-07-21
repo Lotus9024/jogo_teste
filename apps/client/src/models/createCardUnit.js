@@ -53,6 +53,7 @@ export function createCardUnit(card, cardIndex) {
     minAttackRange: card.minAttackRange,
     attackRange: card.attackRange,
     areaRadius: card.areaRadius,
+    areaDamage: card.areaDamage,
     cardType: card.type,
     buildRounds: card.buildRounds,
     cost: card.cost,

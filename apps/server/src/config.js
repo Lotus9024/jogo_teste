@@ -28,5 +28,8 @@ export const config = Object.freeze({
   clientOrigins: Object.freeze(clientOrigins),
   databaseUrl: process.env.DATABASE_URL ?? '',
   migrationDatabaseUrl: process.env.MIGRATION_DATABASE_URL ?? '',
-  databaseSsl: process.env.DATABASE_SSL === 'true'
+  databaseSsl: process.env.DATABASE_SSL === 'true',
+  databaseCertificate: process.env.DATABASE_CERTIFICATE_BASE64
+    ? Buffer.from(process.env.DATABASE_CERTIFICATE_BASE64, 'base64').toString('utf8')
+    : ''
 });

@@ -38,6 +38,12 @@ test('canhão usa frente relativa ao dono e alcance de três a sete casas', () =
   assert.equal(isCannonTargetValid(cannon, { x: 8, z: 5 }), false);
 });
 
+test('canhão separa dano direto do dano em área', () => {
+  assert.equal(CARD_BY_ID.cannon.damage, 4);
+  assert.equal(CARD_BY_ID.cannon.areaDamage, 2);
+  assert.equal(CARD_BY_ID.cannon.areaRadius, 2);
+});
+
 test('ruas formam uma rede conectada ao castelo e não possuem vida', () => {
   const roads = [{ ownerSeat: 1, x: 7, z: 11 }, { ownerSeat: 1, x: 7, z: 10 }, { ownerSeat: 1, x: 2, z: 2 }];
   assert.equal(CARD_BY_ID.road.hp, null);

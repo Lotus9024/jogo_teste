@@ -5,7 +5,12 @@ import pg from 'pg';
 import { config } from '../config.js';
 
 if (!config.migrationDatabaseUrl) throw new Error('Defina MIGRATION_DATABASE_URL antes de executar as migrations.');
-const pool = new pg.Pool({ connectionString: config.migrationDatabaseUrl, ssl: config.databaseSsl ? { rejectUnauthorized: false } : false, max: 2, application_name: 'tronos-migrator' });
+const databaseTls = config.databaseSsl
+  ? config.databaseCertificate
+    ? { cert: config.databaseCertificate, key: config.databaseCertificate, rejectUnauthorized: false }
+    : { rejectUnauthorized: false }
+  : false;
+const pool = new pg.Pool({ connectionString: config.migrationDatabaseUrl, ssl: databaseTls, max: 2, application_name: 'tronos-migrator' });
 
 const migrationDirectory = join(dirname(fileURLToPath(import.meta.url)), 'migrations');
 const client = await pool.connect();

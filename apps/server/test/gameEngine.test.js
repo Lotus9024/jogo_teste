@@ -327,7 +327,7 @@ test('canhão dispara somente para frente entre três e sete casas', () => {
   }
 });
 
-test('explosão do canhão causa dano em área 2 inclusive em aliados', () => {
+test('explosão do canhão causa 4 no impacto e 2 em área inclusive em aliados', () => {
   const { rooms, room, first } = match();
   room.state.units.push(
     { id: 'cannon-area', ownerSeat: 1, cardId: 'cannon', x: 7, z: 9, hp: 2, shield: 0, actionUsed: false, underConstruction: false },
@@ -338,7 +338,8 @@ test('explosão do canhão causa dano em área 2 inclusive em aliados', () => {
     { id: 'safe', ownerSeat: 1, cardId: 'guard', x: 10, z: 5, hp: 8, shield: 0, actionUsed: false }
   );
   rooms.action(room.code, first.id, { type: 'attack', unitId: 'cannon-area', targetUnitId: 'impact' }, room.state.version);
-  for (const id of ['impact', 'enemy-splash', 'ally-splash']) assert.equal(room.state.units.find(unit => unit.id === id).hp, 4);
+  assert.equal(room.state.units.find(unit => unit.id === 'impact').hp, 4);
+  for (const id of ['enemy-splash', 'ally-splash']) assert.equal(room.state.units.find(unit => unit.id === id).hp, 6);
   assert.equal(room.state.units.find(unit => unit.id === 'safe').hp, 8);
 });
 
@@ -380,7 +381,7 @@ test('canhão pode disparar em casa vazia e atingir a área ao redor', () => {
     { id: 'splash-empty', ownerSeat: 2, cardId: 'guard', x: 8, z: 5, hp: 8, shield: 0, actionUsed: false }
   );
   rooms.action(room.code, first.id, { type: 'attack', unitId: 'cannon-empty', x: 7, z: 5 }, room.state.version);
-  assert.equal(room.state.units.find(unit => unit.id === 'splash-empty').hp, 4);
+  assert.equal(room.state.units.find(unit => unit.id === 'splash-empty').hp, 6);
   assert.equal(room.state.units.find(unit => unit.id === 'operator-empty').actionUsed, true);
 });
 
