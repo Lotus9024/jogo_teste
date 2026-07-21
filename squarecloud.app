@@ -4,5 +4,4 @@ VERSION=recommended
 DISPLAY_NAME=Tronos em Ruinas API
 DESCRIPTION=Servidor autoritativo WebSocket de Tronos em Ruinas.
 SUBDOMAIN=tronos-em-ruinas-api
-START=npm run start
 AUTORESTART=true
