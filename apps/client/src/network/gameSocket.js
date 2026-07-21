@@ -1,4 +1,4 @@
-import { CLIENT_EVENTS, SERVER_EVENTS, parseMessage } from '@tronos/shared/protocol';
+import { CLIENT_EVENTS, PROTOCOL_LIMITS, SERVER_EVENTS, parseMessage } from '@tronos/shared/protocol';
 
 export class GameSocketClient extends EventTarget {
   constructor(url = import.meta.env.VITE_WS_URL ?? `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.hostname}:3001/ws`) {
@@ -13,7 +13,7 @@ export class GameSocketClient extends EventTarget {
     this.socket.addEventListener('open', () => this.#emit('connected'));
     this.socket.addEventListener('close', () => this.#emit('disconnected'));
     this.socket.addEventListener('message', ({ data }) => {
-      const message = parseMessage(data);
+      const message = parseMessage(data, { maxBytes: PROTOCOL_LIMITS.serverMessageBytes });
       if (message) this.#emit(message.type, message.payload);
     });
   }

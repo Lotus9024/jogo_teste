@@ -12,10 +12,17 @@ export const SERVER_EVENTS = Object.freeze({
   ERROR: 'server:error'
 });
 
-export function parseMessage(raw) {
+export const PROTOCOL_LIMITS = Object.freeze({
+  clientMessageBytes: 4096,
+  serverMessageBytes: 65536
+});
+
+const encoder = new TextEncoder();
+
+export function parseMessage(raw, { maxBytes = PROTOCOL_LIMITS.serverMessageBytes } = {}) {
   try {
     const source = String(raw);
-    if (source.length > 4096) return null;
+    if (source.length > maxBytes || encoder.encode(source).byteLength > maxBytes) return null;
     const message = JSON.parse(source);
     if (!message || typeof message !== 'object' || Array.isArray(message) || typeof message.type !== 'string') return null;
     if (!Object.values({ ...CLIENT_EVENTS, ...SERVER_EVENTS }).includes(message.type)) return null;

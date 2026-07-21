@@ -1,6 +1,6 @@
 import { WebSocket, WebSocketServer } from 'ws';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
-import { CLIENT_EVENTS, SERVER_EVENTS, encodeMessage, parseMessage } from '@tronos/shared/protocol';
+import { CLIENT_EVENTS, PROTOCOL_LIMITS, SERVER_EVENTS, encodeMessage, parseMessage } from '@tronos/shared/protocol';
 import { config } from '../config.js';
 
 export function createSocketServer(server, rooms) {
@@ -21,7 +21,7 @@ export function createSocketServer(server, rooms) {
     socket.on('message', raw => {
       const now = Date.now(); session.messages = session.messages.filter(timestamp => now - timestamp < 10_000); session.messages.push(now);
       if (session.messages.length > 30) return socket.close(1008, 'Rate limit');
-      const message = parseMessage(raw);
+      const message = parseMessage(raw, { maxBytes: PROTOCOL_LIMITS.clientMessageBytes });
       if (!message) return sendError(socket, 'Mensagem inválida.');
       try {
         if (message.type === CLIENT_EVENTS.ROOM_CREATE) {
