@@ -29,7 +29,8 @@ const dragPoint=new THREE.Vector3();
 const tileMarker=add(new THREE.PlaneGeometry(tile*.9,tile*.9),new THREE.MeshBasicMaterial({color:0xcaa45d,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide}),scene,[0,.075,0],[-Math.PI/2,0,0]);
 tileMarker.visible=false;
 const movementGeometry=new THREE.PlaneGeometry(tile*.82,tile*.82),movementMaterial=new THREE.MeshBasicMaterial({color:0x60b8e8,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide}),attackMaterial=new THREE.MeshBasicMaterial({color:0xff3b2e,transparent:true,opacity:.7,depthWrite:false,side:THREE.DoubleSide}),movementMarkers=[];
-function setAttackHighlight(unit,highlight){const ring=unit.getObjectByName('selectionRing');if(!ring)return;if(ring.userData.baseColor===undefined)ring.userData.baseColor=ring.material.color.getHex();const color=highlight?0xff2d20:ring.userData.baseColor;ring.material.color.setHex(color);ring.material.emissive.setHex(color);ring.material.emissiveIntensity=highlight?1.65:.18;unit.userData.attackHighlighted=highlight}
+function setAttackHighlight(unit,highlight){const ring=unit.getObjectByName('selectionRing');if(!ring)return;if(ring.userData.baseColor===undefined)ring.userData.baseColor=ring.material.color.getHex();const color=highlight?0xff2d20:ring.userData.baseColor;ring.material.color.setHex(color);ring.material.emissive.setHex(color);ring.material.emissiveIntensity=highlight?1.65:(ring.userData.baseEmissiveIntensity??.75);unit.userData.attackHighlighted=highlight}
+function setUnitTeamColor(unit,color){const ring=unit.getObjectByName('selectionRing'),platform=unit.getObjectByName('teamPlatform');[ring,platform].filter(Boolean).forEach(part=>{part.material.color.setHex(color);part.material.emissive.setHex(color)});if(ring){ring.userData.baseColor=color;ring.userData.baseEmissiveIntensity=.9;ring.material.emissiveIntensity=.9}if(platform){platform.userData.baseColor=color;platform.material.emissiveIntensity=.62}}
 function clearMovementGrid(){movementMarkers.splice(0).forEach(marker=>scene.remove(marker));units.filter(unit=>unit.userData.attackHighlighted).forEach(unit=>setAttackHighlight(unit,false));app.dataset.movementTiles='0';app.dataset.attackTiles='0'}
 function addMovementMarker(x,z,material){const marker=new THREE.Mesh(movementGeometry,material);marker.rotation.x=-Math.PI/2;marker.position.set(x*tile-half,.076,z*tile-half);scene.add(marker);movementMarkers.push(marker)}
 function unitAtCell(x,z,exclude=null){return units.find(unit=>unit!==exclude&&Math.round((unit.position.x+half)/tile)===x&&Math.round((unit.position.z+half)/tile)===z)??null}
@@ -60,7 +61,7 @@ function hoverableAtPointer(e){
 }
 function snapToTile(value){return THREE.MathUtils.clamp(Math.round((value+half)/tile)*tile-half,-half,half)}
 function applyConstructionState(unit,underConstruction){unit.userData.underConstruction=underConstruction;if(unit.userData.cardId==='wooden_barrier')setWoodBarrierConstructionState(unit,underConstruction);app.dataset.constructions=String(units.filter(item=>item.userData.underConstruction).length)}
-function selectUnit(u,{cinematic=true}={}){if(selected)selected.getObjectByName('selectionRing').material.emissiveIntensity=.18;selected=u;selected.getObjectByName('selectionRing').material.emissiveIntensity=1.3;showMovementGrid(u);if(cinematic)cameraTransition.focusBoard({side:selfSeat===2?-1:1})}
+function selectUnit(u,{cinematic=true}={}){if(selected){const previousRing=selected.getObjectByName('selectionRing');previousRing.material.emissiveIntensity=previousRing.userData.baseEmissiveIntensity??.75}selected=u;selected.getObjectByName('selectionRing').material.emissiveIntensity=1.6;showMovementGrid(u);if(cinematic)cameraTransition.focusBoard({side:selfSeat===2?-1:1})}
 function pick(e){if(justDragged){justDragged=false;return}const u=unitAtPointer(e);if(u)selectUnit(u)}
 function startDrag(e){
   if(e.button!==0)return;const u=unitAtPointer(e);if(!u)return;
@@ -190,8 +191,8 @@ function renderOnlineHand(instances){
 function onlineUnit(data){
   const index=cards.findIndex(card=>card.id===data.cardId),unit=makeSummonedUnit(index),card=cards[index];
   unit.userData={...unit.userData,serverUnitId:data.id,ownerSeat:data.ownerSeat,cardId:data.cardId,cardIndex:index,hp:data.hp,maxHp:card.hp,actionUsed:data.actionUsed,abilityUsed:data.abilityUsed,buildReadyRound:data.buildReadyRound};
-  const color=data.ownerSeat===1?0x4d91bd:0xb94e45,ring=unit.getObjectByName('selectionRing');ring.material.color.setHex(color);ring.material.emissive.setHex(color);
-  ring.userData.baseColor=color;applyConstructionState(unit,Boolean(data.underConstruction));unit.position.set(data.x*tile-half,.06,data.z*tile-half);return unit;
+  const color=data.ownerSeat===1?0x168cff:0xff352f;setUnitTeamColor(unit,color);
+  applyConstructionState(unit,Boolean(data.underConstruction));unit.position.set(data.x*tile-half,.06,data.z*tile-half);return unit;
 }
 function reconcileOnlineUnits(serverUnits){
   clearMovementGrid();units.splice(0).forEach(unit=>scene.remove(unit));hoverables.splice(0);selected=null;

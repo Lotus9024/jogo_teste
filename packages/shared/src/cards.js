@@ -12,9 +12,9 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'archer', name: 'Arqueiro', description: 'Um arqueiro silencioso que ataca apenas de longe, ele ataca apenas a 3, 4 e 5 blocos de distância de si mesmo, mantendo a distância.',
-    hp: 2, damage: 2, move: 2, movementType: 'any', minAttackRange: 3, attackRange: 5, cost: 4, rarity: 'COMUM', rarityClass: 'common', info: 'HUMANO · ATIRADOR', glyph: '➶',
-    ability: Object.freeze({ name: 'Distância segura', cost: 'PASSIVA', description: 'Ataca somente alvos a 3, 4 ou 5 blocos. Os alvos válidos ficam vermelhos.', enabled: false, passive: true }),
+    id: 'archer', name: 'Arqueiro', description: 'Um arqueiro silencioso que ataca apenas de longe, ele ataca apenas a 3 e 4 blocos de distância de si mesmo, mantendo a distância. Ele ao matar uma criatura não ocupa a posição dela.',
+    hp: 2, damage: 2, move: 2, movementType: 'any', minAttackRange: 3, attackRange: 4, cost: 4, rarity: 'COMUM', rarityClass: 'common', info: 'HUMANO · ATIRADOR', glyph: '➶',
+    ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({

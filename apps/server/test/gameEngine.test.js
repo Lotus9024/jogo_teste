@@ -63,7 +63,10 @@ test('cartas usam os atributos definidos', () => {
     assert.equal(card.ability.enabled, false);
     assert.equal(card.instant.enabled, false);
   });
-  assert.equal(CARD_BY_ID.archer.ability.passive, true);
+  assert.deepEqual(
+    { minAttackRange: CARD_BY_ID.archer.minAttackRange, attackRange: CARD_BY_ID.archer.attackRange, ability: CARD_BY_ID.archer.ability.name },
+    { minAttackRange: 3, attackRange: 4, ability: 'Nenhuma' }
+  );
   assert.equal(CARD_BY_ID.wooden_barrier.buildRounds, 1);
 });
 
@@ -80,7 +83,7 @@ test('guerreiro só anda reto e guarda pode andar na diagonal', () => {
   assert.deepEqual({ x: other.room.state.units[0].x, z: other.room.state.units[0].z }, { x: 5, z: 10 });
 });
 
-test('arqueiro ataca somente a três, quatro ou cinco blocos', () => {
+test('arqueiro ataca somente a três ou quatro blocos e não ocupa a casa da vítima', () => {
   const near = match();
   near.room.state.units.push(
     { id: 'archer-near', ownerSeat: 1, cardId: 'archer', x: 4, z: 9, hp: 2, shield: 0, actionUsed: false, abilityUsed: false },
@@ -99,7 +102,7 @@ test('arqueiro ataca somente a três, quatro ou cinco blocos', () => {
   const edge = match();
   edge.room.state.units.push(
     { id: 'archer-edge', ownerSeat: 1, cardId: 'archer', x: 4, z: 9, hp: 2, shield: 0, actionUsed: false, abilityUsed: false },
-    { id: 'target-edge', ownerSeat: 2, cardId: 'guard', x: 4, z: 14, hp: 4, shield: 0, actionUsed: false, abilityUsed: false }
+    { id: 'target-edge', ownerSeat: 2, cardId: 'guard', x: 4, z: 13, hp: 4, shield: 0, actionUsed: false, abilityUsed: false }
   );
   edge.rooms.action(edge.room.code, edge.first.id, { type: 'attack', unitId: 'archer-edge', targetUnitId: 'target-edge' }, edge.room.state.version);
   assert.equal(edge.room.state.units.find(unit => unit.id === 'target-edge').hp, 2);
@@ -107,9 +110,21 @@ test('arqueiro ataca somente a três, quatro ou cinco blocos', () => {
   const far = match();
   far.room.state.units.push(
     { id: 'archer-far', ownerSeat: 1, cardId: 'archer', x: 4, z: 9, hp: 2, shield: 0, actionUsed: false, abilityUsed: false },
-    { id: 'target-far', ownerSeat: 2, cardId: 'guard', x: 10, z: 9, hp: 4, shield: 0, actionUsed: false, abilityUsed: false }
+    { id: 'target-far', ownerSeat: 2, cardId: 'guard', x: 4, z: 14, hp: 4, shield: 0, actionUsed: false, abilityUsed: false }
   );
   assert.throws(() => far.rooms.action(far.room.code, far.first.id, { type: 'attack', unitId: 'archer-far', targetUnitId: 'target-far' }, far.room.state.version), /fora de alcance/);
+
+  const kill = match();
+  kill.room.state.units.push(
+    { id: 'archer-kill', ownerSeat: 1, cardId: 'archer', x: 4, z: 9, hp: 2, shield: 0, actionUsed: false, abilityUsed: false },
+    { id: 'target-kill', ownerSeat: 2, cardId: 'guard', x: 4, z: 12, hp: 2, shield: 0, actionUsed: false, abilityUsed: false }
+  );
+  kill.rooms.action(kill.room.code, kill.first.id, { type: 'attack', unitId: 'archer-kill', targetUnitId: 'target-kill' }, kill.room.state.version);
+  assert.equal(kill.room.state.units.some(unit => unit.id === 'target-kill'), false);
+  assert.deepEqual(
+    { x: kill.room.state.units.find(unit => unit.id === 'archer-kill').x, z: kill.room.state.units.find(unit => unit.id === 'archer-kill').z },
+    { x: 4, z: 9 }
+  );
 });
 
 test('barreira permanece em construção durante uma rodada', () => {
