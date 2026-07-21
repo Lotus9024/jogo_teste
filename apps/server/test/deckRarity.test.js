@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CARD_BY_ID } from '@tronos/shared/cards';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
-import { createDeck, rarityForRoll } from '../src/game/createInitialState.js';
+import { createDeck, drawCard, rarityForRoll } from '../src/game/createInitialState.js';
 
 test('sorteia cartas comuns e incomuns na proporção de dois para um', () => {
   const rarityRolls = Array.from({ length: GAME_CONFIG.deckSize }, (_, index) => index % 3);
@@ -35,4 +35,12 @@ test('nível dois usa chances 60% comum, 30% incomum e 10% rara', () => {
   let call = 0;
   const deck = createDeck(max => (call++ % 2 === 0 ? 9 : 0) % max, 2, 1);
   assert.deepEqual(deck, ['mage']);
+});
+
+test('renova o baralho quando ele acaba e continua comprando cartas', () => {
+  const player = { baseLevel: 2, hand: [], deck: [] };
+  assert.equal(drawCard(player), true);
+  assert.equal(player.hand.length, 1);
+  assert.equal(player.deck.length, GAME_CONFIG.deckSize - 1);
+  assert.ok(CARD_BY_ID[player.hand[0].cardId]);
 });

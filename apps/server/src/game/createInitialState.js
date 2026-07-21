@@ -23,7 +23,8 @@ export function createDeck(random = randomInt, level = 1, size = GAME_CONFIG.dec
 }
 
 export function drawCard(player) {
-  if (player.hand.length >= GAME_CONFIG.maxHandSize || !player.deck.length) return false;
+  if (player.hand.length >= GAME_CONFIG.maxHandSize) return false;
+  if (!player.deck.length) player.deck = createDeck(undefined, player.baseLevel ?? 1);
   player.hand.push({ instanceId: randomUUID(), cardId: player.deck.shift() });
   return true;
 }

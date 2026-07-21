@@ -62,7 +62,7 @@ test('cartas usam os atributos definidos', () => {
     {
       warrior: { hp: 3, damage: 2, move: 2, movementType: 'straight', cost: 4 },
       guard: { hp: 4, damage: 1, move: 1, movementType: 'any', cost: 4 },
-      archer: { hp: 2, damage: 2, move: 2, movementType: 'any', cost: 6 },
+      archer: { hp: 2, damage: 2, move: 1, movementType: 'any', cost: 6 },
       wooden_barrier: { hp: 2, damage: 0, move: 0, movementType: 'none', cost: 4 },
       tower: { hp: 5, damage: 0, move: 0, movementType: 'none', cost: 7 },
       operator: { hp: 1, damage: 0, move: 1, movementType: 'any', cost: 3 },
@@ -254,6 +254,24 @@ test('arqueiro ataca somente a três ou quatro blocos e não ocupa a casa da ví
   );
 });
 
+test('arqueiro ataca o castelo inimigo quando está no alcance', () => {
+  const { rooms, room, first } = match();
+  room.state.units.push({ id: 'archer-base', ownerSeat: 1, cardId: 'archer', x: 7, z: 5, hp: 2, shield: 0, actionUsed: false, abilityUsed: false });
+  rooms.action(room.code, first.id, { type: 'attack', unitId: 'archer-base', targetBaseSeat: 2 }, room.state.version);
+  assert.equal(room.state.players[1].baseHp, 8);
+});
+
+test('arqueiro na torre ataca através de unidades à frente', () => {
+  const { rooms, room, first } = match();
+  room.state.units.push(
+    { id: 'tower-shot', ownerSeat: 1, cardId: 'tower', x: 7, z: 5, hp: 5, shield: 0, actionUsed: false, underConstruction: false },
+    { id: 'archer-tower-shot', ownerSeat: 1, cardId: 'archer', x: 7, z: 5, hp: 2, shield: 0, actionUsed: false, mountedOnTowerId: 'tower-shot' },
+    { id: 'tower-shot-blocker', ownerSeat: 1, cardId: 'guard', x: 7, z: 4, hp: 4, shield: 0, actionUsed: false }
+  );
+  rooms.action(room.code, first.id, { type: 'attack', unitId: 'archer-tower-shot', targetBaseSeat: 2 }, room.state.version);
+  assert.equal(room.state.players[1].baseHp, 8);
+});
+
 test('barreira permanece em construção durante uma rodada', () => {
   const { rooms, room, first, second } = match();
   room.state.players[0].hand.push({ instanceId: 'barrier-card', cardId: 'wooden_barrier' });
@@ -329,7 +347,7 @@ test('arqueiro pode subir na torre e recebe mais um de alcance', () => {
   const { rooms, room, first } = match();
   room.state.units.push(
     { id: 'tower-built', ownerSeat: 1, cardId: 'tower', x: 6, z: 10, hp: 5, shield: 0, actionUsed: false, underConstruction: false },
-    { id: 'archer-mount', ownerSeat: 1, cardId: 'archer', x: 6, z: 8, hp: 2, shield: 0, actionUsed: false, instantUsedRound: 0 },
+    { id: 'archer-mount', ownerSeat: 1, cardId: 'archer', x: 6, z: 9, hp: 2, shield: 0, actionUsed: false, instantUsedRound: 0 },
     { id: 'range-five', ownerSeat: 2, cardId: 'guard', x: 6, z: 5, hp: 4, shield: 0, actionUsed: false }
   );
   rooms.action(room.code, first.id, { type: 'move', unitId: 'archer-mount', x: 6, z: 10 }, room.state.version);
@@ -396,7 +414,7 @@ test('canhão dispara somente para frente entre três e sete casas', () => {
   }
 });
 
-test('explosão do canhão causa 4 no impacto e 2 em área inclusive em aliados', () => {
+test('explosão do canhão causa 4 no impacto e 1 em área inclusive em aliados', () => {
   const { rooms, room, first } = match();
   room.state.units.push(
     { id: 'cannon-area', ownerSeat: 1, cardId: 'cannon', x: 7, z: 9, hp: 2, shield: 0, actionUsed: false, underConstruction: false },
@@ -408,7 +426,7 @@ test('explosão do canhão causa 4 no impacto e 2 em área inclusive em aliados'
   );
   rooms.action(room.code, first.id, { type: 'attack', unitId: 'cannon-area', targetUnitId: 'impact' }, room.state.version);
   assert.equal(room.state.units.find(unit => unit.id === 'impact').hp, 4);
-  for (const id of ['enemy-splash', 'ally-splash']) assert.equal(room.state.units.find(unit => unit.id === id).hp, 6);
+  for (const id of ['enemy-splash', 'ally-splash']) assert.equal(room.state.units.find(unit => unit.id === id).hp, 7);
   assert.equal(room.state.units.find(unit => unit.id === 'safe').hp, 8);
 });
 
@@ -450,7 +468,7 @@ test('canhão pode disparar em casa vazia e atingir a área ao redor', () => {
     { id: 'splash-empty', ownerSeat: 2, cardId: 'guard', x: 8, z: 5, hp: 8, shield: 0, actionUsed: false }
   );
   rooms.action(room.code, first.id, { type: 'attack', unitId: 'cannon-empty', x: 7, z: 5 }, room.state.version);
-  assert.equal(room.state.units.find(unit => unit.id === 'splash-empty').hp, 6);
+  assert.equal(room.state.units.find(unit => unit.id === 'splash-empty').hp, 7);
   assert.equal(room.state.units.find(unit => unit.id === 'operator-empty').actionUsed, true);
 });
 

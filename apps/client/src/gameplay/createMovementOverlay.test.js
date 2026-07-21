@@ -34,3 +34,29 @@ test('casas ocupadas ou atrás de uma tropa não recebem marca verde nem vermelh
   assert.equal(overlay.isInteractiveCell(7, 5), false);
   assert.equal(app.dataset.attackTiles, '0');
 });
+
+test('arqueiro montado marca alvos e castelo mesmo com uma unidade à frente', () => {
+  const scene = new THREE.Scene();
+  const app = { dataset: {} };
+  const source = unit('mounted-archer', 1, 5, 5);
+  Object.assign(source.userData, { cardId: 'archer', move: 1, movementType: 'any', minAttackRange: 3, attackRange: 5, mountedOnTowerId: 'tower-1' });
+  const tower = unit('tower-1', 1, 5, 5);
+  tower.userData.cardId = 'tower';
+  const blocker = unit('blocker', 1, 5, 4);
+  const enemy = unit('enemy', 2, 5, 2);
+  const units = [source, tower, blocker, enemy];
+  const overlay = createMovementOverlay({
+    scene, app, units, tile: 1, half: 0,
+    unitAtCell: (x, z, excluded) => units.find(candidate => candidate !== excluded && candidate.position.x === x && candidate.position.z === z),
+    baseSeatAtCell: () => null,
+    baseCellsForSeat: seat => seat === 2 ? [{ x: 6, z: 2 }] : [],
+    getRoads: () => [],
+    getMatchContext: () => ({ onlineState: { state: { activeSeat: 1 } }, selfSeat: 1, devMode: false })
+  });
+
+  overlay.show(source);
+  assert.equal(overlay.isInteractiveCell(5, 2), true);
+  assert.equal(overlay.isInteractiveCell(6, 2), true);
+  assert.equal(app.dataset.movementTiles, '0');
+  assert.equal(app.dataset.attackTiles, '2');
+});

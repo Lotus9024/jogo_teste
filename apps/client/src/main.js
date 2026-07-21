@@ -108,6 +108,12 @@ function boardCellAtPointer(e){
   const worldX=snapToTile(dragPoint.x),worldZ=snapToTile(dragPoint.z);
   return{x:Math.round((worldX+half)/tile),z:Math.round((worldZ+half)/tile),worldX,worldZ};
 }
+function baseSeatAtPointer(e){
+  const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;ray.setFromCamera(pointer,camera);
+  if(ray.intersectObject(alliedKeep,true).length)return 1;
+  if(ray.intersectObject(enemyKeep,true).length)return 2;
+  return null;
+}
 function removeLocalUnit(unit){
   const removedTowerId=towerId(unit);units.splice(units.indexOf(unit),1);hoverables.splice(hoverables.indexOf(unit),1);scene.remove(unit);
   units.filter(candidate=>candidate.userData.mountedOnTowerId===removedTowerId).forEach(candidate=>{candidate.userData.mountedOnTowerId=null;candidate.userData.attackRange=CARD_BY_ID[candidate.userData.cardId].attackRange;candidate.position.y=.06;setArcherMountedState(candidate,false)});
@@ -140,7 +146,8 @@ function moveOrAttackUnit(unit,destination,explicitTarget=null,originPosition=un
   const cannonMove=unit.userData.cardId==='cannon'&&destination.x===origin.x+forward.x&&destination.z===origin.z+forward.z;
   if(isMountedArcher(unit)&&!hostileTarget&&!baseTarget){unit.position.copy(originPosition);showGameError('O arqueiro na torre não pode se mover.');return}
   const blockedByUnit=gridCellsBetween(origin,destination).some(cell=>unitAtCell(cell.x,cell.z,unit));
-  if(blockedByUnit){unit.position.copy(originPosition);return}
+  const mountedShot=isMountedArcher(unit)&&(hostileTarget||baseTarget);
+  if(blockedByUnit&&!mountedShot){unit.position.copy(originPosition);return}
   if(onlineState){
     unit.position.copy(originPosition);
     if(mountable)return sendOnlineAction({type:'move',unitId:unit.userData.serverUnitId,...destination});
@@ -189,6 +196,8 @@ function toggleMageFireCell(destination){
 function pick(e){
   if(justDragged){justDragged=false;return}
   if(selectedCardElement())return playSelectedCardAtPointer(e);
+  const clickedBaseSeat=selected&&canCommandUnit(selected)?baseSeatAtPointer(e):null,enemySeat=selected?.userData.ownerSeat===1?2:1;
+  if(clickedBaseSeat===enemySeat){const cell=baseCellsForSeat(clickedBaseSeat).find(item=>movementOverlay.isInteractiveCell(item.x,item.z));if(cell){moveOrAttackUnit(selected,{...cell,worldX:cell.x*tile-half,worldZ:cell.z*tile-half});clearMovementGrid();return}}
   const u=unitAtPointer(e),destination=boardCellAtPointer(e);
   if(mageAiming&&selected?.userData.cardId==='mage'&&destination){toggleMageFireCell(destination);return}
   if(selected&&canCommandUnit(selected)&&destination&&u!==selected){if(!movementOverlay.isInteractiveCell(destination.x,destination.z)){if(u)selectUnit(u);return}moveOrAttackUnit(selected,destination,u);clearMovementGrid();return}

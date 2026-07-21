@@ -55,6 +55,10 @@ function attackCard(state, unit, card) {
   return card.id === 'archer' && mountedTower(state, unit) ? { ...card, attackRange: card.attackRange + 1 } : card;
 }
 
+function attackIgnoresUnits(state, unit, card) {
+  return card.id === 'archer' && Boolean(mountedTower(state, unit));
+}
+
 function damageUnit(state, target, damage) {
   const absorbed = Math.min(target.shield ?? 0, damage);
   target.shield = (target.shield ?? 0) - absorbed;
@@ -225,7 +229,7 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     if (action.targetUnitId) {
       const target = state.units.find(item => item.id === action.targetUnitId && (card.id === 'cannon' || item.ownerSeat !== player.seat) && item.id !== unit.id) ?? fail('Alvo inválido.');
       if (card.id === 'cannon' ? !isCannonTargetValid(unit, target) : !isAttackDistanceValid(card, distance(unit, target))) fail('Alvo fora de alcance.');
-      if (unitBlocksLine(state, unit, target, unit.id)) fail('A linha de ataque está bloqueada por outra tropa.');
+      if (!attackIgnoresUnits(state, unit, card) && unitBlocksLine(state, unit, target, unit.id)) fail('A linha de ataque está bloqueada por outra tropa.');
       if (card.id === 'cannon') {
         fireCannonAt(state, unit, target, card);
         operator.actionUsed = true;
@@ -241,7 +245,7 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
       fireCannonAt(state, unit, targetCell, card);
       operator.actionUsed = true;
     } else if (action.targetBaseSeat === opponent.seat) {
-      const reachableBaseCells = baseCells(opponent.seat).filter(cell => (card.id === 'cannon' ? isCannonTargetValid(unit, cell) : isAttackDistanceValid(card, distance(unit, cell))) && !unitBlocksLine(state, unit, cell, unit.id));
+      const reachableBaseCells = baseCells(opponent.seat).filter(cell => (card.id === 'cannon' ? isCannonTargetValid(unit, cell) : isAttackDistanceValid(card, distance(unit, cell))) && (attackIgnoresUnits(state, unit, card) || !unitBlocksLine(state, unit, cell, unit.id)));
       const cannonBaseCell = card.id === 'cannon' ? reachableBaseCells[0] : null;
       if (!reachableBaseCells.length) fail('Base fora de alcance ou linha de ataque bloqueada.');
       opponent.baseHp = Math.max(0, opponent.baseHp - damage);

@@ -40,7 +40,7 @@ test('canhão usa frente relativa ao dono e alcance de três a sete casas', () =
 
 test('canhão separa dano direto do dano em área', () => {
   assert.equal(CARD_BY_ID.cannon.damage, 4);
-  assert.equal(CARD_BY_ID.cannon.areaDamage, 2);
+  assert.equal(CARD_BY_ID.cannon.areaDamage, 1);
   assert.equal(CARD_BY_ID.cannon.areaRadius, 2);
 });
 
