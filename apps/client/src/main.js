@@ -10,15 +10,15 @@ import { createDeploymentOverlay } from './gameplay/createDeploymentOverlay.js';
 import { createDamageEffects } from './gameplay/damageEffects.js';
 import { createMovementOverlay } from './gameplay/createMovementOverlay.js';
 import { applyConstructionState as applyUnitConstructionState, isMountedArcher, setUnitTeamColor } from './gameplay/unitState.js';
-import { createCardUnit, UNIT_MODEL_SCALE } from './models/createCardUnit.js';
-import { makeArcher, makeGuard, makeWarrior, setArcherMountedState } from './models/unitModels.js';
+import { createCardUnit } from './models/createCardUnit.js';
+import { setArcherMountedState } from './models/unitModels.js';
 import { makeRoad } from './assets/models/roadModel.js';
 import { makeFireHazard } from './assets/models/fireHazardModel.js';
 import { GameSocketClient, SERVER_EVENTS } from './network/gameSocket.js';
 import { mountGameShell } from './ui/gameShell.js';
 import { cardMarkup, cards, hideDeckPreview as hideCardPreview, showDeckPreview } from './ui/cardView.js';
 import { setResource } from './ui/resourceView.js';
-import { ensureHealthBadge, updateHealthBadge } from './ui/unitHealthBadge.js';
+import { updateHealthBadge } from './ui/unitHealthBadge.js';
 import { createWorld } from './world/createWorld.js';
 import './style.css';
 
@@ -33,8 +33,8 @@ const { board, tile, half, alliedKeep, enemyKeep, deck3D, topDeckCard, wisps, fi
 
 // Each miniature is snapped to the exact center of a tile. Scale 0.64 keeps
 // even the outermost weapon silhouette inside the 1.08 × 1.08 footprint.
-const units=[makeWarrior(),makeGuard(),makeArcher()]; units[0].position.set(-2.16,.06,0);units[1].position.set(0,.06,0);units[2].position.set(2.16,.06,0);units.forEach((u,cardIndex)=>{const card=cards[cardIndex];u.scale.setScalar(UNIT_MODEL_SCALE);Object.assign(u.userData,{hoverable:true,cardId:card.id,cardIndex,hp:card.hp,maxHp:card.hp,damage:card.damage,move:card.move,movementType:card.movementType,minAttackRange:card.minAttackRange,attackRange:card.attackRange,cardType:card.type,cost:card.cost,ability:card.ability,abilityUsed:false,description:card.abilityText});ensureHealthBadge(u);scene.add(u)});
-const hoverables=[...units];
+const units=[];
+const hoverables=[];
 const roads=[];const roadMeshes=[];const fires=[];const fireMeshes=[];
 const { unitAtCell, unitsAtCell, baseSeatAtCell, baseCellsForSeat, snapToTile } = createBoardCoordinates({ getUnits: () => units, tile, half });
 
@@ -75,12 +75,12 @@ function hoverableAtPointer(e){
   const hits=ray.intersectObjects(hoverables,true);if(!hits.length)return null;let o=hits[0].object;while(o.parent&&!o.userData.hoverable)o=o.parent;return o.userData.hoverable?o:null;
 }
 function applyConstructionState(unit,underConstruction){applyUnitConstructionState(unit,underConstruction,units,app)}
-const instantButton=document.querySelector('#activate-instant'),mageCommands=document.querySelector('#mage-commands'),mageFireButton=document.querySelector('#mage-fire-command'),mageAcidButton=document.querySelector('#mage-acid-command');
+const instantButton=document.querySelector('#activate-instant'),mageCommands=document.querySelector('#mage-commands'),mageFireButton=document.querySelector('#mage-fire-command'),mageAcidButton=document.querySelector('#mage-acid-command'),devUnitTools=document.querySelector('#dev-unit-tools');
 const towerId=unit=>unit.userData.serverUnitId??unit.uuid;
 function towerForArcher(unit){return unit?.userData.cardId==='archer'&&unit.userData.mountedOnTowerId?units.find(candidate=>towerId(candidate)===unit.userData.mountedOnTowerId&&candidate.userData.cardId==='tower'&&!candidate.userData.underConstruction):null}
 function currentRound(){return onlineState?.state.round??round}
 function syncInstantCommand(){
-  const tower=towerForArcher(selected),owned=devMode||selected?.userData.ownerSeat===selfSeat,available=tower&&owned;
+  const tower=towerForArcher(selected),owned=devMode?selected?.userData.ownerSeat===activePlayer:selected?.userData.ownerSeat===selfSeat,available=tower&&owned;
   instantButton.hidden=!available;if(!available)return;
   const me=onlineState?.state.players.find(player=>player.seat===selfSeat),used=selected.userData.instantUsedRound===currentRound();
   instantButton.disabled=used||Boolean(me&&me.energy<CARD_BY_ID.tower.instant.cost);
@@ -93,14 +93,15 @@ function showMageTargets(){
   for(let dx=-4;dx<=4;dx++)for(let dz=-4;dz<=4;dz++){const value=Math.abs(dx)+Math.abs(dz),x=origin.x+dx,z=origin.z+dz;if(value<1||value>4||x<0||x>=GAME_CONFIG.boardSize||z<0||z>=GAME_CONFIG.boardSize)continue;const marker=new THREE.Mesh(mageTargetGeometry,chosen.has(cellKey(x,z))?mageChosenMaterial:mageTargetMaterial);marker.rotation.x=-Math.PI/2;marker.position.set(x*tile-half,.082,z*tile-half);scene.add(marker);mageTargetMarkers.push(marker)}
 }
 function syncMageCommands(){
-  const owned=devMode||selected?.userData.ownerSeat===selfSeat,available=selected?.userData.cardId==='mage'&&owned;mageCommands.hidden=!available;if(!available){clearMageTargets();return}
+  const owned=devMode?selected?.userData.ownerSeat===activePlayer:selected?.userData.ownerSeat===selfSeat,available=selected?.userData.cardId==='mage'&&owned;mageCommands.hidden=!available;if(!available){clearMageTargets();return}
   const me=onlineState?.state.players.find(player=>player.seat===selfSeat),unavailable=Boolean(onlineState&&(onlineState.state.activeSeat!==selfSeat||selected.userData.actionUsed));
   mageFireButton.disabled=unavailable;mageAcidButton.disabled=unavailable||selected.userData.abilityUsed||Boolean(me&&me.energy<CARD_BY_ID.mage.ability.cost);
   mageFireButton.textContent=!mageAiming?'CONJURAR FOGO':mageFireCells.length?`LANÇAR FOGO · ${mageFireCells.length}/2`:'ESCOLHA 1 OU 2 CASAS';
 }
-function clearUnitSelection(){if(!selected)return;const ring=selected.getObjectByName('selectionRing');if(ring)ring.material.emissiveIntensity=ring.userData.baseEmissiveIntensity??.75;selected=null;clearMovementGrid();clearMageTargets();syncInstantCommand();syncMageCommands()}
+function syncDevUnitTools(){const visible=devMode&&Boolean(selected);devUnitTools.hidden=!visible;if(!visible)return;document.querySelector('#dev-unit-name').textContent=selected.userData.name;document.querySelectorAll('[data-unit-level]').forEach(button=>button.setAttribute('aria-pressed',String(Number(button.dataset.unitLevel)===(selected.userData.devLevel??1))))}
+function clearUnitSelection(){if(!selected)return;const ring=selected.getObjectByName('selectionRing');if(ring)ring.material.emissiveIntensity=ring.userData.baseEmissiveIntensity??.75;selected=null;clearMovementGrid();clearMageTargets();syncInstantCommand();syncMageCommands();syncDevUnitTools()}
 function centerCamera(){if(cameraCentering)cameraTransition.focusBoard({side:selfSeat===2?-1:1})}
-function selectUnit(u,{cinematic=true}={}){if(selected!==u)clearMageTargets();if(selected){const previousRing=selected.getObjectByName('selectionRing');if(previousRing)previousRing.material.emissiveIntensity=previousRing.userData.baseEmissiveIntensity??.75}selected=u;const ring=selected.getObjectByName('selectionRing');if(ring)ring.material.emissiveIntensity=1.6;showMovementGrid(u);syncInstantCommand();syncMageCommands();if(cinematic)centerCamera()}
+function selectUnit(u,{cinematic=true}={}){if(selected!==u)clearMageTargets();if(selected){const previousRing=selected.getObjectByName('selectionRing');if(previousRing)previousRing.material.emissiveIntensity=previousRing.userData.baseEmissiveIntensity??.75}selected=u;const ring=selected.getObjectByName('selectionRing');if(ring)ring.material.emissiveIntensity=1.6;showMovementGrid(u);syncInstantCommand();syncMageCommands();syncDevUnitTools();if(cinematic)centerCamera()}
 function boardCellAtPointer(e){
   const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;ray.setFromCamera(pointer,camera);
   if(!ray.ray.intersectPlane(boardPlane,dragPoint)||Math.abs(dragPoint.x)>half+tile/2||Math.abs(dragPoint.z)>half+tile/2)return null;
@@ -120,7 +121,7 @@ function resolveLocalFires(endingSeat){
   fires.filter(fire=>fire.ownerSeat!==endingSeat).forEach(fire=>{const occupant=unitAtCell(fire.x,fire.z);if(occupant&&!fire.damagedUnitIds.includes(occupant.uuid))damageLocalUnit(occupant,1)});
   reconcileFires(fires.filter(fire=>fire.ownerSeat===endingSeat));
 }
-function canCommandUnit(unit){return Boolean(unit&&(devMode||onlineState&&unit.userData.ownerSeat===selfSeat&&onlineState.state.activeSeat===selfSeat&&!unit.userData.actionUsed))}
+function canCommandUnit(unit){return Boolean(unit&&(devMode?unit.userData.ownerSeat===activePlayer:onlineState&&unit.userData.ownerSeat===selfSeat&&onlineState.state.activeSeat===selfSeat&&!unit.userData.actionUsed))}
 function placeArcherOnTower(unit,tower){
   const mount=tower.getObjectByName('archerMount');tower.updateMatrixWorld(true);
   if(mount)unit.position.copy(mount.getWorldPosition(archerMountPoint));else unit.position.set(tower.position.x,.94,tower.position.z);
@@ -196,6 +197,7 @@ function pick(e){
 function startDrag(e){
   if(e.button!==0)return;const u=unitAtPointer(e);if(!u)return;
   if(selectedCardElement()||(selected&&selected!==u&&canCommandUnit(selected)))return;
+  if(devMode&&u.userData.ownerSeat!==activePlayer){selectUnit(u,{cinematic:false});return showGameError('Passe o turno para controlar este reino.');}
   if(u.userData.cardType==='construction'||u.userData.underConstruction)return showGameError(u.userData.underConstruction?'A construção ainda não foi concluída.':'Esta construção não pode se mover.');
   if(isMountedArcher(u)){selectUnit(u,{cinematic:false});return}
   if(onlineState&&(u.userData.ownerSeat!==selfSeat||onlineState.state.activeSeat!==selfSeat||u.userData.actionUsed))return;
@@ -237,9 +239,12 @@ renderer.domElement.addEventListener('pointerup',finishDrag,true);
 renderer.domElement.addEventListener('pointercancel',finishDrag,true);
 renderer.domElement.addEventListener('pointerleave',()=>hoverCard.classList.remove('visible'));
 
-let activePlayer=1,round=1;
+let activePlayer=1,round=1,devCardLevel=1,devInstantBuild=false;
+const devKingdoms={1:{baseLevel:1,baseSize:1,hp:GAME_CONFIG.startingBaseHp},2:{baseLevel:1,baseSize:1,hp:GAME_CONFIG.startingBaseHp}};
+const keepForSeat=seat=>seat===1?alliedKeep:enemyKeep;
 const settingsModal=document.querySelector('#settings-modal'),settingsToggle=document.querySelector('#settings-toggle'),settingsClose=document.querySelector('#settings-close');let restoreControlsAfterSettings=true;
-function syncSettingsButtons(){document.querySelectorAll('[data-graphics]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.graphics===graphicsQuality)));document.querySelectorAll('[data-camera-centering]').forEach(button=>button.setAttribute('aria-pressed',String((button.dataset.cameraCentering==='true')===cameraCentering)))}
+function syncDevSettings(){if(!devMode)return;const kingdom=devKingdoms[activePlayer];document.querySelector('#dev-base-size').textContent=String(kingdom.baseSize);document.querySelectorAll('[data-base-level]').forEach(button=>button.setAttribute('aria-pressed',String(Number(button.dataset.baseLevel)===kingdom.baseLevel)));document.querySelectorAll('[data-dev-settings] [data-card-level]').forEach(button=>button.setAttribute('aria-pressed',String(Number(button.dataset.cardLevel)===devCardLevel)));document.querySelector('#dev-instant-build').setAttribute('aria-pressed',String(devInstantBuild));document.querySelector('#dev-instant-build').textContent=devInstantBuild?'LIGADO':'DESLIGADO'}
+function syncSettingsButtons(){document.querySelectorAll('[data-graphics]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.graphics===graphicsQuality)));document.querySelectorAll('[data-camera-centering]').forEach(button=>button.setAttribute('aria-pressed',String((button.dataset.cameraCentering==='true')===cameraCentering)));syncDevSettings()}
 function persistSettings(){saveGameSettings({graphics:graphicsQuality,cameraCentering})}
 function applyGraphicsQuality(nextQuality){graphicsQuality=nextQuality;setSceneGraphicsQuality(nextQuality);setWorldGraphicsQuality(nextQuality);resize();persistSettings();syncSettingsButtons()}
 function openSettings(){restoreControlsAfterSettings=controls.enabled;controls.enabled=false;settingsModal.hidden=false;syncSettingsButtons();settingsClose.focus()}
@@ -248,10 +253,21 @@ settingsToggle.addEventListener('click',openSettings);settingsClose.addEventList
 document.querySelectorAll('[data-graphics]').forEach(button=>button.addEventListener('click',()=>applyGraphicsQuality(button.dataset.graphics)));
 document.querySelectorAll('[data-camera-centering]').forEach(button=>button.addEventListener('click',()=>{cameraCentering=button.dataset.cameraCentering==='true';if(!cameraCentering)cameraTransition.cancel();persistSettings();syncSettingsButtons()}));
 addEventListener('keydown',event=>{if(event.key==='Escape'&&!settingsModal.hidden)closeSettings()});syncSettingsButtons();
+function resizeDevBase(delta){const kingdom=devKingdoms[activePlayer];kingdom.baseSize=THREE.MathUtils.clamp(kingdom.baseSize+delta,1,6);keepForSeat(activePlayer).scale.setScalar(.85+kingdom.baseSize*.15);syncDevSettings()}
+document.querySelector('#dev-base-size-minus').addEventListener('click',()=>resizeDevBase(-1));document.querySelector('#dev-base-size-plus').addEventListener('click',()=>resizeDevBase(1));
+document.querySelectorAll('[data-base-level]').forEach(button=>button.addEventListener('click',()=>{devKingdoms[activePlayer].baseLevel=Number(button.dataset.baseLevel);syncDevKingdomHud()}));
+document.querySelectorAll('[data-dev-settings] [data-card-level]').forEach(button=>button.addEventListener('click',()=>{devCardLevel=Number(button.dataset.cardLevel);syncDevSettings();if(!gallery.hidden)renderDevGallery();if(!galleryDetail.hidden)showDevCardDetail(galleryCardIndex)}));
+document.querySelector('#dev-instant-build').addEventListener('click',()=>{devInstantBuild=!devInstantBuild;if(devInstantBuild)units.filter(unit=>unit.userData.ownerSeat===activePlayer&&unit.userData.underConstruction).forEach(unit=>applyConstructionState(unit,false));syncDevSettings();syncDevKingdomHud()});
+function removeDevUnit(unit){if(!unit)return;const removedId=towerId(unit);units.splice(units.indexOf(unit),1);hoverables.splice(hoverables.indexOf(unit),1);scene.remove(unit);units.filter(candidate=>candidate.userData.mountedOnTowerId===removedId).forEach(candidate=>{candidate.userData.mountedOnTowerId=null;candidate.userData.attackRange=CARD_BY_ID[candidate.userData.cardId].attackRange;candidate.position.y=.06;setArcherMountedState(candidate,false)});if(selected===unit)clearUnitSelection();syncDevKingdomHud()}
+document.querySelector('#dev-delete-unit').addEventListener('click',()=>{if(devMode)removeDevUnit(selected)});
+document.querySelectorAll('[data-unit-level]').forEach(button=>button.addEventListener('click',()=>{if(!devMode||!selected)return;const level=Number(button.dataset.unitLevel),card=cards[selected.userData.cardIndex],multiplier=1+(level-1)*.25;selected.userData.devLevel=level;if(card.hp!==null){selected.userData.maxHp=Math.ceil(card.hp*multiplier);selected.userData.hp=selected.userData.maxHp;updateHealthBadge(selected)}selected.userData.damage=Math.ceil((card.damage??0)*multiplier);syncDevUnitTools()}));
+document.querySelector('#dev-clear-board').addEventListener('click',()=>{if(!devMode)return;clearUnitSelection();units.splice(0).forEach(unit=>scene.remove(unit));hoverables.splice(0);reconcileRoads([]);reconcileFires([]);syncDevKingdomHud();showGameError('Tabuleiro de testes limpo.')});
 function setKingdomProgressHud(citizens,level,enemyLevel=1){document.querySelector('#self-citizens').textContent=String(citizens);document.querySelector('#self-level').textContent=`LV ${level}`;document.querySelector('#enemy-base-level').textContent=`LV ${enemyLevel}`;document.querySelector('#level-requirement').textContent=level>=2?'Nível 2 alcançado. Os próximos níveis serão adicionados depois.':'Nível 2: tenha 9 cidadãos em seu reino.'}
 function syncLocalKingdomHud(){const localUnits=units.map(unit=>({ownerSeat:unit.userData.ownerSeat??1,cardId:unit.userData.cardId,x:Math.round((unit.position.x+half)/tile),z:Math.round((unit.position.z+half)/tile),underConstruction:Boolean(unit.userData.underConstruction)})),citizens=citizensForSeat(1,localUnits,roads,GAME_CONFIG.boardSize),level=citizens>=GAME_CONFIG.level2CitizenRequirement?2:1;setKingdomProgressHud(citizens,level)}
 function endTurn(){if(onlineState)return sendOnlineAction({type:'end_turn'});resolveLocalFires(activePlayer);activePlayer=activePlayer===1?2:1;if(activePlayer===1)round++;units.filter(unit=>unit.userData.underConstruction&&unit.userData.ownerSeat===activePlayer&&unit.userData.buildReadyRound<=round).forEach(unit=>applyConstructionState(unit,false));units.filter(unit=>unit.userData.ownerSeat===activePlayer).forEach(unit=>{unit.userData.actionUsed=false;unit.userData.abilityUsed=false});syncLocalKingdomHud();showDeploymentArea(false);clearMageTargets();syncInstantCommand();syncMageCommands()}
-document.querySelector('#end-turn').addEventListener('click',endTurn);addEventListener('keydown',e=>{if(e.key==='Enter')endTurn()});
+function syncDevKingdomHud(){const localUnits=units.map(unit=>({ownerSeat:unit.userData.ownerSeat??1,cardId:unit.userData.cardId,x:Math.round((unit.position.x+half)/tile),z:Math.round((unit.position.z+half)/tile),underConstruction:Boolean(unit.userData.underConstruction)})),citizens=citizensForSeat(activePlayer,localUnits,roads,GAME_CONFIG.boardSize),enemySeat=activePlayer===1?2:1;setKingdomProgressHud(citizens,devKingdoms[activePlayer].baseLevel,devKingdoms[enemySeat].baseLevel);document.querySelector('#level-requirement').textContent=`Nível selecionado manualmente para o Reino ${activePlayer}.`;setResource('#self-health',devKingdoms[activePlayer].hp,GAME_CONFIG.startingBaseHp);document.querySelector('.enemy-base-tag i').style.width=`${devKingdoms[enemySeat].hp/GAME_CONFIG.startingBaseHp*100}%`;document.querySelector('#turn-label').textContent=`REINO ${activePlayer} · TURNO ${round}`;syncDevSettings()}
+function endDevTurn(){resolveLocalFires(activePlayer);clearUnitSelection();activePlayer=activePlayer===1?2:1;if(activePlayer===1)round++;selfSeat=activePlayer;units.filter(unit=>unit.userData.underConstruction&&unit.userData.ownerSeat===activePlayer&&(devInstantBuild||unit.userData.buildReadyRound<=round)).forEach(unit=>applyConstructionState(unit,false));units.filter(unit=>unit.userData.ownerSeat===activePlayer).forEach(unit=>{unit.userData.actionUsed=false;unit.userData.abilityUsed=false});syncDevKingdomHud();showDeploymentArea(false);syncInstantCommand();syncMageCommands();cameraTransition.focusBoard({side:activePlayer===2?-1:1})}
+document.querySelector('#end-turn').addEventListener('click',()=>devMode?endDevTurn():endTurn());addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.target.closest?.('input,select,button'))(devMode?endDevTurn():endTurn())});
 
 const deckPreview=document.querySelector('#deck-preview');
 function previewDeckCard(index){
@@ -259,7 +275,7 @@ function previewDeckCard(index){
 }
 function hideDeckPreview(){hideCardPreview(deckPreview)}
 const hand=document.querySelector('#card-hand');
-hand.innerHTML=cards.map(cardMarkup).join('');
+hand.replaceChildren();
 document.querySelector('#hand-count').textContent=`${hand.children.length} CARTAS`;
 const bottomCommand=document.querySelector('.bottom-command');
 let cardDrag=null,suppressCardClick=false,cardCasting=false;
@@ -286,7 +302,7 @@ function cardTileAtPointer(e,cardIndex=Number(selectedCardElement()?.dataset.car
 function makeSummonedUnit(cardIndex){
   return createCardUnit(cards[cardIndex],cardIndex);
 }
-function summonCard(cardIndex,x,z,mountableTower=null){const card=cards[cardIndex];if(card.id==='road'){reconcileRoads([...roads,{id:`local-road-${roads.length+1}`,ownerSeat:activePlayer,x:Math.round((x+half)/tile),z:Math.round((z+half)/tile)}]);syncLocalKingdomHud();return}const unit=makeSummonedUnit(cardIndex);unit.position.set(x,.06,z);unit.userData.ownerSeat=activePlayer;unit.rotation.y=card.id==='cannon'&&activePlayer===2?Math.PI:0;units.push(unit);hoverables.push(unit);scene.add(unit);if(card.buildRounds){unit.userData.buildReadyRound=round+card.buildRounds;applyConstructionState(unit,true)}if(card.id==='archer'&&mountableTower)mountArcherLocally(unit,mountableTower);else selectUnit(unit,{cinematic:false});syncLocalKingdomHud()}
+function summonCard(cardIndex,x,z,mountableTower=null,level=devCardLevel){const card=cards[cardIndex];if(card.id==='road'){reconcileRoads([...roads,{id:`local-road-${roads.length+1}`,ownerSeat:activePlayer,x:Math.round((x+half)/tile),z:Math.round((z+half)/tile)}]);syncDevKingdomHud();return}const unit=makeSummonedUnit(cardIndex);unit.position.set(x,.06,z);unit.userData.ownerSeat=activePlayer;unit.userData.devLevel=level;unit.rotation.y=card.id==='cannon'&&activePlayer===2?Math.PI:0;setUnitTeamColor(unit,activePlayer===1?0x168cff:0xff352f);units.push(unit);hoverables.push(unit);scene.add(unit);if(card.buildRounds&&!devInstantBuild){unit.userData.buildReadyRound=round+card.buildRounds;applyConstructionState(unit,true)}if(card.id==='archer'&&mountableTower)mountArcherLocally(unit,mountableTower);else selectUnit(unit,{cinematic:false});syncDevKingdomHud()}
 const summonFlightPoint=new THREE.Vector3();
 function animateCardSummon(cardNode,tileInfo,onCommit){
   if(cardCasting)return false;cardCasting=true;
@@ -304,7 +320,7 @@ function playSelectedCardAtPointer(e){
   if(onlineState&&onlineState.state.activeSeat!==selfSeat){showGameError('Aguarde o seu turno.');return true}
   const index=Number(cardNode.dataset.card),tileInfo=cardTileAtPointer(e,index);
   if(!tileInfo?.valid){showGameError(cards[index].id==='road'?'Conecte a Rua ao castelo ou a outra Rua do seu reino.':'Escolha uma casa livre a até 2 casas do seu reino.');return true}
-  const launched=animateCardSummon(cardNode,tileInfo,()=>{if(onlineState)sendOnlineAction({type:'summon',cardInstanceId:cardNode.dataset.instance,x:tileInfo.x,z:tileInfo.z});else{summonCard(index,tileInfo.worldX,tileInfo.worldZ,tileInfo.mountableTower);cardNode.remove();document.querySelector('#hand-count').textContent=`${hand.querySelectorAll('.game-card').length} CARTAS`}});if(!launched)return true;
+  const launched=animateCardSummon(cardNode,tileInfo,()=>{if(onlineState)sendOnlineAction({type:'summon',cardInstanceId:cardNode.dataset.instance,x:tileInfo.x,z:tileInfo.z});else{summonCard(index,tileInfo.worldX,tileInfo.worldZ,tileInfo.mountableTower,Number(cardNode.dataset.cardLevel)||1);cardNode.remove();document.querySelector('#hand-count').textContent=`${hand.querySelectorAll('.game-card').length} CARTAS`}});if(!launched)return true;
   cardNode.classList.remove('selected');showDeploymentArea(false);syncBottomCommand();return true;
 }
 hand.addEventListener('dragstart',event=>event.preventDefault());
@@ -319,13 +335,26 @@ addEventListener('pointermove',e=>{
 });
 addEventListener('pointerup',e=>{
   if(!cardDrag)return;const drag=cardDrag;cardDrag=null;controls.enabled=true;tileMarker.visible=false;
-  if(drag.moved){suppressCardClick=true;if(drag.tile?.valid)animateCardSummon(drag.card,drag.tile,()=>{if(onlineState)sendOnlineAction({type:'summon',cardInstanceId:drag.instanceId,x:drag.tile.x,z:drag.tile.z});else{summonCard(drag.index,drag.tile.worldX,drag.tile.worldZ,drag.tile.mountableTower);drag.card.remove();document.querySelector('#hand-count').textContent=`${hand.querySelectorAll('.game-card').length} CARTAS`}});else drag.card.classList.remove('aiming');setTimeout(()=>{suppressCardClick=false;showDeploymentArea(false);syncBottomCommand()},0)}else{drag.card.classList.remove('aiming');showDeploymentArea(Boolean(selectedCardElement()));syncBottomCommand()}
+  if(drag.moved){suppressCardClick=true;if(drag.tile?.valid)animateCardSummon(drag.card,drag.tile,()=>{if(onlineState)sendOnlineAction({type:'summon',cardInstanceId:drag.instanceId,x:drag.tile.x,z:drag.tile.z});else{summonCard(drag.index,drag.tile.worldX,drag.tile.worldZ,drag.tile.mountableTower,Number(drag.card.dataset.cardLevel)||1);drag.card.remove();document.querySelector('#hand-count').textContent=`${hand.querySelectorAll('.game-card').length} CARTAS`}});else drag.card.classList.remove('aiming');setTimeout(()=>{suppressCardClick=false;showDeploymentArea(false);syncBottomCommand()},0)}else{drag.card.classList.remove('aiming');showDeploymentArea(Boolean(selectedCardElement()));syncBottomCommand()}
 });
 
 let drawingCard=false,handShift=0,deckRemaining=28,deckHover=false,deckPreviewIndex=0;
 const deckScreenPoint=new THREE.Vector3();
 function deckScreenPosition(y=.8){deck3D.getWorldPosition(deckScreenPoint);deckScreenPoint.y+=y;deckScreenPoint.project(camera);return{x:(deckScreenPoint.x*.5+.5)*innerWidth,y:(-deckScreenPoint.y*.5+.5)*innerHeight}}
+const gallery=document.querySelector('#dev-card-gallery'),galleryGrid=document.querySelector('#dev-gallery-grid'),galleryDetail=document.querySelector('#dev-card-detail');
+const gallerySearch=document.querySelector('#dev-card-search'),rarityFilter=document.querySelector('#dev-rarity-filter'),typeFilter=document.querySelector('#dev-type-filter'),costFilter=document.querySelector('#dev-cost-filter');
+let galleryCardIndex=0;
+const normalizeSearch=value=>String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+const cardTypeLabel=card=>card.type??'unit';
+function fillGalleryFilters(){[...new Set(cards.map(card=>card.rarity))].sort().forEach(value=>rarityFilter.add(new Option(value,value)));[...new Set(cards.map(card=>cardTypeLabel(card)))].sort().forEach(value=>typeFilter.add(new Option(value==='unit'?'UNIDADE':value.toUpperCase(),value)));[...new Set(cards.map(card=>card.cost))].sort((a,b)=>a-b).forEach(value=>costFilter.add(new Option(String(value),String(value))))}
+function renderDevGallery(){const query=normalizeSearch(gallerySearch.value),rarity=rarityFilter.value,type=typeFilter.value,cost=costFilter.value;galleryGrid.replaceChildren();cards.forEach((card,index)=>{const haystack=normalizeSearch(`${card.name} ${card.description} ${card.ability} ${card.abilityText}`);if(query&&!haystack.includes(query)||rarity&&card.rarity!==rarity||type&&cardTypeLabel(card)!==type||cost&&String(card.cost)!==cost)return;const item=document.createElement('article');item.className='dev-gallery-card';item.tabIndex=0;item.setAttribute('role','button');item.setAttribute('aria-label',`Ampliar ${card.name}`);item.dataset.cardIndex=String(index);item.innerHTML=cardMarkup(card,index,{level:devCardLevel});galleryGrid.appendChild(item)});document.querySelector('#dev-gallery-empty').hidden=Boolean(galleryGrid.children.length)}
+function openDevGallery(){if(!devMode)return;gallery.hidden=false;controls.enabled=false;galleryDetail.hidden=true;gallerySearch.value='';rarityFilter.value='';typeFilter.value='';costFilter.value='';renderDevGallery();requestAnimationFrame(()=>gallerySearch.focus())}
+function closeDevGallery(){gallery.hidden=true;galleryDetail.hidden=true;controls.enabled=true;app.focus({preventScroll:true})}
+function showDevCardDetail(index){const card=cards[index];if(!card)return;galleryCardIndex=index;document.querySelector('#dev-detail-card').innerHTML=cardMarkup(card,index,{level:devCardLevel});document.querySelector('#dev-detail-level').textContent=String(devCardLevel);document.querySelector('#dev-detail-name').textContent=card.name;document.querySelector('#dev-detail-description').textContent=card.description;galleryDetail.hidden=false;document.querySelector('#dev-choose-card').focus()}
+function chooseDevCard(){const holder=document.createElement('div');holder.innerHTML=cardMarkup(cards[galleryCardIndex],galleryCardIndex,{level:devCardLevel});const node=holder.firstElementChild;node.dataset.instance=`dev-${crypto.randomUUID()}`;hand.appendChild(node);document.querySelector('#hand-count').textContent=`${hand.children.length} CARTAS`;hand.classList.add('reflow');setTimeout(()=>hand.classList.remove('reflow'),600);closeDevGallery();showGameError(`${cards[galleryCardIndex].name} nível ${devCardLevel} adicionada à mão.`)}
+fillGalleryFilters();[gallerySearch,rarityFilter,typeFilter,costFilter].forEach(control=>control.addEventListener(control===gallerySearch?'input':'change',renderDevGallery));galleryGrid.addEventListener('click',event=>{const item=event.target.closest('.dev-gallery-card');if(item)showDevCardDetail(Number(item.dataset.cardIndex))});galleryGrid.addEventListener('keydown',event=>{if(!['Enter',' '].includes(event.key))return;const item=event.target.closest('.dev-gallery-card');if(item){event.preventDefault();showDevCardDetail(Number(item.dataset.cardIndex))}});document.querySelector('#dev-gallery-close').addEventListener('click',closeDevGallery);document.querySelector('#dev-detail-close').addEventListener('click',()=>{galleryDetail.hidden=true;galleryGrid.querySelector(`[data-card-index="${galleryCardIndex}"]`)?.focus()});document.querySelector('#dev-choose-card').addEventListener('click',chooseDevCard);
 function drawCardPreview(){
+  if(devMode){openDevGallery();return}
   if(onlineState){previewDeckCard(deckPreviewIndex);return}
   if(drawingCard||deckRemaining<=0)return;drawingCard=true;const deck=deckScreenPosition(),target=hand.getBoundingClientRect();
   const ghost=document.createElement('div');ghost.className='draw-card-ghost';ghost.textContent='♜';ghost.style.left=`${deck.x-36}px`;ghost.style.top=`${deck.y-53}px`;document.body.appendChild(ghost);
@@ -423,7 +452,9 @@ document.querySelectorAll('#create-room,#join-room').forEach(button=>button.disa
 document.querySelector('#room-code').addEventListener('input',event=>{event.target.value=event.target.value.toUpperCase().replace(/[^A-Z2-9]/g,'').slice(0,6)});
 document.querySelector('#create-room').addEventListener('click',()=>onlineSocket.createRoom(document.querySelector('#player-name').value));
 document.querySelector('#join-room').addEventListener('click',()=>onlineSocket.joinRoom(document.querySelector('#room-code').value,document.querySelector('#player-name').value));
-document.querySelector('#dev-mode').addEventListener('click',()=>{devMode=true;onlineState=null;selfSeat=null;app.dataset.mode='dev';document.querySelector('#online-lobby').classList.add('closed');document.querySelector('#match-state').hidden=false;document.querySelector('#turn-label').textContent='TESTE LIVRE';document.querySelector('#turn-clock').textContent='∞';document.querySelector('#end-turn').disabled=false;setResource('#self-energy','∞','');setResource('#self-health',GAME_CONFIG.startingBaseHp,GAME_CONFIG.startingBaseHp);syncLocalKingdomHud();showDeploymentArea(false)});
+function initializeDevMode(){devMode=true;onlineState=null;activePlayer=1;round=1;selfSeat=1;app.dataset.mode='dev';document.querySelector('#online-lobby').classList.add('closed');document.querySelector('#match-state').hidden=false;document.querySelector('#turn-clock').textContent='∞';document.querySelector('#end-turn').disabled=false;setResource('#self-energy','∞','');hand.replaceChildren();document.querySelector('#hand-count').textContent='0 CARTAS';deckRemaining=Number.POSITIVE_INFINITY;document.querySelector('#deck-count').textContent='∞';document.querySelector('[data-dev-settings]').hidden=false;devUnitTools.hidden=true;units.splice(0).forEach(unit=>scene.remove(unit));hoverables.splice(0);reconcileRoads([]);reconcileFires([]);keepForSeat(1).scale.setScalar(1);keepForSeat(2).scale.setScalar(1);setOnlinePerspective();syncDevKingdomHud();syncDevSettings();showDeploymentArea(false)}
+document.querySelector('#dev-mode').addEventListener('click',initializeDevMode);
+addEventListener('keydown',event=>{if(event.key!=='Escape'||gallery.hidden)return;if(!galleryDetail.hidden){galleryDetail.hidden=true;return}closeDevGallery()});
 onlineSocket.connect();
 setInterval(()=>{if(!onlineState?.state.turnEndsAt)return;const remaining=Math.max(0,onlineState.state.turnEndsAt-Date.now()),minutes=Math.floor(remaining/60000),seconds=Math.floor(remaining%60000/1000);document.querySelector('#turn-clock').textContent=`${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`},250);
 

@@ -43,6 +43,11 @@ export function mountGameShell() {
         <button id="mage-fire-command" class="ability-command">CONJURAR FOGO</button>
         <button id="mage-acid-command" class="ability-command">CÍRCULO ÁCIDO <span>4</span></button>
       </div>
+      <section id="dev-unit-tools" class="dev-unit-tools" aria-label="Ferramentas da unidade selecionada" hidden>
+        <div><small>UNIDADE SELECIONADA</small><strong id="dev-unit-name">—</strong></div>
+        <div class="dev-unit-levels" role="group" aria-label="Nível da unidade"><span>NÍVEL</span><button data-unit-level="1">1</button><button data-unit-level="2">2</button><button data-unit-level="3">3</button><button data-unit-level="4">4</button></div>
+        <button id="dev-delete-unit" class="dev-danger-button">EXCLUIR</button>
+      </section>
       <div class="bottom-command">
         <div class="command-resource level" tabindex="0" aria-describedby="level-requirement"><small>CASTELO</small><b id="self-level">LV 1</b><span id="level-requirement" role="tooltip">Nível 2: tenha 9 cidadãos em seu reino.</span></div>
         <div class="command-resource energy" aria-label="Energia"><small>ENERGIA</small><b id="self-energy">10<em>/${GAME_CONFIG.maxEnergy}</em></b></div>
@@ -62,7 +67,32 @@ export function mountGameShell() {
             <div><small>JOGABILIDADE</small><h3>Câmera se centralizar</h3><p>Move a câmera para o centro do tabuleiro ao selecionar uma criatura.</p></div>
             <div class="settings-options" role="group" aria-label="Centralização da câmera"><button data-camera-centering="false">DESLIGADO</button><button data-camera-centering="true">LIGADO</button></div>
           </div>
+          <div class="dev-settings" data-dev-settings hidden>
+            <div class="dev-settings-heading"><small>MESA DE TESTES</small><h3>Menu de dev mode</h3><p>Estes controles afetam apenas a partida local e o reino do turno atual.</p></div>
+            <div class="dev-setting-row"><span>Tamanho visual da base</span><div class="dev-stepper"><button id="dev-base-size-minus" aria-label="Diminuir base">−1</button><output id="dev-base-size">1.00×</output><button id="dev-base-size-plus" aria-label="Aumentar base">+1</button></div></div>
+            <div class="dev-setting-row"><span>Nível da base</span><div class="dev-choice" role="group" aria-label="Nível da base"><button data-base-level="1">1</button><button data-base-level="2">2</button><button data-base-level="3">3</button><button data-base-level="4">4</button></div></div>
+            <div class="dev-setting-row"><span>Nível das próximas cartas</span><div class="dev-choice" role="group" aria-label="Nível das próximas cartas"><button data-card-level="1">1</button><button data-card-level="2">2</button><button data-card-level="3">3</button><button data-card-level="4">4</button></div></div>
+            <div class="dev-setting-row"><span>Construção instantânea</span><button id="dev-instant-build" class="dev-toggle" aria-pressed="false">DESLIGADO</button></div>
+            <div class="dev-setting-row"><span>Limpar tabuleiro</span><button id="dev-clear-board" class="dev-danger-button">REMOVER TUDO</button></div>
+          </div>
         </section>
       </div>
+      <section id="dev-card-gallery" class="dev-card-gallery" role="dialog" aria-modal="true" aria-labelledby="dev-gallery-title" hidden>
+        <header class="dev-gallery-bar">
+          <div><small>DEV MODE · PRÓXIMA COMPRA</small><h2 id="dev-gallery-title">Galeria de cartas</h2></div>
+          <label class="dev-gallery-search"><span class="sr-only">Buscar carta</span><input id="dev-card-search" type="search" placeholder="Buscar por nome ou habilidade…" autocomplete="off" /></label>
+          <label><span>RARIDADE</span><select id="dev-rarity-filter"><option value="">Todas</option></select></label>
+          <label><span>TIPO</span><select id="dev-type-filter"><option value="">Todos</option></select></label>
+          <label><span>CUSTO</span><select id="dev-cost-filter"><option value="">Todos</option></select></label>
+          <button id="dev-gallery-close" class="dev-gallery-close" aria-label="Fechar galeria">×</button>
+        </header>
+        <div id="dev-gallery-grid" class="dev-gallery-grid" aria-live="polite"></div>
+        <p id="dev-gallery-empty" class="dev-gallery-empty" hidden>Nenhuma carta corresponde aos filtros.</p>
+        <section id="dev-card-detail" class="dev-card-detail" aria-label="Carta ampliada" hidden>
+          <button id="dev-detail-close" aria-label="Voltar para a galeria">×</button>
+          <div id="dev-detail-card"></div>
+          <div class="dev-detail-copy"><small>PRÓXIMA COMPRA · NÍVEL <b id="dev-detail-level">1</b></small><h3 id="dev-detail-name"></h3><p id="dev-detail-description"></p><button id="dev-choose-card">ESCOLHER ESTA CARTA</button></div>
+        </section>
+      </section>
     </main>`;
 }
