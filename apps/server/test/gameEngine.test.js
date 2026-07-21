@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CARD_BY_ID } from '@tronos/shared/cards';
+import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { RoomManager } from '../src/game/roomManager.js';
 
 function match() {
@@ -15,6 +16,8 @@ test('inicia com cinco cartas privadas e dez de energia', () => {
   assert.equal(room.state.players[0].hand.length, 5);
   assert.equal(room.state.players[1].hand.length, 5);
   assert.equal(room.state.players[0].energy, 10);
+  assert.equal(room.state.players[0].baseHp, 10);
+  assert.equal(GAME_CONFIG.turnDurationSeconds, 60);
 });
 
 test('invocação válida consome a carta e energia no servidor', () => {
@@ -59,6 +62,10 @@ test('cartas usam os atributos definidos', () => {
       wooden_barrier: { hp: 2, damage: 0, move: 0, movementType: 'none', cost: 4 }
     }
   );
+  assert.deepEqual(
+    { minAttackRange: CARD_BY_ID.warrior.minAttackRange, attackRange: CARD_BY_ID.warrior.attackRange },
+    { minAttackRange: 1, attackRange: 2 }
+  );
   Object.values(CARD_BY_ID).forEach(card => {
     assert.equal(card.ability.enabled, false);
     assert.equal(card.instant.enabled, false);
@@ -81,6 +88,16 @@ test('guerreiro só anda reto e guarda pode andar na diagonal', () => {
   other.room.state.units.push({ id: 'guard-1', ownerSeat: 1, cardId: 'guard', x: 4, z: 9, hp: 4, shield: 0, actionUsed: false, abilityUsed: false, instantUsedRound: 0, empowered: false });
   other.rooms.action(other.room.code, other.first.id, { type: 'move', unitId: 'guard-1', x: 5, z: 10 }, other.room.state.version);
   assert.deepEqual({ x: other.room.state.units[0].x, z: other.room.state.units[0].z }, { x: 5, z: 10 });
+});
+
+test('guerreiro ataca a até dois blocos de distância', () => {
+  const { rooms, room, first } = match();
+  room.state.units.push(
+    { id: 'warrior-range', ownerSeat: 1, cardId: 'warrior', x: 4, z: 9, hp: 3, shield: 0, actionUsed: false, abilityUsed: false },
+    { id: 'target-range', ownerSeat: 2, cardId: 'guard', x: 4, z: 11, hp: 4, shield: 0, actionUsed: false, abilityUsed: false }
+  );
+  rooms.action(room.code, first.id, { type: 'attack', unitId: 'warrior-range', targetUnitId: 'target-range' }, room.state.version);
+  assert.equal(room.state.units.find(unit => unit.id === 'target-range').hp, 2);
 });
 
 test('arqueiro ataca somente a três ou quatro blocos e não ocupa a casa da vítima', () => {

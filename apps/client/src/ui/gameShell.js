@@ -1,3 +1,5 @@
+import { GAME_CONFIG } from '@tronos/shared/game-config';
+
 export function mountGameShell() {
   document.body.innerHTML = `
     <section id="online-lobby" class="online-lobby" aria-labelledby="lobby-title">
@@ -26,9 +28,9 @@ export function mountGameShell() {
       <button id="draw-card" class="sr-only" aria-label="Comprar carta do baralho 3D">Comprar carta <span id="deck-count">28</span></button>
       <section id="deck-preview" class="deck-preview" aria-live="polite" aria-hidden="true"></section>
       <aside id="hover-card" class="hover-card unit-card-preview" aria-hidden="true"></aside>
-      <div id="match-state" class="match-state" hidden><b id="match-code"></b><span id="turn-label"></span><time id="turn-clock">03:00</time></div>
+      <div id="match-state" class="match-state" hidden><b id="match-code"></b><span id="turn-label"></span><time id="turn-clock">01:00</time></div>
       <output id="game-error" class="game-error" aria-live="polite"></output>
-      <div class="base-health enemy-base-tag" role="img" aria-label="Vida do castelo inimigo: 16 de 20"><i style="width:80%"></i></div>
+      <div class="base-health enemy-base-tag" role="img" aria-label="Vida do castelo inimigo: ${GAME_CONFIG.startingBaseHp} de ${GAME_CONFIG.startingBaseHp}"><i style="width:100%"></i></div>
       <section class="card-dock" aria-label="Mão de cartas">
         <div class="dock-label"><span>MÃO DO REINO</span><b id="hand-count">6 CARTAS</b></div>
         <button class="tray-nav tray-prev" id="tray-prev" aria-label="Ver cartas anteriores">‹</button>
@@ -38,7 +40,7 @@ export function mountGameShell() {
       <div class="bottom-command">
         <div class="command-resource energy" aria-label="Energia"><b id="self-energy">10<em>/12</em></b></div>
         <button id="end-turn">PASSAR TURNO</button>
-        <div class="command-resource health" aria-label="Vida"><b id="self-health">20<em>/20</em></b></div>
+        <div class="command-resource health" aria-label="Vida"><b id="self-health">${GAME_CONFIG.startingBaseHp}<em>/${GAME_CONFIG.startingBaseHp}</em></b></div>
       </div>
       <div class="loading"><div class="loader-mark">✦</div><span>PREPARANDO O CAMPO</span></div>
     </main>`;
