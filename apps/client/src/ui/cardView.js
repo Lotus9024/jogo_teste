@@ -6,7 +6,9 @@ export const cards = CARD_DEFINITIONS.map(card => {
     ...card,
     ability: featuredAbility.name,
     abilityCost: featuredAbility.cost,
-    abilityText: featuredAbility.description,
+    abilityText: featuredAbility.enabled
+      ? `${featuredAbility.description} Aperte F selecionando a tropa para utilizar.`
+      : featuredAbility.description,
     abilityKind: card.instant.enabled ? 'instant' : 'normal'
   };
 });

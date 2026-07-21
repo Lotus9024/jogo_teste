@@ -9,6 +9,7 @@ import { createBoardCoordinates } from './gameplay/boardCoordinates.js';
 import { createDeploymentOverlay } from './gameplay/createDeploymentOverlay.js';
 import { createDamageEffects } from './gameplay/damageEffects.js';
 import { createMovementOverlay } from './gameplay/createMovementOverlay.js';
+import { createMageEffects } from './gameplay/mageEffects.js';
 import { applyConstructionState as applyUnitConstructionState, isMountedArcher, setUnitTeamColor } from './gameplay/unitState.js';
 import { createCardUnit } from './models/createCardUnit.js';
 import { setArcherMountedState } from './models/unitModels.js';
@@ -18,7 +19,7 @@ import { GameSocketClient, SERVER_EVENTS } from './network/gameSocket.js';
 import { mountGameShell } from './ui/gameShell.js';
 import { cardMarkup, cards, hideDeckPreview as hideCardPreview, showDeckPreview } from './ui/cardView.js';
 import { setResource } from './ui/resourceView.js';
-import { updateHealthBadge } from './ui/unitHealthBadge.js';
+import { setMageFireBadgeActive, updateHealthBadge } from './ui/unitHealthBadge.js';
 import { createWorld } from './world/createWorld.js';
 import './style.css';
 
@@ -30,6 +31,7 @@ const { scene, renderer, camera, controls, updateDynamicLighting, setGraphicsQua
 const damageEffects = createDamageEffects(scene);
 const cameraTransition = createCinematicCamera({ camera, controls, app });
 const { board, tile, half, alliedKeep, enemyKeep, deck3D, topDeckCard, wisps, fireLights, updateTerrain, setGraphicsQuality:setWorldGraphicsQuality } = createWorld(scene, renderer,{quality:graphicsQuality});
+const mageEffects = createMageEffects(scene, tile);
 
 // Each miniature is snapped to the exact center of a tile. Scale 0.64 keeps
 // even the outermost weapon silhouette inside the 1.08 × 1.08 footprint.
@@ -75,31 +77,30 @@ function hoverableAtPointer(e){
   const hits=ray.intersectObjects(hoverables,true);if(!hits.length)return null;let o=hits[0].object;while(o.parent&&!o.userData.hoverable)o=o.parent;return o.userData.hoverable?o:null;
 }
 function applyConstructionState(unit,underConstruction){applyUnitConstructionState(unit,underConstruction,units,app)}
-const instantButton=document.querySelector('#activate-instant'),mageCommands=document.querySelector('#mage-commands'),mageFireButton=document.querySelector('#mage-fire-command'),mageAcidButton=document.querySelector('#mage-acid-command'),devUnitTools=document.querySelector('#dev-unit-tools');
+const devUnitTools=document.querySelector('#dev-unit-tools');
 const towerId=unit=>unit.userData.serverUnitId??unit.uuid;
 function towerForArcher(unit){return unit?.userData.cardId==='archer'&&unit.userData.mountedOnTowerId?units.find(candidate=>towerId(candidate)===unit.userData.mountedOnTowerId&&candidate.userData.cardId==='tower'&&!candidate.userData.underConstruction):null}
 function currentRound(){return onlineState?.state.round??round}
 function syncInstantCommand(){
-  const tower=towerForArcher(selected),owned=devMode?selected?.userData.ownerSeat===activePlayer:selected?.userData.ownerSeat===selfSeat,available=tower&&owned;
-  instantButton.hidden=!available;if(!available)return;
-  const me=onlineState?.state.players.find(player=>player.seat===selfSeat),used=selected.userData.instantUsedRound===currentRound();
-  instantButton.disabled=used||Boolean(me&&me.energy<CARD_BY_ID.tower.instant.cost);
-  instantButton.title=used?'Disponível novamente na próxima rodada':'Dispara nas quatro direções retas';
+  app.dataset.instantAvailable=String(Boolean(towerForArcher(selected)));
 }
-function clearMageTargets(){mageTargetMarkers.splice(0).forEach(marker=>scene.remove(marker));mageAiming=false;mageFireCells=[]}
+function mageFireTriggerAtPointer(e){
+  const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;ray.setFromCamera(pointer,camera);
+  const hit=ray.intersectObjects(units,true).find(item=>item.object.userData.mageFireTrigger);if(!hit)return null;
+  let unit=hit.object;while(unit.parent&&!unit.userData.selectable)unit=unit.parent;return unit.userData.selectable?unit:null;
+}
+function clearMageTargets(){mageTargetMarkers.splice(0).forEach(marker=>scene.remove(marker));if(selected?.userData.cardId==='mage')setMageFireBadgeActive(selected,false);mageAiming=false;mageFireCells=[]}
 function showMageTargets(){
   mageTargetMarkers.splice(0).forEach(marker=>scene.remove(marker));if(!mageAiming||selected?.userData.cardId!=='mage')return;
   const origin={x:Math.round((selected.position.x+half)/tile),z:Math.round((selected.position.z+half)/tile)},chosen=new Set(mageFireCells.map(cell=>cellKey(cell.x,cell.z)));
   for(let dx=-4;dx<=4;dx++)for(let dz=-4;dz<=4;dz++){const value=Math.abs(dx)+Math.abs(dz),x=origin.x+dx,z=origin.z+dz;if(value<1||value>4||x<0||x>=GAME_CONFIG.boardSize||z<0||z>=GAME_CONFIG.boardSize)continue;const marker=new THREE.Mesh(mageTargetGeometry,chosen.has(cellKey(x,z))?mageChosenMaterial:mageTargetMaterial);marker.rotation.x=-Math.PI/2;marker.position.set(x*tile-half,.082,z*tile-half);scene.add(marker);mageTargetMarkers.push(marker)}
 }
 function syncMageCommands(){
-  const owned=devMode?selected?.userData.ownerSeat===activePlayer:selected?.userData.ownerSeat===selfSeat,available=selected?.userData.cardId==='mage'&&owned;mageCommands.hidden=!available;if(!available){clearMageTargets();return}
-  const me=onlineState?.state.players.find(player=>player.seat===selfSeat),unavailable=Boolean(onlineState&&(onlineState.state.activeSeat!==selfSeat||selected.userData.actionUsed));
-  mageFireButton.disabled=unavailable;mageAcidButton.disabled=unavailable||selected.userData.abilityUsed||Boolean(me&&me.energy<CARD_BY_ID.mage.ability.cost);
-  mageFireButton.textContent=!mageAiming?'CONJURAR FOGO':mageFireCells.length?`LANÇAR FOGO · ${mageFireCells.length}/2`:'ESCOLHA 1 OU 2 CASAS';
+  if(selected?.userData.cardId!=='mage'){clearMageTargets();return}
+  setMageFireBadgeActive(selected,mageAiming);
 }
 function syncDevUnitTools(){const visible=devMode&&Boolean(selected);devUnitTools.hidden=!visible;if(!visible)return;document.querySelector('#dev-unit-name').textContent=selected.userData.name;document.querySelectorAll('[data-unit-level]').forEach(button=>button.setAttribute('aria-pressed',String(Number(button.dataset.unitLevel)===(selected.userData.devLevel??1))))}
-function clearUnitSelection(){if(!selected)return;const ring=selected.getObjectByName('selectionRing');if(ring)ring.material.emissiveIntensity=ring.userData.baseEmissiveIntensity??.75;selected=null;clearMovementGrid();clearMageTargets();syncInstantCommand();syncMageCommands();syncDevUnitTools()}
+function clearUnitSelection(){if(!selected)return;const ring=selected.getObjectByName('selectionRing');if(ring)ring.material.emissiveIntensity=ring.userData.baseEmissiveIntensity??.75;clearMageTargets();selected=null;clearMovementGrid();syncInstantCommand();syncMageCommands();syncDevUnitTools()}
 function centerCamera(){if(cameraCentering)cameraTransition.focusBoard({side:selfSeat===2?-1:1})}
 function selectUnit(u,{cinematic=true}={}){if(selected!==u)clearMageTargets();if(selected){const previousRing=selected.getObjectByName('selectionRing');if(previousRing)previousRing.material.emissiveIntensity=previousRing.userData.baseEmissiveIntensity??.75}selected=u;const ring=selected.getObjectByName('selectionRing');if(ring)ring.material.emissiveIntensity=1.6;showMovementGrid(u);syncInstantCommand();syncMageCommands();syncDevUnitTools();if(cinematic)centerCamera()}
 function boardCellAtPointer(e){
@@ -195,6 +196,7 @@ function toggleMageFireCell(destination){
 }
 function pick(e){
   if(justDragged){justDragged=false;return}
+  const fireMage=mageFireTriggerAtPointer(e);if(fireMage){if(selected!==fireMage)selectUnit(fireMage,{cinematic:false});activateMageFire();return}
   if(selectedCardElement())return playSelectedCardAtPointer(e);
   const clickedBaseSeat=selected&&canCommandUnit(selected)?baseSeatAtPointer(e):null,enemySeat=selected?.userData.ownerSeat===1?2:1;
   if(clickedBaseSeat===enemySeat){const cell=baseCellsForSeat(clickedBaseSeat).find(item=>movementOverlay.isInteractiveCell(item.x,item.z));if(cell){moveOrAttackUnit(selected,{...cell,worldX:cell.x*tile-half,worldZ:cell.z*tile-half});clearMovementGrid();return}}
@@ -204,7 +206,7 @@ function pick(e){
   if(u)selectUnit(u);
 }
 function startDrag(e){
-  if(e.button!==0)return;const u=unitAtPointer(e);if(!u)return;
+  if(e.button!==0)return;if(mageFireTriggerAtPointer(e)){e.preventDefault();e.stopPropagation();return}const u=unitAtPointer(e);if(!u)return;
   if(selectedCardElement()||(selected&&selected!==u&&canCommandUnit(selected)))return;
   if(devMode&&u.userData.ownerSeat!==activePlayer){selectUnit(u,{cinematic:false});return showGameError('Passe o turno para controlar este reino.');}
   if(u.userData.cardType==='construction'||u.userData.underConstruction)return showGameError(u.userData.underConstruction?'A construção ainda não foi concluída.':'Esta construção não pode se mover.');
@@ -382,11 +384,12 @@ renderer.domElement.addEventListener('pointerdown',e=>{if(e.button!==0||!deckAtP
 renderer.domElement.addEventListener('pointerup',e=>{if(!deckPressed)return;e.preventDefault();e.stopPropagation();deckPressed=false;controls.enabled=true;if(deckAtPointer(e))drawCardPreview()},true);
 renderer.domElement.addEventListener('pointerleave',()=>{deckHover=false;deckPressed=false;controls.enabled=true;renderer.domElement.style.cursor='';hideDeckPreview()});
 function moveTray(direction){const dock=document.querySelector('.card-dock'),maxShift=Math.max(0,hand.scrollWidth-dock.clientWidth+48);handShift=THREE.MathUtils.clamp(handShift+direction*120,-maxShift,0);hand.style.setProperty('--hand-shift',`${handShift}px`)}
-document.querySelector('#tray-prev').addEventListener('click',()=>moveTray(1));document.querySelector('#tray-next').addEventListener('click',()=>moveTray(-1));
+document.querySelector('.card-dock').addEventListener('wheel',event=>{if(Math.abs(event.deltaY)<Math.abs(event.deltaX))return;event.preventDefault();moveTray(event.deltaY>0?-1:1)},{passive:false});
 
 function sendOnlineAction(action){if(onlineState&&onlineSocket)onlineSocket.sendAction(action,onlineState.state.version)}
 function activateSelectedInstant(){
-  if(instantButton.hidden||instantButton.disabled||!towerForArcher(selected))return;
+  const tower=towerForArcher(selected),owned=devMode?selected?.userData.ownerSeat===activePlayer:selected?.userData.ownerSeat===selfSeat,me=onlineState?.state.players.find(player=>player.seat===selfSeat);
+  if(!tower||!owned||selected.userData.instantUsedRound===currentRound()||Boolean(me&&me.energy<CARD_BY_ID.tower.instant.cost))return;
   if(onlineState){sendOnlineAction({type:'use_instant',unitId:selected.userData.serverUnitId});return}
   const directions=[[1,0],[-1,0],[0,1],[0,-1]],origin={x:Math.round((selected.position.x+half)/tile),z:Math.round((selected.position.z+half)/tile)};
   for(const [dx,dz] of directions){
@@ -395,8 +398,6 @@ function activateSelectedInstant(){
   }
   selected.userData.instantUsedRound=round;syncInstantCommand();
 }
-instantButton.addEventListener('click',activateSelectedInstant);
-addEventListener('keydown',event=>{if(event.key.toLowerCase()==='f'&&!event.repeat&&!event.target.closest?.('input,textarea')){event.preventDefault();activateSelectedInstant()}});
 function castMageFireLocally(cells){
   const additions=cells.map((cell,index)=>({id:`local-fire-${round}-${Date.now()}-${index}`,ownerSeat:selected.userData.ownerSeat??activePlayer,casterUnitId:selected.uuid,...cell,damagedUnitIds:[]}));
   reconcileFires([...fires,...additions]);
@@ -404,20 +405,25 @@ function castMageFireLocally(cells){
   selected.userData.actionUsed=true;
 }
 function activateMageFire(){
-  if(mageFireButton.disabled||selected?.userData.cardId!=='mage')return;
+  const owned=devMode?selected?.userData.ownerSeat===activePlayer:selected?.userData.ownerSeat===selfSeat;
+  const unavailable=selected?.userData.cardId!=='mage'||!owned||selected.userData.actionUsed||Boolean(onlineState&&onlineState.state.activeSeat!==selfSeat);
+  if(unavailable)return;
   if(!mageAiming){mageAiming=true;mageFireCells=[];clearMovementGrid();showMageTargets();syncMageCommands();return}
   if(!mageFireCells.length)return;
   const cells=mageFireCells.map(cell=>({...cell}));if(onlineState)sendOnlineAction({type:'mage_fire',unitId:selected.userData.serverUnitId,cells});else castMageFireLocally(cells);
   clearMageTargets();syncMageCommands();
 }
 function activateMageAcid(){
-  if(mageAcidButton.disabled||selected?.userData.cardId!=='mage')return;
+  const owned=devMode?selected?.userData.ownerSeat===activePlayer:selected?.userData.ownerSeat===selfSeat,me=onlineState?.state.players.find(player=>player.seat===selfSeat);
+  const unavailable=selected?.userData.cardId!=='mage'||!owned||selected.userData.actionUsed||selected.userData.abilityUsed||Boolean(onlineState&&(onlineState.state.activeSeat!==selfSeat||me.energy<CARD_BY_ID.mage.ability.cost));
+  if(unavailable)return;
+  mageEffects.castAcid(selected);
   if(onlineState){sendOnlineAction({type:'use_ability',unitId:selected.userData.serverUnitId});return}
   const origin={x:Math.round((selected.position.x+half)/tile),z:Math.round((selected.position.z+half)/tile)};
   [...units].filter(unit=>unit!==selected&&Math.max(Math.abs(Math.round((unit.position.x+half)/tile)-origin.x),Math.abs(Math.round((unit.position.z+half)/tile)-origin.z))<=1).forEach(unit=>damageLocalUnit(unit,CARD_BY_ID.mage.ability.damage));
   selected.userData.actionUsed=true;selected.userData.abilityUsed=true;syncMageCommands();
 }
-mageFireButton.addEventListener('click',activateMageFire);mageAcidButton.addEventListener('click',activateMageAcid);
+addEventListener('keydown',event=>{if(event.key.toLowerCase()!=='f'||event.repeat||event.target.closest?.('input,textarea'))return;event.preventDefault();if(selected?.userData.cardId==='mage')activateMageAcid();else activateSelectedInstant()});
 function renderOnlineHand(instances){
   hand.replaceChildren();
   for(const instance of instances){const c=CARD_BY_ID[instance.cardId],index=cards.findIndex(card=>card.id===instance.cardId);if(!c||index<0||!/^[-0-9a-f]{36}$/i.test(instance.instanceId))continue;const holder=document.createElement('div');holder.innerHTML=cardMarkup(cards[index],index);const node=holder.firstElementChild;node.dataset.instance=instance.instanceId;hand.appendChild(node)}
@@ -475,5 +481,5 @@ const enemyBaseTag=document.querySelector('.enemy-base-tag');
 const baseTagPoint=new THREE.Vector3();
 function positionEnemyStatus(){const target=selfSeat===2?alliedKeep:enemyKeep;target.getWorldPosition(baseTagPoint);baseTagPoint.y+=4.9;baseTagPoint.project(camera);enemyBaseTag.style.left=`${(baseTagPoint.x*.5+.5)*innerWidth}px`;enemyBaseTag.style.top=`${(-baseTagPoint.y*.5+.5)*innerHeight}px`;enemyBaseTag.style.visibility=baseTagPoint.z<1?'visible':'hidden';}
 let lastStatusUpdate=0;
-function animate(){requestAnimationFrame(animate);const delta=clock.getDelta(),t=clock.elapsedTime;controls.update();cameraTransition.update();damageEffects.update(delta);if(t-lastStatusUpdate>(graphicsQuality==='low'?.1:.033)){positionEnemyStatus();lastStatusUpdate=t}topDeckCard.position.y=THREE.MathUtils.lerp(topDeckCard.position.y,deckHover ? .98 : .766,.14);topDeckCard.rotation.z=THREE.MathUtils.lerp(topDeckCard.rotation.z,deckHover ? -.08 : 0,.12);if(graphicsQuality==='high'){updateDynamicLighting(t);updateTerrain(t);units.forEach((u,i)=>{const rig=u.getObjectByName('rig');rig.position.y=.18+Math.sin(t*1.35+i*1.7)*.012;rig.rotation.z=Math.sin(t*.8+i)*.006;u.traverse(o=>{if(o.userData.magic){o.rotation.y=t*1.5;}})});fireMeshes.forEach(group=>group.traverse(o=>{if(o.userData.flame){o.scale.y=.86+Math.sin(t*8+o.userData.phase)*.16;o.rotation.y=t*1.7+o.userData.phase}}));wisps.forEach((w,i)=>{w.position.x=w.userData.baseX+Math.sin(t*.12+i)*.55;w.material.opacity=.012+i*.003+Math.sin(t*.35+i)*.004;});fireLights.forEach((light,i)=>{const pulse=.91+Math.sin(t*7.4+light.userData.phase)*.065+Math.sin(t*13.1+i)*.025;light.intensity=light.userData.baseIntensity*pulse;})}renderer.render(scene,camera)}
+function animate(){requestAnimationFrame(animate);const delta=clock.getDelta(),t=clock.elapsedTime;controls.update();cameraTransition.update();damageEffects.update(delta);mageEffects.update(delta);if(t-lastStatusUpdate>(graphicsQuality==='low'?.1:.033)){positionEnemyStatus();lastStatusUpdate=t}topDeckCard.position.y=THREE.MathUtils.lerp(topDeckCard.position.y,deckHover ? .98 : .766,.14);topDeckCard.rotation.z=THREE.MathUtils.lerp(topDeckCard.rotation.z,deckHover ? -.08 : 0,.12);if(graphicsQuality==='high'){updateDynamicLighting(t);updateTerrain(t);units.forEach((u,i)=>{const rig=u.getObjectByName('rig');rig.position.y=.18+Math.sin(t*1.35+i*1.7)*.012;rig.rotation.z=Math.sin(t*.8+i)*.006;u.traverse(o=>{if(o.userData.magic){o.rotation.y=t*1.5;}})});fireMeshes.forEach(group=>group.traverse(o=>{if(o.userData.flame){o.scale.y=.86+Math.sin(t*8+o.userData.phase)*.16;o.rotation.y=t*1.7+o.userData.phase}}));wisps.forEach((w,i)=>{w.position.x=w.userData.baseX+Math.sin(t*.12+i)*.55;w.material.opacity=.012+i*.003+Math.sin(t*.35+i)*.004;});fireLights.forEach((light,i)=>{const pulse=.91+Math.sin(t*7.4+light.userData.phase)*.065+Math.sin(t*13.1+i)*.025;light.intensity=light.userData.baseIntensity*pulse;})}renderer.render(scene,camera)}
 function resize(){const aspect=innerWidth/innerHeight,view=innerWidth<700?12.6:11.45;camera.left=-view*aspect;camera.right=view*aspect;camera.top=view;camera.bottom=-view;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,graphicsQuality==='low'?.9:1.7))}addEventListener('resize',resize);resize();animate();setTimeout(()=>document.querySelector('.loading').classList.add('done'),500);

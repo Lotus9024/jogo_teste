@@ -24,10 +24,8 @@ export function mountGameShell() {
       </div>
     </section>
     <main id="game" tabindex="0" aria-label="Tabuleiro 3D medieval com três tropas">
-      <header class="hud-title"><span class="sigil">♜</span><div><small>CRÔNICAS DOS REINOS</small><h1>TRONOS EM RUÍNAS</h1></div></header>
       <aside id="turn-round-card" class="turn-round-card" aria-label="Turno e rodada" hidden>
         <div><span>Turno <b id="current-turn-number">1</b></span><span>Rodada <b id="current-round-number">1</b></span></div>
-        <small><b>OBS.</b> Rodada é uma volta completa do jogo.</small>
       </aside>
       <button id="draw-card" class="sr-only" aria-label="Comprar carta do baralho 3D">Comprar carta <span id="deck-count">28</span></button>
       <section id="deck-preview" class="deck-preview" aria-live="polite" aria-hidden="true"></section>
@@ -37,16 +35,9 @@ export function mountGameShell() {
       <output id="game-error" class="game-error" aria-live="polite"></output>
       <div class="base-health enemy-base-tag" role="img" aria-label="Vida do castelo inimigo: ${GAME_CONFIG.startingBaseHp} de ${GAME_CONFIG.startingBaseHp}"><b id="enemy-base-level">LV 1</b><i style="width:100%"></i></div>
       <section class="card-dock" aria-label="Mão de cartas">
-        <div class="dock-label"><span>MÃO DO REINO</span><b id="hand-count">6 CARTAS</b></div>
-        <button class="tray-nav tray-prev" id="tray-prev" aria-label="Ver cartas anteriores">‹</button>
+        <b id="hand-count" class="sr-only">6 CARTAS</b>
         <div id="card-hand" class="card-hand"></div>
-        <button class="tray-nav tray-next" id="tray-next" aria-label="Ver próximas cartas">›</button>
       </section>
-      <button id="activate-instant" class="ability-command" hidden>ATIVAR HABILIDADE <span>2</span><kbd>F</kbd></button>
-      <div id="mage-commands" class="mage-commands" hidden>
-        <button id="mage-fire-command" class="ability-command">CONJURAR FOGO</button>
-        <button id="mage-acid-command" class="ability-command">CÍRCULO ÁCIDO <span>4</span></button>
-      </div>
       <section id="dev-unit-tools" class="dev-unit-tools" aria-label="Ferramentas da unidade selecionada" hidden>
         <div><small>UNIDADE SELECIONADA</small><strong id="dev-unit-name">—</strong></div>
         <div class="dev-unit-levels" role="group" aria-label="Nível da unidade"><span>NÍVEL</span><button data-unit-level="1">1</button><button data-unit-level="2">2</button><button data-unit-level="3">3</button><button data-unit-level="4">4</button></div>
