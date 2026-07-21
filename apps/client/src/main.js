@@ -338,8 +338,8 @@ function applyOnlineState(payload){
   const mine=payload.state.activeSeat===selfSeat,finished=payload.state.phase==='finished';document.querySelector('#turn-label').textContent=finished?(payload.state.winnerSeat===selfSeat?'VITÓRIA':'DERROTA'):(mine?'SEU TURNO':'TURNO RIVAL');document.querySelector('#end-turn').disabled=!mine||finished;
 }
 const lobbyError=document.querySelector('#lobby-error'),gameError=document.querySelector('#game-error'),connectionState=document.querySelector('#connection-state');let gameErrorTimer;function showGameError(message){gameError.textContent=message;clearTimeout(gameErrorTimer);gameErrorTimer=setTimeout(()=>gameError.textContent='',2800)}onlineSocket=new GameSocketClient();
-onlineSocket.addEventListener('connected',()=>{connectionState.textContent='SERVIDOR CONECTADO';document.querySelectorAll('#create-room,#join-room').forEach(button=>button.disabled=false)});
-onlineSocket.addEventListener('disconnected',()=>{connectionState.textContent='CONEXÃO ENCERRADA';lobbyError.textContent='A conexão com a partida foi encerrada.'});
+onlineSocket.addEventListener('connected',()=>{connectionState.textContent='SERVIDOR CONECTADO';lobbyError.textContent='';document.querySelectorAll('#create-room,#join-room').forEach(button=>button.disabled=false)});
+onlineSocket.addEventListener('disconnected',()=>{connectionState.textContent='RECONECTANDO...';lobbyError.textContent='Reconectando ao servidor da partida...';document.querySelectorAll('#create-room,#join-room').forEach(button=>button.disabled=true)});
 onlineSocket.addEventListener(SERVER_EVENTS.ROOM_STATE,event=>{lobbyError.textContent='';gameError.textContent='';applyOnlineState(event.detail)});
 onlineSocket.addEventListener(SERVER_EVENTS.ERROR,event=>{const message=String(event.detail.message??'Erro na partida.');if(document.querySelector('#online-lobby').classList.contains('closed'))showGameError(message);else lobbyError.textContent=message});
 document.querySelectorAll('#create-room,#join-room').forEach(button=>button.disabled=true);
