@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { isMountedArcher } from '../gameplay/unitState.js';
 import { UNIT_MODEL_SCALE } from './createCardUnit.js';
-import { makeArcher, makeGuard, makeTower, makeWarrior } from './unitModels.js';
+import { makeArcher, makeGuard, makeTower, makeWarrior, setArcherMountedState } from './unitModels.js';
 
 const TILE_SIZE = 1.08;
 
@@ -26,6 +26,34 @@ test('guarda possui identidade própria e não usa elementos de mago', () => {
   let magicParts = 0;
   guard.traverse(object => { if (object.userData.magic) magicParts += 1; });
   assert.equal(magicParts, 0);
+  const spear = guard.getObjectByName('guardSpear');
+  assert.ok(spear);
+  const spearShaft = guard.getObjectByName('guardSpearShaft');
+  assert.equal(spearShaft.geometry.parameters.height, 1.82);
+});
+
+test('arqueiro segura arco e flecha com as duas maos e perde a base ao montar', () => {
+  const archer = makeArcher();
+  const bow = archer.getObjectByName('archerBow');
+  const arrow = archer.getObjectByName('archerArrow');
+  assert.ok(bow);
+  assert.ok(arrow);
+  assert.equal(arrow.parent, bow);
+  assert.ok(archer.getObjectByName('archerBowHand'));
+  assert.ok(archer.getObjectByName('archerDrawHand'));
+
+  setArcherMountedState(archer, true);
+  assert.equal(archer.getObjectByName('unitPedestal').visible, false);
+  assert.equal(archer.getObjectByName('teamPlatform').visible, false);
+  assert.equal(archer.getObjectByName('selectionRing').visible, false);
+  setArcherMountedState(archer, false);
+  assert.equal(archer.getObjectByName('unitPedestal').visible, true);
+  assert.equal(archer.getObjectByName('teamPlatform').visible, true);
+});
+
+test('torre oferece um encaixe dedicado para o arqueiro', () => {
+  const tower = makeTower();
+  assert.ok(tower.getObjectByName('archerMount'));
 });
 
 test('guerreiro usa espada sem escudo', () => {

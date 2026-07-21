@@ -19,7 +19,8 @@ export function capsule(radius, length, material, parent, position, rotation = [
 }
 
 export function unitBase(parent, color = 0xb08a43) {
-  add(new THREE.CylinderGeometry(0.54, 0.59, 0.15, 32), M.base, parent, [0, 0.08, 0]);
+  const pedestal = add(new THREE.CylinderGeometry(0.54, 0.59, 0.15, 32), M.base, parent, [0, 0.08, 0]);
+  pedestal.name = 'unitPedestal';
   const platformMaterial = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.5, metalness: 0.32, roughness: 0.48 });
   const platform = add(new THREE.CylinderGeometry(0.49, 0.53, 0.04, 32), platformMaterial, parent, [0, 0.16, 0]);
   platform.name = 'teamPlatform';

@@ -17,19 +17,20 @@ export function createDeploymentOverlay({ scene, tile, half }) {
 
   function show(seat, emphasized = false) {
     clear();
-    if (![1, 2].includes(seat)) return;
-    for (let x = 0; x < GAME_CONFIG.boardSize; x += 1) {
-      for (let z = 0; z < GAME_CONFIG.boardSize; z += 1) {
-        if (!isDeploymentCell(seat, x, z, GAME_CONFIG.boardSize)) continue;
-        const material = new THREE.MeshBasicMaterial({
-          color: TEAM_COLORS[seat], transparent: true, opacity: emphasized ? 0.16 : 0.075,
-          depthWrite: false, side: THREE.DoubleSide
-        });
-        const marker = new THREE.Mesh(geometry, material);
-        marker.rotation.x = -Math.PI / 2;
-        marker.position.set(x * tile - half, 0.074, z * tile - half);
-        scene.add(marker);
-        markers.push(marker);
+    for (const markerSeat of [1, 2]) {
+      for (let x = 0; x < GAME_CONFIG.boardSize; x += 1) {
+        for (let z = 0; z < GAME_CONFIG.boardSize; z += 1) {
+          if (!isDeploymentCell(markerSeat, x, z, GAME_CONFIG.boardSize)) continue;
+          const material = new THREE.MeshBasicMaterial({
+            color: TEAM_COLORS[markerSeat], transparent: true, opacity: emphasized && markerSeat === seat ? 0.2 : 0.1,
+            depthWrite: false, side: THREE.DoubleSide
+          });
+          const marker = new THREE.Mesh(geometry, material);
+          marker.rotation.x = -Math.PI / 2;
+          marker.position.set(x * tile - half, 0.074, z * tile - half);
+          scene.add(marker);
+          markers.push(marker);
+        }
       }
     }
   }

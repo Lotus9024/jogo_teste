@@ -15,6 +15,7 @@ export function makeTower() {
   const stoneLight = new THREE.MeshStandardMaterial({ color: 0x9a8566, roughness: 0.84, flatShading: true });
   const rim = new THREE.MeshStandardMaterial({ color: 0x8f7a5e, roughness: 0.84, flatShading: true });
   add(new THREE.CylinderGeometry(0.52, 0.6, 1.28, 10), stone, rig, [0, 0.8, 0]);
+  add(new THREE.CylinderGeometry(0.48, 0.48, 0.08, 10), M.wood, rig, [0, 1.53, 0]);
   add(new THREE.CylinderGeometry(0.58, 0.58, 0.18, 10), rim, rig, [0, 1.48, 0]);
   for (let i = 0; i < 8; i += 1) {
     const angle = (i / 8) * Math.PI * 2;
@@ -23,6 +24,10 @@ export function makeTower() {
   add(new THREE.BoxGeometry(0.18, 0.48, 0.08), U.plateDark, rig, [0, 0.7, 0.56]);
   add(new THREE.BoxGeometry(0.12, 0.2, 0.06), U.black, rig, [-0.23, 1.05, 0.51]);
   add(new THREE.BoxGeometry(0.12, 0.2, 0.06), U.black, rig, [0.23, 1.05, 0.51]);
+  const archerMount = new THREE.Object3D();
+  archerMount.name = 'archerMount';
+  archerMount.position.set(0, 1.42, 0);
+  rig.add(archerMount);
   setTowerConstructionState(root, false);
   return root;
 }

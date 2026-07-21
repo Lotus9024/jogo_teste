@@ -31,9 +31,15 @@ export function makeGuard() {
   shield.position.set(-0.67, 1.25, 0.18);
   shield.rotation.y = 0.12;
   rig.add(shield);
-  add(new THREE.CylinderGeometry(0.025, 0.035, 2.25, 8), M.wood, rig, [0.62, 1.38, 0.03], [0, 0, -0.06]);
-  add(new THREE.ConeGeometry(0.095, 0.38, 6), U.plate, rig, [0.69, 2.65, 0.03], [0, 0, -0.06]);
-  add(new THREE.CylinderGeometry(0.06, 0.06, 0.22, 8), U.bronze, rig, [0.55, 0.29, 0.03], [0, 0, -0.06]);
+  const spear = new THREE.Group();
+  spear.name = 'guardSpear';
+  spear.position.set(0.61, 1.35, 0.03);
+  spear.rotation.z = -0.06;
+  const spearShaft = add(new THREE.CylinderGeometry(0.025, 0.034, 1.82, 8), M.wood, spear);
+  spearShaft.name = 'guardSpearShaft';
+  add(new THREE.ConeGeometry(0.09, 0.34, 6), U.plate, spear, [0, 1.02, 0]);
+  add(new THREE.CylinderGeometry(0.055, 0.055, 0.18, 8), U.bronze, spear, [0, -0.98, 0]);
+  rig.add(spear);
   const cloak = add(new THREE.ConeGeometry(0.48, 1.3, 10, 4, true), U.blueCloth, rig, [0, 1.18, -0.3], [0, 0, 0], [1, 1, 0.38]);
   cloak.material.side = THREE.DoubleSide;
   root.rotation.y = -0.12;
