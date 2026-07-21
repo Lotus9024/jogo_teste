@@ -1,12 +1,17 @@
 import * as THREE from 'three';
+import { baseCellsForSeat as sharedBaseCellsForSeat } from '@tronos/shared/cards';
 
 export function createBoardCoordinates({ getUnits, tile, half }) {
   function unitAtCell(x, z, exclude = null) {
-    return getUnits().find(unit => (
+    return unitsAtCell(x, z, exclude)[0] ?? null;
+  }
+
+  function unitsAtCell(x, z, exclude = null) {
+    return getUnits().filter(unit => (
       unit !== exclude
       && Math.round((unit.position.x + half) / tile) === x
       && Math.round((unit.position.z + half) / tile) === z
-    )) ?? null;
+    ));
   }
 
   function baseSeatAtCell(x, z) {
@@ -17,17 +22,12 @@ export function createBoardCoordinates({ getUnits, tile, half }) {
   }
 
   function baseCellsForSeat(seat) {
-    const cells = [];
-    const centerZ = seat === 1 ? 13 : 1;
-    for (let x = 6; x <= 8; x += 1) {
-      for (let z = centerZ - 1; z <= centerZ + 1; z += 1) cells.push({ x, z });
-    }
-    return cells;
+    return sharedBaseCellsForSeat(seat, 15);
   }
 
   function snapToTile(value) {
     return THREE.MathUtils.clamp(Math.round((value + half) / tile) * tile - half, -half, half);
   }
 
-  return { unitAtCell, baseSeatAtCell, baseCellsForSeat, snapToTile };
+  return { unitAtCell, unitsAtCell, baseSeatAtCell, baseCellsForSeat, snapToTile };
 }

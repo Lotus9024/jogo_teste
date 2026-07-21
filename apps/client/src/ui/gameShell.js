@@ -37,6 +37,7 @@ export function mountGameShell() {
         <div id="card-hand" class="card-hand"></div>
         <button class="tray-nav tray-next" id="tray-next" aria-label="Ver próximas cartas">›</button>
       </section>
+      <button id="activate-instant" class="ability-command" hidden>ATIVAR HABILIDADE <span>2</span><kbd>F</kbd></button>
       <div class="bottom-command">
         <div class="command-resource energy" aria-label="Energia"><b id="self-energy">10<em>/12</em></b></div>
         <button id="end-turn">PASSAR TURNO</button>

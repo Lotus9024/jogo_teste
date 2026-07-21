@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { isAttackDistanceValid, movementDistance } from '@tronos/shared/cards';
-import { setAttackHighlight } from './unitState.js';
+import { isMountedArcher, setAttackHighlight } from './unitState.js';
 
 export function createMovementOverlay({
   scene,
@@ -45,12 +45,17 @@ export function createMovementOverlay({
     const originX = Math.round((unit.position.x + half) / tile);
     const originZ = Math.round((unit.position.z + half) / tile);
     const range = unit.userData.move;
-    for (let dx = -range; dx <= range; dx += 1) {
+    if (!isMountedArcher(unit)) for (let dx = -range; dx <= range; dx += 1) {
       for (let dz = -range; dz <= range; dz += 1) {
         const x = originX + dx;
         const z = originZ + dz;
         const distance = movementDistance(unit.userData.movementType, { x: 0, z: 0 }, { x: dx, z: dz });
-        if (!distance || distance > range || x < 0 || x >= 15 || z < 0 || z >= 15 || baseSeatAtCell(x, z) || unitAtCell(x, z, unit)) continue;
+        const occupant = unitAtCell(x, z, unit);
+        const mountableTower = unit.userData.cardId === 'archer'
+          && occupant?.userData.cardId === 'tower'
+          && occupant.userData.ownerSeat === unit.userData.ownerSeat
+          && !occupant.userData.underConstruction;
+        if (!distance || distance > range || x < 0 || x >= 15 || z < 0 || z >= 15 || baseSeatAtCell(x, z) || (occupant && !mountableTower)) continue;
         addMarker(x, z, movementMaterial);
       }
     }

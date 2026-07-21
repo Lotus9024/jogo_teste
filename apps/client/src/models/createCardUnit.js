@@ -1,14 +1,17 @@
 import * as THREE from 'three';
 import { M, add } from '../core/scenePrimitives.js';
 import { ensureHealthBadge } from '../ui/unitHealthBadge.js';
-import { makeArcher, makeMage, makeWarrior, makeWoodBarrier, unitBase } from './unitModels.js';
+import { makeArcher, makeGuard, makeTower, makeWarrior, makeWoodBarrier, unitBase } from './unitModels.js';
 
 const UNIT_FACTORIES = Object.freeze({
   warrior: makeWarrior,
-  guard: makeMage,
+  guard: makeGuard,
   archer: makeArcher,
-  wooden_barrier: makeWoodBarrier
+  wooden_barrier: makeWoodBarrier,
+  tower: makeTower
 });
+
+export const UNIT_MODEL_SCALE = 0.55;
 
 function createFallbackUnit(card) {
   const colors = { common: 0x858a85, uncommon: 0x628c67, rare: 0x5186a8, epic: 0x8d5ab0, legendary: 0xc68a34 };
@@ -51,7 +54,7 @@ export function createCardUnit(card, cardIndex) {
     abilityUsed: false,
     description: card.abilityText
   };
-  unit.scale.setScalar(0.64);
+  unit.scale.setScalar(UNIT_MODEL_SCALE);
   ensureHealthBadge(unit);
   return unit;
 }

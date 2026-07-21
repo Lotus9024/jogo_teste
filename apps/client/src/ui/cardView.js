@@ -1,11 +1,15 @@
 import { CARD_DEFINITIONS } from '@tronos/shared/cards';
 
-export const cards = CARD_DEFINITIONS.map(card => ({
-  ...card,
-  ability: card.ability.name,
-  abilityCost: card.ability.cost,
-  abilityText: card.ability.description
-}));
+export const cards = CARD_DEFINITIONS.map(card => {
+  const featuredAbility = card.instant.enabled ? card.instant : card.ability;
+  return {
+    ...card,
+    ability: featuredAbility.name,
+    abilityCost: featuredAbility.cost,
+    abilityText: featuredAbility.description,
+    abilityKind: card.instant.enabled ? 'instant' : 'normal'
+  };
+});
 
 const bootIcon = '<svg class="stat-boot" viewBox="0 0 24 24"><path d="M5 2h8v9.5c0 1.5 1.2 2.5 2.8 2.5H20c1.1 0 2 .9 2 2v4H9a6 6 0 0 1-6-6V9h2V2Z"/></svg>';
 const hourglassIcon = '<span aria-hidden="true">⌛</span>';

@@ -23,7 +23,7 @@ test('inicia com cinco cartas privadas e dez de energia', () => {
 test('invocação válida consome a carta e energia no servidor', () => {
   const { rooms, room, first } = match();
   const player = room.state.players[0], instance = player.hand[0], cost = CARD_BY_ID[instance.cardId].cost;
-  rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: instance.instanceId, x: 2, z: 9 }, room.state.version);
+  rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: instance.instanceId, x: 6, z: 10 }, room.state.version);
   assert.equal(player.hand.length, 4);
   assert.equal(player.energy, 10 - cost);
   assert.equal(room.state.units[0].ownerSeat, 1);
@@ -36,7 +36,7 @@ test('rejeita ação fora do turno, replay e posição adulterada', () => {
   const oldVersion = room.state.version;
   rooms.action(room.code, first.id, { type: 'end_turn' }, oldVersion);
   assert.throws(() => rooms.action(room.code, second.id, { type: 'end_turn' }, oldVersion), /estado/);
-  assert.throws(() => rooms.action(room.code, second.id, { type: 'summon', cardInstanceId: secondCard.instanceId, x: 2, z: 12 }, room.state.version), /zona/);
+  assert.throws(() => rooms.action(room.code, second.id, { type: 'summon', cardInstanceId: secondCard.instanceId, x: 2, z: 12 }, room.state.version), /2 casas/);
 });
 
 test('passar turno compra carta, entrega energia e reinicia o relógio', () => {
@@ -59,7 +59,8 @@ test('cartas usam os atributos definidos', () => {
       warrior: { hp: 3, damage: 2, move: 2, movementType: 'straight', cost: 4 },
       guard: { hp: 4, damage: 1, move: 1, movementType: 'any', cost: 4 },
       archer: { hp: 2, damage: 2, move: 2, movementType: 'any', cost: 5 },
-      wooden_barrier: { hp: 2, damage: 0, move: 0, movementType: 'none', cost: 4 }
+      wooden_barrier: { hp: 2, damage: 0, move: 0, movementType: 'none', cost: 4 },
+      tower: { hp: 5, damage: 0, move: 0, movementType: 'none', cost: 7 }
     }
   );
   assert.deepEqual(
@@ -68,13 +69,14 @@ test('cartas usam os atributos definidos', () => {
   );
   Object.values(CARD_BY_ID).forEach(card => {
     assert.equal(card.ability.enabled, false);
-    assert.equal(card.instant.enabled, false);
+    assert.equal(card.instant.enabled, card.id === 'tower');
   });
   assert.deepEqual(
     { minAttackRange: CARD_BY_ID.archer.minAttackRange, attackRange: CARD_BY_ID.archer.attackRange, ability: CARD_BY_ID.archer.ability.name },
     { minAttackRange: 3, attackRange: 4, ability: 'Nenhuma' }
   );
   assert.equal(CARD_BY_ID.wooden_barrier.buildRounds, 1);
+  assert.equal(CARD_BY_ID.tower.buildRounds, 2);
 });
 
 test('guerreiro só anda reto e guarda pode andar na diagonal', () => {
@@ -147,7 +149,7 @@ test('arqueiro ataca somente a três ou quatro blocos e não ocupa a casa da ví
 test('barreira permanece em construção durante uma rodada', () => {
   const { rooms, room, first, second } = match();
   room.state.players[0].hand.push({ instanceId: 'barrier-card', cardId: 'wooden_barrier' });
-  rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: 'barrier-card', x: 3, z: 9 }, room.state.version);
+  rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: 'barrier-card', x: 6, z: 10 }, room.state.version);
   const barrier = room.state.units[0];
   assert.equal(barrier.underConstruction, true);
   assert.equal(barrier.buildReadyRound, 2);
@@ -160,7 +162,7 @@ test('barreira permanece em construção durante uma rodada', () => {
   const secondPlayer = match();
   secondPlayer.rooms.action(secondPlayer.room.code, secondPlayer.first.id, { type: 'end_turn' }, secondPlayer.room.state.version);
   secondPlayer.room.state.players[1].hand.push({ instanceId: 'barrier-card-seat-2', cardId: 'wooden_barrier' });
-  secondPlayer.rooms.action(secondPlayer.room.code, secondPlayer.second.id, { type: 'summon', cardInstanceId: 'barrier-card-seat-2', x: 3, z: 5 }, secondPlayer.room.state.version);
+  secondPlayer.rooms.action(secondPlayer.room.code, secondPlayer.second.id, { type: 'summon', cardInstanceId: 'barrier-card-seat-2', x: 6, z: 4 }, secondPlayer.room.state.version);
   const secondBarrier = secondPlayer.room.state.units[0];
   secondPlayer.rooms.action(secondPlayer.room.code, secondPlayer.second.id, { type: 'end_turn' }, secondPlayer.room.state.version);
   assert.equal(secondBarrier.underConstruction, true);
@@ -187,4 +189,70 @@ test('habilidades normais e instantâneas estão indisponíveis', () => {
   room.state.units.push({ id: 'warrior-1', ownerSeat: 1, cardId: 'warrior', x: 4, z: 9, hp: 3, shield: 0, actionUsed: false, abilityUsed: false, instantUsedRound: 0, empowered: false });
   assert.throws(() => rooms.action(room.code, first.id, { type: 'use_ability', unitId: 'warrior-1' }, room.state.version), /indisponível/);
   assert.throws(() => rooms.action(room.code, first.id, { type: 'use_instant', unitId: 'warrior-1' }, room.state.version), /indisponível/);
+});
+
+test('cartas só podem ser lançadas a até duas casas do reino', () => {
+  const { rooms, room, first } = match();
+  room.state.players[0].hand.push({ instanceId: 'zone-card', cardId: 'wooden_barrier' });
+  assert.throws(
+    () => rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: 'zone-card', x: 6, z: 9 }, room.state.version),
+    /2 casas/
+  );
+  rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: 'zone-card', x: 6, z: 10 }, room.state.version);
+  assert.deepEqual({ x: room.state.units[0].x, z: room.state.units[0].z }, { x: 6, z: 10 });
+});
+
+test('torre leva duas rodadas para concluir', () => {
+  const { rooms, room, first, second } = match();
+  room.state.players[0].hand.push({ instanceId: 'tower-card', cardId: 'tower' });
+  rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: 'tower-card', x: 6, z: 10 }, room.state.version);
+  const tower = room.state.units[0];
+  assert.equal(tower.underConstruction, true);
+  assert.equal(tower.buildReadyRound, 3);
+  rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
+  rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
+  assert.equal(tower.underConstruction, true);
+  rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
+  rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
+  assert.equal(tower.underConstruction, false);
+});
+
+test('arqueiro pode subir na torre e recebe mais um de alcance', () => {
+  const { rooms, room, first } = match();
+  room.state.units.push(
+    { id: 'tower-built', ownerSeat: 1, cardId: 'tower', x: 6, z: 10, hp: 5, shield: 0, actionUsed: false, underConstruction: false },
+    { id: 'archer-mount', ownerSeat: 1, cardId: 'archer', x: 6, z: 8, hp: 2, shield: 0, actionUsed: false, instantUsedRound: 0 },
+    { id: 'range-five', ownerSeat: 2, cardId: 'guard', x: 6, z: 5, hp: 4, shield: 0, actionUsed: false }
+  );
+  rooms.action(room.code, first.id, { type: 'move', unitId: 'archer-mount', x: 6, z: 10 }, room.state.version);
+  const archer = room.state.units.find(unit => unit.id === 'archer-mount');
+  assert.equal(archer.mountedOnTowerId, 'tower-built');
+  archer.actionUsed = false;
+  assert.throws(
+    () => rooms.action(room.code, first.id, { type: 'move', unitId: 'archer-mount', x: 6, z: 9 }, room.state.version),
+    /arqueiro montado não pode se mover/i
+  );
+  assert.deepEqual({ x: archer.x, z: archer.z, tower: archer.mountedOnTowerId }, { x: 6, z: 10, tower: 'tower-built' });
+  rooms.action(room.code, first.id, { type: 'attack', unitId: 'archer-mount', targetUnitId: 'range-five' }, room.state.version);
+  assert.equal(room.state.units.find(unit => unit.id === 'range-five').hp, 2);
+});
+
+test('rajada da torre funciona em qualquer turno e recarrega após uma rodada', () => {
+  const { rooms, room, first, second } = match();
+  room.state.units.push(
+    { id: 'tower-seat-2', ownerSeat: 2, cardId: 'tower', x: 7, z: 4, hp: 5, shield: 0, actionUsed: false, underConstruction: false },
+    { id: 'archer-seat-2', ownerSeat: 2, cardId: 'archer', x: 7, z: 4, hp: 2, shield: 0, actionUsed: false, instantUsedRound: 0, mountedOnTowerId: 'tower-seat-2' },
+    { id: 'east', ownerSeat: 1, cardId: 'guard', x: 9, z: 4, hp: 4, shield: 0 },
+    { id: 'west', ownerSeat: 1, cardId: 'guard', x: 5, z: 4, hp: 4, shield: 0 },
+    { id: 'south', ownerSeat: 1, cardId: 'guard', x: 7, z: 6, hp: 4, shield: 0 },
+    { id: 'north', ownerSeat: 1, cardId: 'guard', x: 7, z: 2, hp: 4, shield: 0 }
+  );
+  rooms.action(room.code, second.id, { type: 'use_instant', unitId: 'archer-seat-2' }, room.state.version);
+  for (const id of ['east', 'west', 'south', 'north']) assert.equal(room.state.units.find(unit => unit.id === id).hp, 2);
+  assert.equal(room.state.players[1].energy, 8);
+  assert.throws(() => rooms.action(room.code, second.id, { type: 'use_instant', unitId: 'archer-seat-2' }, room.state.version), /indisponível/);
+  rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
+  rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
+  rooms.action(room.code, second.id, { type: 'use_instant', unitId: 'archer-seat-2' }, room.state.version);
+  assert.equal(room.state.units.some(unit => ['east', 'west', 'south', 'north'].includes(unit.id)), false);
 });

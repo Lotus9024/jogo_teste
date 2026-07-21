@@ -34,3 +34,6 @@ canvas{cursor:grab}#game[data-dragging] canvas{cursor:grabbing}.hint{bottom:34px
 @media(max-width:900px){.card-hand{left:20px;transform:translateX(var(--hand-shift,0px))}.tray-prev{left:4px}.tray-next{right:4px}}
 @media(prefers-reduced-motion:reduce){.card-hand.reflow .game-card{animation:none}.hover-card{transition:none}}
 
+.ability-command{position:fixed;z-index:6;left:50%;bottom:160px;transform:translateX(-50%);height:31px;padding:0 13px;border:1px solid rgba(93,145,103,.7);background:linear-gradient(180deg,rgba(29,55,37,.96),rgba(9,18,12,.97));color:#b9d8b9;font:600 7px Cinzel;letter-spacing:.11em;cursor:pointer;box-shadow:0 8px 22px rgba(0,0,0,.55)}
+.ability-command[hidden]{display:none}.ability-command:hover:not(:disabled){filter:brightness(1.18)}.ability-command:disabled{opacity:.42;cursor:not-allowed}.ability-command span{margin-left:8px;color:#75a8b8}.ability-command kbd{margin-left:8px;color:#8ea592;font:7px Inter}
+@media(max-width:900px){.ability-command{bottom:153px}}

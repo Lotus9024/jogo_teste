@@ -1,4 +1,8 @@
-import { setWoodBarrierConstructionState } from '../models/unitModels.js';
+import { setTowerConstructionState, setWoodBarrierConstructionState } from '../models/unitModels.js';
+
+export function isMountedArcher(unit) {
+  return unit?.userData.cardId === 'archer' && Boolean(unit.userData.mountedOnTowerId);
+}
 
 export function setAttackHighlight(unit, highlighted) {
   const ring = unit.getObjectByName('selectionRing');
@@ -32,5 +36,6 @@ export function setUnitTeamColor(unit, color) {
 export function applyConstructionState(unit, underConstruction, units, app) {
   unit.userData.underConstruction = underConstruction;
   if (unit.userData.cardId === 'wooden_barrier') setWoodBarrierConstructionState(unit, underConstruction);
+  if (unit.userData.cardId === 'tower') setTowerConstructionState(unit, underConstruction);
   app.dataset.constructions = String(units.filter(item => item.userData.underConstruction).length);
 }
