@@ -26,3 +26,12 @@
 - Inclua em cada commit somente os arquivos alterados pela tarefa atual.
 - Se surgir qualquer conflito durante pull, merge ou rebase, avise o usuário antes de continuar a publicação.
 - Na resposta final inclua resumo, testes, commit, branch enviada e URL local.
+
+## Projetos e destinos de deploy
+
+- Código-fonte: GitHub `Lotus9024/jogo_teste`.
+- Frontend: projeto Netlify `tronos-em-ruinas`, ID `f26cfbca-b41e-429f-b413-dd6a8dddcef7`, publicado em `https://tronos-em-ruinas.netlify.app`. A configuração está no `netlify.toml`, o build é `npm run build --workspace @tronos/client` e a pasta publicada é `apps/client/dist`.
+- Backend: projeto Square Cloud `Tronos em Ruinas API`, subdomínio `tronos-em-ruinas-api`, publicado em `https://tronos-em-ruinas-api.squareweb.app` e iniciado por `apps/server/src/index.js`, conforme `squarecloud.app`.
+- Banco de dados: PostgreSQL usado pelo backend por meio de `DATABASE_URL` e `MIGRATION_DATABASE_URL`. Nunca revele nem publique os valores dessas variáveis.
+
+Quando o usuário pedir um deploy, explique antes quais destes projetos serão atualizados e o que pertence a cada um. Respeite o escopo pedido: “deploy na Netlify” atualiza somente o frontend; publique também o backend na Square Cloud ou execute migrations somente quando isso for solicitado explicitamente ou for indispensável para uma mudança de backend já autorizada. Ao concluir, informe os projetos efetivamente publicados, suas URLs e os links de logs ou administração disponíveis.
