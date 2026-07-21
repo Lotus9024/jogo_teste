@@ -7,7 +7,7 @@ export const GAME_CONFIG = Object.freeze({
   level2MaxEnergy: 12,
   level2CitizenRequirement: 9,
   energyPerTurn: 4,
-  turnDurationSeconds: 60,
+  turnDurationSeconds: 120,
   cardsDrawnPerTurn: 1,
   startingHandSize: 5,
   maxHandSize: 7,

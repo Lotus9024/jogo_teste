@@ -3,6 +3,7 @@ import { CARD_BY_ID, ORTHOGONAL_DIRECTIONS, cellKey, citizensForSeat, forwardDel
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { createCinematicCamera } from './core/createCinematicCamera.js';
 import { createGameScene } from './core/createGameScene.js';
+import { loadGameSettings, saveGameSettings } from './core/gameSettings.js';
 import { add } from './core/scenePrimitives.js';
 import { createBoardCoordinates } from './gameplay/boardCoordinates.js';
 import { createDeploymentOverlay } from './gameplay/createDeploymentOverlay.js';
@@ -23,10 +24,11 @@ import './style.css';
 mountGameShell();
 const app = document.querySelector('#game');
 app.focus({ preventScroll: true });
-const { scene, renderer, camera, controls, updateDynamicLighting } = createGameScene(app);
+const gameSettings=loadGameSettings();let graphicsQuality=gameSettings.graphics,cameraCentering=gameSettings.cameraCentering;
+const { scene, renderer, camera, controls, updateDynamicLighting, setGraphicsQuality:setSceneGraphicsQuality } = createGameScene(app,{quality:graphicsQuality});
 const damageEffects = createDamageEffects(scene);
 const cameraTransition = createCinematicCamera({ camera, controls, app });
-const { board, tile, half, alliedKeep, enemyKeep, deck3D, topDeckCard, wisps, fireLights, updateTerrain } = createWorld(scene, renderer);
+const { board, tile, half, alliedKeep, enemyKeep, deck3D, topDeckCard, wisps, fireLights, updateTerrain, setGraphicsQuality:setWorldGraphicsQuality } = createWorld(scene, renderer,{quality:graphicsQuality});
 
 // Each miniature is snapped to the exact center of a tile. Scale 0.64 keeps
 // even the outermost weapon silhouette inside the 1.08 × 1.08 footprint.
@@ -77,7 +79,8 @@ function syncInstantCommand(){
   instantButton.title=used?'Disponível novamente na próxima rodada':'Dispara nas quatro direções retas';
 }
 function clearUnitSelection(){if(!selected)return;const ring=selected.getObjectByName('selectionRing');if(ring)ring.material.emissiveIntensity=ring.userData.baseEmissiveIntensity??.75;selected=null;clearMovementGrid();syncInstantCommand()}
-function selectUnit(u,{cinematic=true}={}){if(selected){const previousRing=selected.getObjectByName('selectionRing');if(previousRing)previousRing.material.emissiveIntensity=previousRing.userData.baseEmissiveIntensity??.75}selected=u;const ring=selected.getObjectByName('selectionRing');if(ring)ring.material.emissiveIntensity=1.6;showMovementGrid(u);syncInstantCommand();if(cinematic)cameraTransition.focusBoard({side:selfSeat===2?-1:1})}
+function centerCamera(){if(cameraCentering)cameraTransition.focusBoard({side:selfSeat===2?-1:1})}
+function selectUnit(u,{cinematic=true}={}){if(selected){const previousRing=selected.getObjectByName('selectionRing');if(previousRing)previousRing.material.emissiveIntensity=previousRing.userData.baseEmissiveIntensity??.75}selected=u;const ring=selected.getObjectByName('selectionRing');if(ring)ring.material.emissiveIntensity=1.6;showMovementGrid(u);syncInstantCommand();if(cinematic)centerCamera()}
 function boardCellAtPointer(e){
   const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;ray.setFromCamera(pointer,camera);
   if(!ray.ray.intersectPlane(boardPlane,dragPoint)||Math.abs(dragPoint.x)>half+tile/2||Math.abs(dragPoint.z)>half+tile/2)return null;
@@ -171,7 +174,7 @@ function finishDrag(e){
     moveOrAttackUnit(dragged,destination,null,dragged.userData.dragOrigin);
   }
   app.dataset.lastMoved=`${dragged.userData.name}:${dragged.position.x.toFixed(2)},${dragged.position.z.toFixed(2)}`;delete app.dataset.dragging;const wasDrag=dragMoved;justDragged=true;setTimeout(()=>{justDragged=false},0);dragged=null;
-  if(wasDrag)clearMovementGrid();else cameraTransition.focusBoard({side:selfSeat===2?-1:1});
+  if(wasDrag)clearMovementGrid();else centerCamera();
   if(renderer.domElement.hasPointerCapture(e.pointerId))renderer.domElement.releasePointerCapture(e.pointerId);
 }
 const hoverCard=document.querySelector('#hover-card');
@@ -191,6 +194,16 @@ renderer.domElement.addEventListener('pointercancel',finishDrag,true);
 renderer.domElement.addEventListener('pointerleave',()=>hoverCard.classList.remove('visible'));
 
 let activePlayer=1,round=1;
+const settingsModal=document.querySelector('#settings-modal'),settingsToggle=document.querySelector('#settings-toggle'),settingsClose=document.querySelector('#settings-close');let restoreControlsAfterSettings=true;
+function syncSettingsButtons(){document.querySelectorAll('[data-graphics]').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.graphics===graphicsQuality)));document.querySelectorAll('[data-camera-centering]').forEach(button=>button.setAttribute('aria-pressed',String((button.dataset.cameraCentering==='true')===cameraCentering)))}
+function persistSettings(){saveGameSettings({graphics:graphicsQuality,cameraCentering})}
+function applyGraphicsQuality(nextQuality){graphicsQuality=nextQuality;setSceneGraphicsQuality(nextQuality);setWorldGraphicsQuality(nextQuality);resize();persistSettings();syncSettingsButtons()}
+function openSettings(){restoreControlsAfterSettings=controls.enabled;controls.enabled=false;settingsModal.hidden=false;syncSettingsButtons();settingsClose.focus()}
+function closeSettings(){settingsModal.hidden=true;controls.enabled=restoreControlsAfterSettings&&!cameraTransition.active;settingsToggle.focus()}
+settingsToggle.addEventListener('click',openSettings);settingsClose.addEventListener('click',closeSettings);settingsModal.addEventListener('click',event=>{if(event.target===settingsModal)closeSettings()});
+document.querySelectorAll('[data-graphics]').forEach(button=>button.addEventListener('click',()=>applyGraphicsQuality(button.dataset.graphics)));
+document.querySelectorAll('[data-camera-centering]').forEach(button=>button.addEventListener('click',()=>{cameraCentering=button.dataset.cameraCentering==='true';if(!cameraCentering)cameraTransition.cancel();persistSettings();syncSettingsButtons()}));
+addEventListener('keydown',event=>{if(event.key==='Escape'&&!settingsModal.hidden)closeSettings()});syncSettingsButtons();
 function setKingdomProgressHud(citizens,level,enemyLevel=1){document.querySelector('#self-citizens').textContent=String(citizens);document.querySelector('#self-level').textContent=`LV ${level}`;document.querySelector('#enemy-base-level').textContent=`LV ${enemyLevel}`;document.querySelector('#level-requirement').textContent=level>=2?'Nível 2 alcançado. Os próximos níveis serão adicionados depois.':'Nível 2: tenha 9 cidadãos em seu reino.'}
 function syncLocalKingdomHud(){const localUnits=units.map(unit=>({ownerSeat:unit.userData.ownerSeat??1,cardId:unit.userData.cardId,x:Math.round((unit.position.x+half)/tile),z:Math.round((unit.position.z+half)/tile),underConstruction:Boolean(unit.userData.underConstruction)})),citizens=citizensForSeat(1,localUnits,roads,GAME_CONFIG.boardSize),level=citizens>=GAME_CONFIG.level2CitizenRequirement?2:1;setKingdomProgressHud(citizens,level)}
 function endTurn(){if(onlineState)return sendOnlineAction({type:'end_turn'});activePlayer=activePlayer===1?2:1;if(activePlayer===1)round++;units.filter(unit=>unit.userData.underConstruction&&unit.userData.ownerSeat===activePlayer&&unit.userData.buildReadyRound<=round).forEach(unit=>applyConstructionState(unit,false));syncLocalKingdomHud();showDeploymentArea(false);syncInstantCommand()}
@@ -314,7 +327,7 @@ function animateServerDraw(){const deck=deckScreenPosition(),target=hand.getBoun
 function applyOnlineState(payload){
   const previous=onlineState,shouldSetPerspective=!previous||previous.self.seat!==payload.self.seat||previous.state.phase==='waiting';onlineState=payload;selfSeat=payload.self.seat;
   showDeploymentArea(false);
-  document.querySelector('#waiting-code').textContent=payload.code;document.querySelector('#waiting-room').hidden=false;document.querySelector('#match-code').textContent=`SALA ${payload.code}`;document.querySelector('#match-state').hidden=false;
+  document.querySelector('#waiting-code').textContent=payload.code;document.querySelector('#waiting-room').hidden=false;document.querySelector('#match-state').hidden=false;
   if(payload.state.phase==='waiting'){document.querySelector('#waiting-status').textContent='Aguardando o rei rival...';return}
   document.querySelector('#online-lobby').classList.add('closed');if(shouldSetPerspective)setOnlinePerspective();
   if(previous&&payload.self.hand.length>previous.self.hand.length)animateServerDraw();renderOnlineHand(payload.self.hand);reconcileRoads(payload.state.roads??[]);reconcileOnlineUnits(payload.state.units);
@@ -333,7 +346,7 @@ document.querySelectorAll('#create-room,#join-room').forEach(button=>button.disa
 document.querySelector('#room-code').addEventListener('input',event=>{event.target.value=event.target.value.toUpperCase().replace(/[^A-Z2-9]/g,'').slice(0,6)});
 document.querySelector('#create-room').addEventListener('click',()=>onlineSocket.createRoom(document.querySelector('#player-name').value));
 document.querySelector('#join-room').addEventListener('click',()=>onlineSocket.joinRoom(document.querySelector('#room-code').value,document.querySelector('#player-name').value));
-document.querySelector('#dev-mode').addEventListener('click',()=>{devMode=true;onlineState=null;selfSeat=null;app.dataset.mode='dev';document.querySelector('#online-lobby').classList.add('closed');document.querySelector('#match-state').hidden=false;document.querySelector('#match-code').textContent='DEV MODE';document.querySelector('#turn-label').textContent='TESTE LIVRE';document.querySelector('#turn-clock').textContent='∞';document.querySelector('#end-turn').disabled=false;setResource('#self-energy','∞','');setResource('#self-health',GAME_CONFIG.startingBaseHp,GAME_CONFIG.startingBaseHp);syncLocalKingdomHud();showDeploymentArea(false)});
+document.querySelector('#dev-mode').addEventListener('click',()=>{devMode=true;onlineState=null;selfSeat=null;app.dataset.mode='dev';document.querySelector('#online-lobby').classList.add('closed');document.querySelector('#match-state').hidden=false;document.querySelector('#turn-label').textContent='TESTE LIVRE';document.querySelector('#turn-clock').textContent='∞';document.querySelector('#end-turn').disabled=false;setResource('#self-energy','∞','');setResource('#self-health',GAME_CONFIG.startingBaseHp,GAME_CONFIG.startingBaseHp);syncLocalKingdomHud();showDeploymentArea(false)});
 onlineSocket.connect();
 setInterval(()=>{if(!onlineState?.state.turnEndsAt)return;const remaining=Math.max(0,onlineState.state.turnEndsAt-Date.now()),minutes=Math.floor(remaining/60000),seconds=Math.floor(remaining%60000/1000);document.querySelector('#turn-clock').textContent=`${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`},250);
 
@@ -341,5 +354,6 @@ const clock=new THREE.Clock();
 const enemyBaseTag=document.querySelector('.enemy-base-tag');
 const baseTagPoint=new THREE.Vector3();
 function positionEnemyStatus(){const target=selfSeat===2?alliedKeep:enemyKeep;target.getWorldPosition(baseTagPoint);baseTagPoint.y+=4.9;baseTagPoint.project(camera);enemyBaseTag.style.left=`${(baseTagPoint.x*.5+.5)*innerWidth}px`;enemyBaseTag.style.top=`${(-baseTagPoint.y*.5+.5)*innerHeight}px`;enemyBaseTag.style.visibility=baseTagPoint.z<1?'visible':'hidden';}
-function animate(){requestAnimationFrame(animate);const delta=clock.getDelta(),t=clock.elapsedTime;controls.update();cameraTransition.update();damageEffects.update(delta);updateDynamicLighting(t);updateTerrain(t);positionEnemyStatus();topDeckCard.position.y=THREE.MathUtils.lerp(topDeckCard.position.y,deckHover ? .98 : .766,.14);topDeckCard.rotation.z=THREE.MathUtils.lerp(topDeckCard.rotation.z,deckHover ? -.08 : 0,.12);units.forEach((u,i)=>{const rig=u.getObjectByName('rig');rig.position.y=.18+Math.sin(t*1.35+i*1.7)*.012;rig.rotation.z=Math.sin(t*.8+i)*.006;u.traverse(o=>{if(o.userData.magic){o.rotation.y=t*1.5;o.position.y=2.23+Math.sin(t*2.5)*.045;}})});wisps.forEach((w,i)=>{w.position.x=w.userData.baseX+Math.sin(t*.12+i)*.55;w.material.opacity=.012+i*.003+Math.sin(t*.35+i)*.004;});fireLights.forEach((light,i)=>{const pulse=.91+Math.sin(t*7.4+light.userData.phase)*.065+Math.sin(t*13.1+i)*.025;light.intensity=light.userData.baseIntensity*pulse;});renderer.render(scene,camera)}
-function resize(){const aspect=innerWidth/innerHeight,view=innerWidth<700?12.6:11.45;camera.left=-view*aspect;camera.right=view*aspect;camera.top=view;camera.bottom=-view;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7))}addEventListener('resize',resize);resize();animate();setTimeout(()=>document.querySelector('.loading').classList.add('done'),500);
+let lastStatusUpdate=0;
+function animate(){requestAnimationFrame(animate);const delta=clock.getDelta(),t=clock.elapsedTime;controls.update();cameraTransition.update();damageEffects.update(delta);if(t-lastStatusUpdate>(graphicsQuality==='low'?.1:.033)){positionEnemyStatus();lastStatusUpdate=t}topDeckCard.position.y=THREE.MathUtils.lerp(topDeckCard.position.y,deckHover ? .98 : .766,.14);topDeckCard.rotation.z=THREE.MathUtils.lerp(topDeckCard.rotation.z,deckHover ? -.08 : 0,.12);if(graphicsQuality==='high'){updateDynamicLighting(t);updateTerrain(t);units.forEach((u,i)=>{const rig=u.getObjectByName('rig');rig.position.y=.18+Math.sin(t*1.35+i*1.7)*.012;rig.rotation.z=Math.sin(t*.8+i)*.006;u.traverse(o=>{if(o.userData.magic){o.rotation.y=t*1.5;o.position.y=2.23+Math.sin(t*2.5)*.045;}})});wisps.forEach((w,i)=>{w.position.x=w.userData.baseX+Math.sin(t*.12+i)*.55;w.material.opacity=.012+i*.003+Math.sin(t*.35+i)*.004;});fireLights.forEach((light,i)=>{const pulse=.91+Math.sin(t*7.4+light.userData.phase)*.065+Math.sin(t*13.1+i)*.025;light.intensity=light.userData.baseIntensity*pulse;})}renderer.render(scene,camera)}
+function resize(){const aspect=innerWidth/innerHeight,view=innerWidth<700?12.6:11.45;camera.left=-view*aspect;camera.right=view*aspect;camera.top=view;camera.bottom=-view;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,graphicsQuality==='low'?.9:1.7))}addEventListener('resize',resize);resize();animate();setTimeout(()=>document.querySelector('.loading').classList.add('done'),500);

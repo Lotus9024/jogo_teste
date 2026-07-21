@@ -2,17 +2,17 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createMagicSky } from './createMagicSky.js';
 
-export function createGameScene(app) {
+export function createGameScene(app, { quality = 'high' } = {}) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x070b11);
   scene.fog = new THREE.FogExp2(0x111923, 0.0185);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 1.7));
+  renderer.setPixelRatio(Math.min(devicePixelRatio, quality === 'low' ? 0.9 : 1.7));
   renderer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-  renderer.shadowMap.autoUpdate = true;
+  renderer.shadowMap.autoUpdate = false;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.2;
@@ -26,7 +26,7 @@ export function createGameScene(app) {
   camera.position.set(0, 16, 5.2);
   camera.lookAt(0, 0, 0);
   scene.add(camera);
-  const magicSky = createMagicSky(scene, renderer, app, camera);
+  const magicSky = createMagicSky(scene, renderer, app, { quality });
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
@@ -75,18 +75,20 @@ export function createGameScene(app) {
   scene.add(indirectWarmth);
 
   function updateDynamicLighting(elapsed) {
-    // A subtle orbit keeps the shadows alive without making the board appear
-    // to spin through a full day/night cycle during a match.
-    const angle = elapsed * 0.035;
-    sun.position.set(
-      -7.8 + Math.sin(angle) * 0.9,
-      14.2 + Math.sin(angle * 0.63) * 0.22,
-      -5.4 + Math.cos(angle) * 0.9
-    );
-    sunTarget.position.y = Math.sin(angle * 0.41) * 0.08;
-    sunTarget.updateMatrixWorld();
     magicSky.update(elapsed);
   }
 
-  return { scene, renderer, camera, controls, updateDynamicLighting };
+  function setGraphicsQuality(nextQuality) {
+    const low = nextQuality === 'low';
+    renderer.setPixelRatio(Math.min(devicePixelRatio, low ? 0.9 : 1.7));
+    renderer.shadowMap.enabled = !low;
+    sun.castShadow = !low;
+    renderer.shadowMap.needsUpdate = !low;
+    magicSky.setQuality(nextQuality);
+    app.dataset.graphicsQuality = nextQuality;
+    app.dataset.shadows = low ? 'disabled' : 'static-soft';
+  }
+
+  setGraphicsQuality(quality);
+  return { scene, renderer, camera, controls, updateDynamicLighting, setGraphicsQuality };
 }

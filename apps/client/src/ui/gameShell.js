@@ -28,7 +28,8 @@ export function mountGameShell() {
       <button id="draw-card" class="sr-only" aria-label="Comprar carta do baralho 3D">Comprar carta <span id="deck-count">28</span></button>
       <section id="deck-preview" class="deck-preview" aria-live="polite" aria-hidden="true"></section>
       <aside id="hover-card" class="hover-card unit-card-preview" aria-hidden="true"></aside>
-      <div id="match-state" class="match-state" hidden><b id="match-code"></b><span id="turn-label"></span><time id="turn-clock">01:00</time></div>
+      <div id="match-state" class="match-state" hidden><span id="turn-label">SEU TURNO</span><time id="turn-clock">02:00</time></div>
+      <button id="settings-toggle" class="settings-toggle" aria-haspopup="dialog" aria-controls="settings-modal" aria-label="Abrir configurações">⚙</button>
       <output id="game-error" class="game-error" aria-live="polite"></output>
       <div class="base-health enemy-base-tag" role="img" aria-label="Vida do castelo inimigo: ${GAME_CONFIG.startingBaseHp} de ${GAME_CONFIG.startingBaseHp}"><b id="enemy-base-level">LV 1</b><i style="width:100%"></i></div>
       <section class="card-dock" aria-label="Mão de cartas">
@@ -46,5 +47,18 @@ export function mountGameShell() {
         <div class="command-resource citizens" id="citizen-resource" aria-label="Cidadãos"><small>CIDADÃOS</small><b><span aria-hidden="true">☺</span> <strong id="self-citizens">0</strong></b></div>
       </div>
       <div class="loading"><div class="loader-mark">✦</div><span>PREPARANDO O CAMPO</span></div>
+      <div id="settings-modal" class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
+        <section class="settings-panel">
+          <header><div><small>TRONOS EM RUÍNAS</small><h2 id="settings-title">Configurações</h2></div><button id="settings-close" aria-label="Fechar configurações">×</button></header>
+          <div class="settings-group">
+            <div><small>DESEMPENHO</small><h3>Gráficos</h3><p>Baixo reduz polígonos, efeitos e resolução. Alto preserva o visual completo.</p></div>
+            <div class="settings-options" role="group" aria-label="Qualidade dos gráficos"><button data-graphics="low">BAIXO</button><button data-graphics="high">ALTO</button></div>
+          </div>
+          <div class="settings-group">
+            <div><small>JOGABILIDADE</small><h3>Câmera se centralizar</h3><p>Move a câmera para o centro do tabuleiro ao selecionar uma criatura.</p></div>
+            <div class="settings-options" role="group" aria-label="Centralização da câmera"><button data-camera-centering="false">DESLIGADO</button><button data-camera-centering="true">LIGADO</button></div>
+          </div>
+        </section>
+      </div>
     </main>`;
 }

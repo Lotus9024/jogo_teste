@@ -31,12 +31,16 @@ function createRockMaterial(renderer) {
   });
 }
 
-export function createIslandRocks(renderer) {
+export function createIslandRocks(renderer, { autoLoad = true } = {}) {
   const group = new THREE.Group();
   group.name = 'Moonrocks da superfície da ilha';
   group.userData.status = 'loading';
 
-  new GLTFLoader().load(
+  let started = false;
+  function load() {
+    if (started) return;
+    started = true;
+    new GLTFLoader().load(
     ROCK_MODEL,
     gltf => {
       let sourceMesh;
@@ -73,7 +77,10 @@ export function createIslandRocks(renderer) {
     () => {
       group.userData.status = 'failed';
     }
-  );
+    );
+  }
+  group.userData.load = load;
+  if (autoLoad) load();
 
   return group;
 }

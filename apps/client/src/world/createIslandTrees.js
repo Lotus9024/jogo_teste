@@ -73,13 +73,17 @@ function createPlacements() {
   return placements;
 }
 
-export function createIslandTrees() {
+export function createIslandTrees({ autoLoad = true } = {}) {
   const group = new THREE.Group();
   group.name = 'Árvores personalizadas da ilha';
   group.userData.status = 'loading';
 
-  const loader = new GLTFLoader();
-  Promise.all(TREE_MODELS.map(url => loadTree(loader, url)))
+  let started = false;
+  function load() {
+    if (started) return;
+    started = true;
+    const loader = new GLTFLoader();
+    Promise.all(TREE_MODELS.map(url => loadTree(loader, url)))
     .then(models => {
       const trees = models.map(prepareTree);
       createPlacements().forEach(spec => {
@@ -96,6 +100,9 @@ export function createIslandTrees() {
     .catch(() => {
       group.userData.status = 'failed';
     });
+  }
+  group.userData.load = load;
+  if (autoLoad) load();
 
   return group;
 }

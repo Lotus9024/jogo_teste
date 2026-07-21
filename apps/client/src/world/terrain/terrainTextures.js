@@ -11,8 +11,7 @@ function seededRandom(seed) {
   };
 }
 
-export function createGroundTexture(renderer) {
-  const size = 1024;
+export function createGroundTexture(renderer, size = 1024) {
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = size;
   const context = canvas.getContext('2d');
@@ -65,8 +64,7 @@ export function loadIslandGroundTexture(renderer, material) {
   });
 }
 
-export function createCliffTexture(renderer) {
-  const size = 512;
+export function createCliffTexture(renderer, size = 512) {
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = size;
   const context = canvas.getContext('2d');

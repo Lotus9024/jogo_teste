@@ -18,7 +18,7 @@ test('inicia com cinco cartas privadas e dez de energia', () => {
   assert.equal(room.state.players[0].energy, 10);
   assert.equal(room.state.players[0].maxEnergy, 10);
   assert.equal(room.state.players[0].baseHp, 10);
-  assert.equal(GAME_CONFIG.turnDurationSeconds, 60);
+  assert.equal(GAME_CONFIG.turnDurationSeconds, 120);
 });
 
 test('invocação válida consome a carta e energia no servidor', () => {

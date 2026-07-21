@@ -159,9 +159,9 @@ function createMagicDust() {
   return dust;
 }
 
-export function createMagicTerrain(renderer) {
-  const texture = createGroundTexture(renderer);
-  const cliffTexture = createCliffTexture(renderer);
+export function createMagicTerrain(renderer, { quality = 'high' } = {}) {
+  const texture = createGroundTexture(renderer, quality === 'low' ? 384 : 1024);
+  const cliffTexture = createCliffTexture(renderer, quality === 'low' ? 256 : 512);
   const terrainMaterial = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     map: texture,
@@ -170,7 +170,6 @@ export function createMagicTerrain(renderer) {
     roughness: 0.96,
     metalness: 0
   });
-  loadIslandGroundTexture(renderer, terrainMaterial);
   const cliffMaterial = new THREE.MeshStandardMaterial({
     color: 0xffffff,
     map: cliffTexture,
@@ -194,7 +193,13 @@ export function createMagicTerrain(renderer) {
     metalness: 0,
     side: THREE.DoubleSide
   });
-  loadIslandRockTexture(renderer, [cliffMaterial, earthCoreMaterial]);
+  let highResolutionTexturesLoaded = false;
+  function loadHighResolutionTextures() {
+    if (highResolutionTexturesLoaded) return;
+    highResolutionTexturesLoaded = true;
+    loadIslandGroundTexture(renderer, terrainMaterial);
+    loadIslandRockTexture(renderer, [cliffMaterial, earthCoreMaterial]);
+  }
 
   const terrain = new THREE.Group();
   terrain.name = 'Ilha flutuante arcana';
@@ -228,7 +233,9 @@ export function createMagicTerrain(renderer) {
 
   const magicDust = createMagicDust();
 
+  let currentQuality = quality;
   function update(elapsed) {
+    if (currentQuality === 'low') return;
     magicDust.rotation.y = elapsed * 0.014;
     magicDust.position.y = Math.sin(elapsed * 0.24) * 0.09;
     magicDust.material.opacity = 0.5 + Math.sin(elapsed * 0.47) * 0.1;
@@ -248,5 +255,16 @@ export function createMagicTerrain(renderer) {
     });
   }
 
-  return { terrain, magicDust, update };
+  function setQuality(nextQuality) {
+    currentQuality = nextQuality;
+    const high = nextQuality === 'high';
+    [undersideRocks, roots, strataVeins, topDetails, hanging.group, crystals.group, magicDust].forEach(detail => { detail.visible = high; });
+    magicalLift.visible = high;
+    islandBody.castShadow = high;
+    earthCore.castShadow = high;
+    if (high) loadHighResolutionTextures();
+  }
+
+  setQuality(quality);
+  return { terrain, magicDust, update, setQuality };
 }

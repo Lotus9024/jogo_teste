@@ -4,7 +4,7 @@ import { createIslandRocks } from './createIslandRocks.js';
 import { createIslandTrees } from './createIslandTrees.js';
 import { createMagicTerrain } from './createMagicTerrain.js';
 
-export function createWorld(scene, renderer) {
+export function createWorld(scene, renderer, { quality = 'high' } = {}) {
   const fireLights=[];
   const flameOuter=new THREE.MeshBasicMaterial({color:0xff6b2d,toneMapped:false});
   const flameCore=new THREE.MeshBasicMaterial({color:0xffd37a,toneMapped:false});
@@ -108,9 +108,9 @@ export function createWorld(scene, renderer) {
   
   // A ruined, misty valley frames the game board while keeping every tile clear.
   const environment=new THREE.Group(),wisps=[];
-  const {terrain,magicDust,update:updateMagicTerrain}=createMagicTerrain(renderer);
-  const islandRocks=createIslandRocks(renderer);
-  const islandTrees=createIslandTrees();
+  const {terrain,magicDust,update:updateMagicTerrain,setQuality:setTerrainQuality}=createMagicTerrain(renderer,{quality});
+  const islandRocks=createIslandRocks(renderer,{autoLoad:quality==='high'});
+  const islandTrees=createIslandTrees({autoLoad:quality==='high'});
   environment.add(terrain,islandRocks,magicDust,islandTrees);
   const ashStone=new THREE.MeshStandardMaterial({color:0x353c36,roughness:.98});
   
@@ -143,5 +143,14 @@ export function createWorld(scene, renderer) {
   scene.add(board);
 
   const updateTerrain=elapsed=>{updateMagicTerrain(elapsed);};
-  return { board, N, tile, half, alliedKeep, enemyKeep, deck3D, topDeckCard, wisps, fireLights, updateTerrain };
+  function setGraphicsQuality(nextQuality){
+    const high=nextQuality==='high';
+    setTerrainQuality(nextQuality);
+    islandRocks.visible=high;islandTrees.visible=high;
+    wisps.forEach(wisp=>{wisp.visible=high});
+    fireLights.forEach(light=>{light.visible=high});
+    if(high){islandRocks.userData.load?.();islandTrees.userData.load?.()}
+  }
+  setGraphicsQuality(quality);
+  return { board, N, tile, half, alliedKeep, enemyKeep, deck3D, topDeckCard, wisps, fireLights, updateTerrain, setGraphicsQuality };
 }
