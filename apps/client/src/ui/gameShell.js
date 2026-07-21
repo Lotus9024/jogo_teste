@@ -25,6 +25,10 @@ export function mountGameShell() {
     </section>
     <main id="game" tabindex="0" aria-label="Tabuleiro 3D medieval com três tropas">
       <header class="hud-title"><span class="sigil">♜</span><div><small>CRÔNICAS DOS REINOS</small><h1>TRONOS EM RUÍNAS</h1></div></header>
+      <aside id="turn-round-card" class="turn-round-card" aria-label="Turno e rodada" hidden>
+        <div><span>Turno <b id="current-turn-number">1</b></span><span>Rodada <b id="current-round-number">1</b></span></div>
+        <small><b>OBS.</b> Rodada é uma volta completa do jogo.</small>
+      </aside>
       <button id="draw-card" class="sr-only" aria-label="Comprar carta do baralho 3D">Comprar carta <span id="deck-count">28</span></button>
       <section id="deck-preview" class="deck-preview" aria-live="polite" aria-hidden="true"></section>
       <aside id="hover-card" class="hover-card unit-card-preview" aria-hidden="true"></aside>
@@ -49,7 +53,7 @@ export function mountGameShell() {
         <button id="dev-delete-unit" class="dev-danger-button">EXCLUIR</button>
       </section>
       <div class="bottom-command">
-        <div class="command-resource level" tabindex="0" aria-describedby="level-requirement"><small>CASTELO</small><b id="self-level">LV 1</b><span id="level-requirement" role="tooltip">Nível 2: tenha 9 cidadãos em seu reino.</span></div>
+        <div class="command-resource level" tabindex="0" aria-describedby="level-requirement"><small>CASTELO</small><b id="self-level">LV 1</b><span id="level-requirement" role="tooltip">Nível 2: tenha 9 cidadãos e 2 ruas concluídas em seu reino.</span></div>
         <div class="command-resource energy" aria-label="Energia"><small>ENERGIA</small><b id="self-energy">10<em>/${GAME_CONFIG.maxEnergy}</em></b></div>
         <button id="end-turn">PASSAR TURNO</button>
         <div class="command-resource health" aria-label="Vida"><small>VIDA</small><b id="self-health">${GAME_CONFIG.startingBaseHp}<em>/${GAME_CONFIG.startingBaseHp}</em></b></div>

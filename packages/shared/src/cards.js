@@ -50,7 +50,7 @@ export const CARD_DEFINITIONS = Object.freeze([
   }),
   Object.freeze({
     id: 'road', name: 'Rua', description: 'Aumenta em 1 o movimento de quem estiver sobre ela. Casas conectadas à Rua recebem espaço para mais 1 cidadão. Deve estar ligada ao castelo ou a outra Rua.',
-    hp: null, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 1, type: 'terrain', indestructible: true, rarity: 'COMUM', rarityClass: 'common', info: 'TERRENO · RUA', glyph: '═',
+    hp: null, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 1, buildRounds: 1, type: 'terrain', indestructible: true, rarity: 'COMUM', rarityClass: 'common', info: 'TERRENO · RUA', glyph: '═',
     ability: Object.freeze({ name: 'Caminho do reino', cost: '—', description: 'Terreno permanente que se conecta automaticamente e não pode ser destruído.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
@@ -132,10 +132,11 @@ export const ORTHOGONAL_DIRECTIONS = Object.freeze([
 export const cellKey = (x, z) => `${x}:${z}`;
 
 export function connectedRoadKeys(seat, roads, boardSize = 15) {
-  const owned = new Set(roads.filter(road => road.ownerSeat === seat).map(road => cellKey(road.x, road.z)));
+  const completedRoads = roads.filter(road => road.ownerSeat === seat && !road.underConstruction);
+  const owned = new Set(completedRoads.map(road => cellKey(road.x, road.z)));
   const bases = new Set(baseCellsForSeat(seat, boardSize).map(cell => cellKey(cell.x, cell.z)));
   const connected = new Set();
-  const queue = roads.filter(road => road.ownerSeat === seat && ORTHOGONAL_DIRECTIONS.some(direction => bases.has(cellKey(road.x + direction.x, road.z + direction.z))));
+  const queue = completedRoads.filter(road => ORTHOGONAL_DIRECTIONS.some(direction => bases.has(cellKey(road.x + direction.x, road.z + direction.z))));
   queue.forEach(road => connected.add(cellKey(road.x, road.z)));
   for (let index = 0; index < queue.length; index += 1) {
     const road = queue[index];
@@ -168,5 +169,9 @@ export function citizensForSeat(seat, units, roads, boardSize = 15) {
 }
 
 export function roadMovementBonus(x, z, roads) {
-  return roads.some(road => road.x === x && road.z === z) ? 1 : 0;
+  return roads.some(road => road.x === x && road.z === z && !road.underConstruction) ? 1 : 0;
+}
+
+export function completedRoadCount(seat, roads) {
+  return roads.filter(road => road.ownerSeat === seat && !road.underConstruction).length;
 }

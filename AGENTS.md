@@ -23,4 +23,6 @@
 - Finalize implementações com commit e push quando autenticação e remoto estiverem disponíveis.
 - Nunca publique segredos, `.env`, credenciais, cookies, `node_modules`, caches ou arquivos temporários.
 - Não misture mudanças anteriores do usuário sem autorização explícita.
+- Inclua em cada commit somente os arquivos alterados pela tarefa atual.
+- Se surgir qualquer conflito durante pull, merge ou rebase, avise o usuário antes de continuar a publicação.
 - Na resposta final inclua resumo, testes, commit, branch enviada e URL local.

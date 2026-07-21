@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CARD_BY_ID, citizensForSeat, connectedRoadKeys, deploymentDistance, forwardDeltaForSeat, gridCellsBetween, isCannonTargetValid, isDeploymentCell, isRoadPlacementCell, roadMovementBonus } from '../src/cards.js';
+import { CARD_BY_ID, citizensForSeat, completedRoadCount, connectedRoadKeys, deploymentDistance, forwardDeltaForSeat, gridCellsBetween, isCannonTargetValid, isDeploymentCell, isRoadPlacementCell, roadMovementBonus } from '../src/cards.js';
 
 test('calcula as casas intermediarias de uma linha no tabuleiro', () => {
   assert.deepEqual(gridCellsBetween({ x: 2, z: 2 }, { x: 5, z: 2 }), [{ x: 3, z: 2 }, { x: 4, z: 2 }]);
@@ -45,13 +45,16 @@ test('canhão separa dano direto do dano em área', () => {
 });
 
 test('ruas formam uma rede conectada ao castelo e não possuem vida', () => {
-  const roads = [{ ownerSeat: 1, x: 7, z: 11 }, { ownerSeat: 1, x: 7, z: 10 }, { ownerSeat: 1, x: 2, z: 2 }];
+  const roads = [{ ownerSeat: 1, x: 7, z: 11 }, { ownerSeat: 1, x: 7, z: 10 }, { ownerSeat: 1, x: 2, z: 2 }, { ownerSeat: 1, x: 8, z: 11, underConstruction: true }];
   assert.equal(CARD_BY_ID.road.hp, null);
   assert.equal(CARD_BY_ID.road.indestructible, true);
+  assert.equal(CARD_BY_ID.road.buildRounds, 1);
   assert.deepEqual([...connectedRoadKeys(1, roads)].sort(), ['7:10', '7:11']);
   assert.equal(isRoadPlacementCell(1, 7, 9, roads), true);
   assert.equal(isRoadPlacementCell(1, 2, 3, roads), false);
   assert.equal(roadMovementBonus(7, 10, roads), 1);
+  assert.equal(roadMovementBonus(8, 11, roads), 0);
+  assert.equal(completedRoadCount(1, roads), 3);
 });
 
 test('casa concluída fornece cidadãos e recebe bônus quando ligada por Rua', () => {

@@ -18,9 +18,11 @@ export function createMovementOverlay({
   const movementMaterial = new THREE.MeshBasicMaterial({ color: 0x43d17d, transparent: true, opacity: 0.42, depthWrite: false, side: THREE.DoubleSide });
   const attackMaterial = new THREE.MeshBasicMaterial({ color: 0xff3b2e, transparent: true, opacity: 0.7, depthWrite: false, side: THREE.DoubleSide });
   const markers = [];
+  const interactiveCells = new Set();
 
   function clear() {
     markers.splice(0).forEach(marker => scene.remove(marker));
+    interactiveCells.clear();
     units.filter(unit => unit.userData.attackHighlighted).forEach(unit => setAttackHighlight(unit, false));
     app.dataset.movementTiles = '0';
     app.dataset.attackTiles = '0';
@@ -32,6 +34,7 @@ export function createMovementOverlay({
     marker.position.set(x * tile - half, 0.076, z * tile - half);
     scene.add(marker);
     markers.push(marker);
+    interactiveCells.add(`${x}:${z}`);
   }
 
   function lineBlocked(from, to, excludedUnit) {
@@ -78,7 +81,7 @@ export function createMovementOverlay({
       const targetCell = { x: Math.round((target.position.x + half) / tile), z: Math.round((target.position.z + half) / tile) };
       const distance = Math.abs(targetCell.x - originX) + Math.abs(targetCell.z - originZ);
       const cannonCanTarget = unit.userData.cardId === 'cannon' && isCannonTargetValid({ x: originX, z: originZ, ownerSeat: unit.userData.ownerSeat }, targetCell);
-      return target !== unit && (cannonCanTarget || devMode || target.userData.ownerSeat !== selfSeat) && (cannonCanTarget || isAttackDistanceValid(unit.userData, distance)) && !lineBlocked({ x: originX, z: originZ }, targetCell, unit);
+      return target !== unit && (cannonCanTarget || target.userData.ownerSeat !== unit.userData.ownerSeat) && (cannonCanTarget || isAttackDistanceValid(unit.userData, distance)) && !lineBlocked({ x: originX, z: originZ }, targetCell, unit);
     });
     const cannonAttackCells = [];
     if (unit.userData.cardId === 'cannon' && !unit.userData.underConstruction && unit.userData.damage > 0) {
@@ -109,5 +112,5 @@ export function createMovementOverlay({
     app.dataset.attackTiles = String(attackMarkerCount);
   }
 
-  return { clear, show };
+  return { clear, show, isInteractiveCell: (x, z) => interactiveCells.has(`${x}:${z}`) };
 }

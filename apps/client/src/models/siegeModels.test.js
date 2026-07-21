@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { makeCannon, setCannonConstructionState } from '../assets/models/cannonModel.js';
 import { makeOperator } from '../assets/models/operatorModel.js';
-import { makeRoad } from '../assets/models/roadModel.js';
+import { makeRoad, setRoadConstructionState } from '../assets/models/roadModel.js';
 import { makeWoodenHouse, setWoodenHouseConstructionState } from '../assets/models/woodenHouseModel.js';
 import { UNIT_MODEL_SCALE } from './createCardUnit.js';
 
@@ -35,8 +35,10 @@ test('Casa de madeira alterna entre obra e construção concluída', () => {
 
 test('Rua desenha apenas o centro e as direções conectadas', () => {
   const road = makeRoad({ north: true, south: false, east: true, west: false });
-  const meshes = [];
-  road.traverse(object => { if (object.isMesh) meshes.push(object); });
-  assert.equal(meshes.length, 4);
+  assert.equal(road.getObjectByName('roadBuiltParts').children.length, 4);
   assert.equal(road.getObjectByName('selectionRing'), undefined);
+  setRoadConstructionState(road, true);
+  assert.equal(road.getObjectByName('roadBuiltParts').visible, false);
+  assert.equal(road.getObjectByName('roadConstructionParts').visible, true);
+  assert.ok(road.getObjectByName('roadConstructionParts').children.length >= 5);
 });

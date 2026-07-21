@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { CARD_BY_ID, baseCellsForSeat, citizensForSeat, forwardDeltaForSeat, gridCellsBetween, isAttackDistanceValid, isCannonTargetValid, isDeploymentCell, isRoadPlacementCell, movementDistance, roadMovementBonus } from '@tronos/shared/cards';
+import { CARD_BY_ID, baseCellsForSeat, citizensForSeat, completedRoadCount, forwardDeltaForSeat, gridCellsBetween, isAttackDistanceValid, isCannonTargetValid, isDeploymentCell, isRoadPlacementCell, movementDistance, roadMovementBonus } from '@tronos/shared/cards';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { createDeck, drawCard } from './createInitialState.js';
 
@@ -23,7 +23,7 @@ function unitBlocksLine(state, from, to, excludeId = null) {
 function refreshKingdomProgress(state) {
   state.players.forEach(player => {
     player.citizens = citizensForSeat(player.seat, state.units, state.roads, GAME_CONFIG.boardSize);
-    if (player.baseLevel >= 2 || player.citizens < GAME_CONFIG.level2CitizenRequirement) return;
+    if (player.baseLevel >= 2 || player.citizens < GAME_CONFIG.level2CitizenRequirement || completedRoadCount(player.seat, state.roads) < GAME_CONFIG.level2RoadRequirement) return;
     player.baseLevel = 2;
     player.maxEnergy = GAME_CONFIG.level2MaxEnergy;
     player.deck = createDeck(undefined, player.baseLevel, player.deck.length);
@@ -117,6 +117,9 @@ function endTurn(state) {
   state.units.forEach(unit => {
     if (unit.underConstruction && unit.ownerSeat === state.activeSeat && unit.buildReadyRound <= state.round) unit.underConstruction = false;
   });
+  state.roads.forEach(road => {
+    if (road.underConstruction && road.ownerSeat === state.activeSeat && road.buildReadyRound <= state.round) road.underConstruction = false;
+  });
   refreshKingdomProgress(state);
   healLevelTwoConstructions(state, state.activeSeat);
   const player = state.players.find(item => item.seat === state.activeSeat);
@@ -158,7 +161,7 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     } else if (!validCell(x, z) || !deploymentCell(player.seat, x, z) || inBase(x, z) || (unitAt(state, x, z) && !tower) || (roadOccupied && ['construction', 'machine'].includes(card.type))) fail('Escolha uma casa livre a até 2 casas do seu reino.');
     if (player.energy < card.cost) fail('Energia insuficiente.');
     player.energy -= card.cost; player.hand.splice(index, 1); player.discard.push(instance.cardId);
-    if (card.id === 'road') state.roads.push({ id: randomUUID(), ownerSeat: player.seat, x, z });
+    if (card.id === 'road') state.roads.push({ id: randomUUID(), ownerSeat: player.seat, x, z, underConstruction: true, buildReadyRound: state.round + card.buildRounds });
     else state.units.push({
         id: randomUUID(), ownerSeat: player.seat, cardId: card.id, x, z, hp: card.hp, shield: 0,
         actionUsed: true, abilityUsed: false, instantUsedRound: 0, empowered: false, mountedOnTowerId: tower?.id ?? null,
