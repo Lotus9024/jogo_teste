@@ -68,7 +68,8 @@ test('cartas usam os atributos definidos', () => {
       operator: { hp: 1, damage: 0, move: 1, movementType: 'any', cost: 3 },
       cannon: { hp: 2, damage: 4, move: 1, movementType: 'forward', cost: 7 },
       wooden_house: { hp: 1, damage: 0, move: 0, movementType: 'none', cost: 3 },
-      road: { hp: null, damage: 0, move: 0, movementType: 'none', cost: 1 }
+      road: { hp: null, damage: 0, move: 0, movementType: 'none', cost: 1 },
+      mage: { hp: 2, damage: 2, move: 1, movementType: 'any', cost: 6 }
     }
   );
   assert.deepEqual(
@@ -76,7 +77,7 @@ test('cartas usam os atributos definidos', () => {
     { minAttackRange: 1, attackRange: 2 }
   );
   Object.values(CARD_BY_ID).forEach(card => {
-    assert.equal(card.ability.enabled, false);
+    assert.equal(card.ability.enabled, card.id === 'mage');
     assert.equal(card.instant.enabled, card.id === 'tower');
   });
   assert.deepEqual(
@@ -93,6 +94,62 @@ test('cartas usam os atributos definidos', () => {
     { minAttackRange: CARD_BY_ID.cannon.minAttackRange, attackRange: CARD_BY_ID.cannon.attackRange, areaRadius: CARD_BY_ID.cannon.areaRadius, buildRounds: CARD_BY_ID.cannon.buildRounds },
     { minAttackRange: 3, attackRange: 7, areaRadius: 2, buildRounds: 2 }
   );
+});
+
+test('Mago incendeia uma ou duas casas e o fogo persiste pelo turno rival', () => {
+  const { rooms, room, first, second } = match();
+  room.state.units.push(
+    { id: 'mage-fire', ownerSeat: 1, cardId: 'mage', x: 7, z: 8, hp: 2, shield: 0, actionUsed: false, abilityUsed: false },
+    { id: 'fire-target', ownerSeat: 2, cardId: 'guard', x: 7, z: 5, hp: 4, shield: 0, actionUsed: false, abilityUsed: false }
+  );
+  rooms.action(room.code, first.id, { type: 'mage_fire', unitId: 'mage-fire', cells: [{ x: 7, z: 5 }, { x: 8, z: 5 }] }, room.state.version);
+  assert.equal(room.state.units.find(unit => unit.id === 'fire-target').hp, 2);
+  assert.equal(room.state.fires.length, 2);
+  assert.equal(room.state.units.find(unit => unit.id === 'mage-fire').actionUsed, true);
+  rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
+  assert.equal(room.state.fires.length, 2);
+  rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
+  assert.equal(room.state.units.find(unit => unit.id === 'fire-target').hp, 1);
+  assert.equal(room.state.fires.length, 0);
+});
+
+test('tropa que entra no fogo sofre um dano apenas uma vez', () => {
+  const { rooms, room, first, second } = match();
+  room.state.units.push(
+    { id: 'mage-entry', ownerSeat: 1, cardId: 'mage', x: 7, z: 9, hp: 2, shield: 0, actionUsed: false, abilityUsed: false },
+    { id: 'entry-target', ownerSeat: 2, cardId: 'guard', x: 7, z: 5, hp: 4, shield: 0, actionUsed: false, abilityUsed: false }
+  );
+  rooms.action(room.code, first.id, { type: 'mage_fire', unitId: 'mage-entry', cells: [{ x: 7, z: 6 }] }, room.state.version);
+  rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
+  rooms.action(room.code, second.id, { type: 'move', unitId: 'entry-target', x: 7, z: 6 }, room.state.version);
+  assert.equal(room.state.units.find(unit => unit.id === 'entry-target').hp, 3);
+  rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
+  assert.equal(room.state.units.find(unit => unit.id === 'entry-target').hp, 3);
+  assert.equal(room.state.fires.length, 0);
+});
+
+test('círculo ácido do Mago atinge inimigos e aliados ao redor', () => {
+  const { rooms, room, first } = match();
+  room.state.units.push(
+    { id: 'mage-acid', ownerSeat: 1, cardId: 'mage', x: 7, z: 8, hp: 2, shield: 0, actionUsed: false, abilityUsed: false },
+    { id: 'acid-ally', ownerSeat: 1, cardId: 'guard', x: 6, z: 8, hp: 4, shield: 0, actionUsed: false },
+    { id: 'acid-enemy', ownerSeat: 2, cardId: 'guard', x: 8, z: 9, hp: 4, shield: 0, actionUsed: false },
+    { id: 'acid-safe', ownerSeat: 2, cardId: 'guard', x: 9, z: 8, hp: 4, shield: 0, actionUsed: false }
+  );
+  rooms.action(room.code, first.id, { type: 'use_ability', unitId: 'mage-acid' }, room.state.version);
+  assert.equal(room.state.units.find(unit => unit.id === 'acid-ally').hp, 1);
+  assert.equal(room.state.units.find(unit => unit.id === 'acid-enemy').hp, 1);
+  assert.equal(room.state.units.find(unit => unit.id === 'acid-safe').hp, 4);
+  assert.equal(room.state.units.find(unit => unit.id === 'mage-acid').hp, 2);
+  assert.equal(room.state.players[0].energy, 6);
+});
+
+test('Mago rejeita fogo duplicado, distante ou com mais de duas casas', () => {
+  const { rooms, room, first } = match();
+  room.state.units.push({ id: 'mage-invalid', ownerSeat: 1, cardId: 'mage', x: 7, z: 8, hp: 2, shield: 0, actionUsed: false, abilityUsed: false });
+  for (const cells of [[{ x: 7, z: 5 }, { x: 7, z: 5 }], [{ x: 7, z: 3 }], [{ x: 7, z: 5 }, { x: 8, z: 5 }, { x: 9, z: 5 }]]) {
+    assert.throws(() => rooms.action(room.code, first.id, { type: 'mage_fire', unitId: 'mage-invalid', cells }, room.state.version));
+  }
 });
 
 test('guerreiro só anda reto e guarda pode andar na diagonal', () => {

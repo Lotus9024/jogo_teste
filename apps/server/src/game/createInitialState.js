@@ -42,6 +42,6 @@ export function createInitialState(players) {
   return {
     version: 1, phase: ready ? 'playing' : 'waiting', round: 1, activeSeat: 1,
     turnEndsAt: ready ? Date.now() + GAME_CONFIG.turnDurationSeconds * 1000 : null,
-    winnerSeat: null, players: statePlayers, units: [], roads: [], board: { size: GAME_CONFIG.boardSize }
+    winnerSeat: null, players: statePlayers, units: [], roads: [], fires: [], board: { size: GAME_CONFIG.boardSize }
   };
 }

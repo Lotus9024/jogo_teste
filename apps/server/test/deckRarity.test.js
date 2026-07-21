@@ -32,4 +32,7 @@ test('nível dois usa chances 60% comum, 30% incomum e 10% rara', () => {
     'common', 'common', 'common', 'common', 'common', 'common',
     'uncommon', 'uncommon', 'uncommon', 'rare'
   ]);
+  let call = 0;
+  const deck = createDeck(max => (call++ % 2 === 0 ? 9 : 0) % max, 2, 1);
+  assert.deepEqual(deck, ['mage']);
 });

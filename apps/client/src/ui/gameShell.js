@@ -39,6 +39,10 @@ export function mountGameShell() {
         <button class="tray-nav tray-next" id="tray-next" aria-label="Ver próximas cartas">›</button>
       </section>
       <button id="activate-instant" class="ability-command" hidden>ATIVAR HABILIDADE <span>2</span><kbd>F</kbd></button>
+      <div id="mage-commands" class="mage-commands" hidden>
+        <button id="mage-fire-command" class="ability-command">CONJURAR FOGO</button>
+        <button id="mage-acid-command" class="ability-command">CÍRCULO ÁCIDO <span>4</span></button>
+      </div>
       <div class="bottom-command">
         <div class="command-resource level" tabindex="0" aria-describedby="level-requirement"><small>CASTELO</small><b id="self-level">LV 1</b><span id="level-requirement" role="tooltip">Nível 2: tenha 9 cidadãos em seu reino.</span></div>
         <div class="command-resource energy" aria-label="Energia"><small>ENERGIA</small><b id="self-energy">10<em>/${GAME_CONFIG.maxEnergy}</em></b></div>

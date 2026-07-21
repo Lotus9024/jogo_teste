@@ -53,6 +53,12 @@ export const CARD_DEFINITIONS = Object.freeze([
     hp: null, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 1, type: 'terrain', indestructible: true, rarity: 'COMUM', rarityClass: 'common', info: 'TERRENO · RUA', glyph: '═',
     ability: Object.freeze({ name: 'Caminho do reino', cost: '—', description: 'Terreno permanente que se conecta automaticamente e não pode ser destruído.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
+  }),
+  Object.freeze({
+    id: 'mage', name: 'Mago', description: 'Conjura fogo em uma ou duas casas a até 4 quadrados. O impacto causa 2 de dano e as chamas causam mais 1 se uma tropa permanecer ou entrar nelas antes de desaparecerem.',
+    hp: 2, damage: 2, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 4, maxFireCells: 2, cost: 6, rarity: 'RARA', rarityClass: 'rare', info: 'ARCANO · CONJURADOR', glyph: '✦',
+    ability: Object.freeze({ name: 'Círculo ácido', cost: 4, damage: 3, radius: 1, description: 'Espalha ácido nas casas ao redor do Mago. Todas as tropas atingidas sofrem 3 de dano, inclusive as aliadas.', enabled: true }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   })
 ]);
 

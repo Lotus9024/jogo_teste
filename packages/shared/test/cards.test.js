@@ -62,3 +62,14 @@ test('casa concluída fornece cidadãos e recebe bônus quando ligada por Rua', 
   assert.equal(citizensForSeat(1, houses, []), 3);
   assert.equal(citizensForSeat(1, houses, [{ ownerSeat: 1, x: 7, z: 11 }]), 4);
 });
+
+test('Mago é raro e expõe fogo e ácido com os atributos definidos', () => {
+  assert.deepEqual(
+    { hp: CARD_BY_ID.mage.hp, damage: CARD_BY_ID.mage.damage, move: CARD_BY_ID.mage.move, cost: CARD_BY_ID.mage.cost, range: CARD_BY_ID.mage.attackRange, cells: CARD_BY_ID.mage.maxFireCells, rarity: CARD_BY_ID.mage.rarityClass },
+    { hp: 2, damage: 2, move: 1, cost: 6, range: 4, cells: 2, rarity: 'rare' }
+  );
+  assert.deepEqual(
+    { cost: CARD_BY_ID.mage.ability.cost, damage: CARD_BY_ID.mage.ability.damage, radius: CARD_BY_ID.mage.ability.radius },
+    { cost: 4, damage: 3, radius: 1 }
+  );
+});

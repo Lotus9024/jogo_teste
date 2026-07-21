@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { isMountedArcher } from '../gameplay/unitState.js';
 import { UNIT_MODEL_SCALE } from './createCardUnit.js';
-import { makeArcher, makeGuard, makeTower, makeWarrior, makeWoodenHouse, setArcherMountedState } from './unitModels.js';
+import { makeArcher, makeGuard, makeMage, makeTower, makeWarrior, makeWoodenHouse, setArcherMountedState } from './unitModels.js';
 
 const TILE_SIZE = 1.08;
 
 test('tropas mantêm rig, plataforma e silhueta dentro da casa', () => {
-  for (const factory of [makeWarrior, makeGuard, makeArcher, makeTower, makeWoodenHouse]) {
+  for (const factory of [makeWarrior, makeGuard, makeArcher, makeMage, makeTower, makeWoodenHouse]) {
     const unit = factory();
     const size = new THREE.Box3().setFromObject(unit).getSize(new THREE.Vector3());
     assert.ok(unit.getObjectByName('rig'));
@@ -17,6 +17,13 @@ test('tropas mantêm rig, plataforma e silhueta dentro da casa', () => {
     assert.ok(size.x * UNIT_MODEL_SCALE <= TILE_SIZE);
     assert.ok(size.z * UNIT_MODEL_SCALE <= TILE_SIZE);
   }
+});
+
+test('Mago possui cajado, orbe de fogo e identidade arcana', () => {
+  const mage = makeMage();
+  assert.equal(mage.userData.role, 'MAGO');
+  assert.ok(mage.getObjectByName('mageStaff'));
+  assert.ok(mage.getObjectByName('mageFireOrb'));
 });
 
 test('guarda possui identidade própria e não usa elementos de mago', () => {

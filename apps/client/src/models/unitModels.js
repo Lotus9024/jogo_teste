@@ -4,4 +4,5 @@ export { makeTower, setTowerConstructionState } from '../assets/models/towerMode
 export { makeWarrior } from '../assets/models/warriorModel.js';
 export { makeWoodBarrier, setWoodBarrierConstructionState } from '../assets/models/woodBarrierModel.js';
 export { makeWoodenHouse, setWoodenHouseConstructionState } from '../assets/models/woodenHouseModel.js';
+export { makeMage } from '../assets/models/mageModel.js';
 export { unitBase } from '../assets/models/unitModelKit.js';

@@ -73,6 +73,23 @@ function fireCannonAt(state, cannon, targetCell, card) {
     .forEach(unit => damageUnit(state, unit, distance(unit, targetCell) === 0 ? card.damage : card.areaDamage));
 }
 
+function applyFireEntryDamage(state, unit) {
+  const fires = (state.fires ?? []).filter(fire => fire.x === unit.x && fire.z === unit.z && !fire.damagedUnitIds.includes(unit.id));
+  for (const fire of fires) {
+    fire.damagedUnitIds.push(unit.id);
+    if (damageUnit(state, unit, 1)) break;
+  }
+}
+
+function resolveEndingFires(state, endingSeat) {
+  const expiring = (state.fires ?? []).filter(fire => fire.ownerSeat !== endingSeat);
+  for (const fire of expiring) {
+    const occupant = unitAt(state, fire.x, fire.z);
+    if (occupant && !fire.damagedUnitIds.includes(occupant.id)) damageUnit(state, occupant, 1);
+  }
+  state.fires = (state.fires ?? []).filter(fire => fire.ownerSeat === endingSeat);
+}
+
 function mountableTowerAt(state, player, card, x, z, movingUnitId = null) {
   if (card.id !== 'archer') return null;
   const occupants = unitsAt(state, x, z, movingUnitId);
@@ -94,6 +111,7 @@ function fireTowerVolley(state, player, archer, instant) {
 }
 
 function endTurn(state) {
+  resolveEndingFires(state, state.activeSeat);
   state.activeSeat = state.activeSeat === 1 ? 2 : 1;
   if (state.activeSeat === 1) state.round += 1;
   state.units.forEach(unit => {
@@ -162,6 +180,8 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
       if (!validCell(x, z) || inBase(x, z) || unitAt(state, x, z)) fail('A casa à frente do Canhão está bloqueada.');
       operator.x = unit.x; operator.z = unit.z; operator.actionUsed = true;
       unit.x = x; unit.z = z; unit.actionUsed = true;
+      applyFireEntryDamage(state, operator);
+      applyFireEntryDamage(state, unit);
     } else {
     const tower = mountableTowerAt(state, player, card, x, z, unit.id);
     const movementRange = card.move + roadMovementBonus(unit.x, unit.z, state.roads);
@@ -169,11 +189,30 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     if (!validCell(x, z) || inBase(x, z) || movementValue < 1 || movementValue > movementRange || (unitAt(state, x, z, unit.id) && !tower)) fail('Movimento inválido.');
     if (unitBlocksLine(state, unit, { x, z }, unit.id)) fail('O caminho está bloqueado por outra tropa.');
     unit.x = x; unit.z = z; unit.mountedOnTowerId = tower?.id ?? null; unit.actionUsed = true;
+    applyFireEntryDamage(state, unit);
     }
+  } else if (action.type === 'mage_fire') {
+    requireTurn(state, player);
+    const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
+    const card = CARD_BY_ID[unit.cardId];
+    if (card.id !== 'mage' || unit.actionUsed || unit.underConstruction) fail('O Mago não pode conjurar fogo agora.');
+    if (!Array.isArray(action.cells) || action.cells.length < 1 || action.cells.length > card.maxFireCells) fail('Escolha uma ou duas casas para o fogo.');
+    const cells = action.cells.map(cell => ({ x: integer(cell?.x), z: integer(cell?.z) }));
+    if (new Set(cells.map(cell => `${cell.x}:${cell.z}`)).size !== cells.length) fail('Escolha casas diferentes para o fogo.');
+    if (cells.some(cell => !validCell(cell.x, cell.z) || distance(unit, cell) < card.minAttackRange || distance(unit, cell) > card.attackRange)) fail('Casa de fogo fora do alcance.');
+    state.fires ??= [];
+    for (const cell of cells) {
+      const fire = { id: randomUUID(), ownerSeat: player.seat, casterUnitId: unit.id, x: cell.x, z: cell.z, damagedUnitIds: [] };
+      state.fires.push(fire);
+      const target = unitAt(state, cell.x, cell.z);
+      if (target) damageUnit(state, target, card.damage);
+    }
+    unit.actionUsed = true;
   } else if (action.type === 'attack') {
     requireTurn(state, player);
     const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
     const card = attackCard(state, unit, CARD_BY_ID[unit.cardId]);
+    if (card.id === 'mage') fail('Escolha uma ou duas casas para conjurar o fogo.');
     if (unit.actionUsed) fail('Esta unidade já agiu neste turno.');
     if (unit.underConstruction) fail('A construção ainda não foi concluída.');
     if (card.damage <= 0 || card.attackRange <= 0) fail('Esta carta não pode atacar.');
@@ -212,6 +251,7 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
     const card = CARD_BY_ID[unit.cardId];
     if (!card.ability?.enabled || unit.abilityUsed || player.energy < card.ability.cost) fail('Habilidade indisponível.');
+    if (unit.actionUsed || unit.underConstruction) fail('Esta unidade já agiu neste turno.');
     let archerTargets = null;
     if (card.id === 'archer') {
       const target = state.units.find(item => item.id === action.targetUnitId && item.ownerSeat !== player.seat) ?? fail('Alvo inválido.');
@@ -221,6 +261,11 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     player.energy -= card.ability.cost; unit.abilityUsed = true;
     if (card.id === 'warrior') unit.empowered = true;
     if (card.id === 'guard') unit.shield = 12;
+    if (card.id === 'mage') {
+      [...state.units].filter(item => item.id !== unit.id && Math.max(Math.abs(item.x - unit.x), Math.abs(item.z - unit.z)) <= card.ability.radius)
+        .forEach(item => damageUnit(state, item, card.ability.damage));
+      unit.actionUsed = true;
+    }
     if (archerTargets) {
       archerTargets.forEach(item => { item.hp -= 8; });
       state.units = state.units.filter(item => item.hp > 0);

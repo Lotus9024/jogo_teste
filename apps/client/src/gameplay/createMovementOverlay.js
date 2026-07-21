@@ -74,7 +74,7 @@ export function createMovementOverlay({
       }
     }
 
-    const attackTargets = unit.userData.underConstruction || unit.userData.damage <= 0 ? [] : units.filter(target => {
+    const attackTargets = unit.userData.underConstruction || unit.userData.damage <= 0 || unit.userData.cardId === 'mage' ? [] : units.filter(target => {
       const targetCell = { x: Math.round((target.position.x + half) / tile), z: Math.round((target.position.z + half) / tile) };
       const distance = Math.abs(targetCell.x - originX) + Math.abs(targetCell.z - originZ);
       const cannonCanTarget = unit.userData.cardId === 'cannon' && isCannonTargetValid({ x: originX, z: originZ, ownerSeat: unit.userData.ownerSeat }, targetCell);
