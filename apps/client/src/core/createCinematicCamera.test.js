@@ -68,7 +68,7 @@ test('still animates when the camera has not reached the final frame', () => {
   const camera = new THREE.OrthographicCamera();
   const controls = createControls();
   const app = createApp();
-  camera.position.set(0, 14, 4);
+  camera.position.set(0, 10, 10);
   camera.zoom = 1;
 
   const transition = createCinematicCamera({ camera, controls, app });
