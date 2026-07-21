@@ -3,7 +3,7 @@ import { M, add } from '../core/scenePrimitives.js';
 import { ensureHealthBadge } from '../ui/unitHealthBadge.js';
 import { makeCannon } from '../assets/models/cannonModel.js';
 import { makeOperator } from '../assets/models/operatorModel.js';
-import { makeArcher, makeGuard, makeTower, makeWarrior, makeWoodBarrier, unitBase } from './unitModels.js';
+import { makeArcher, makeGuard, makeTower, makeWarrior, makeWoodBarrier, makeWoodenHouse, unitBase } from './unitModels.js';
 
 const UNIT_FACTORIES = Object.freeze({
   warrior: makeWarrior,
@@ -12,7 +12,8 @@ const UNIT_FACTORIES = Object.freeze({
   wooden_barrier: makeWoodBarrier,
   tower: makeTower,
   operator: makeOperator,
-  cannon: makeCannon
+  cannon: makeCannon,
+  wooden_house: makeWoodenHouse
 });
 
 export const UNIT_MODEL_SCALE = 0.55;
@@ -60,6 +61,6 @@ export function createCardUnit(card, cardIndex) {
     description: card.abilityText
   };
   unit.scale.setScalar(UNIT_MODEL_SCALE);
-  ensureHealthBadge(unit);
+  if (card.hp !== null) ensureHealthBadge(unit);
   return unit;
 }

@@ -65,10 +65,11 @@ function publicState(room, viewer) {
     self: { id: viewer.id, seat: viewer.seat, hand: state.players.find(player => player.id === viewer.id)?.hand ?? [] },
     state: {
       version: state.version, phase: state.phase, round: state.round, activeSeat: state.activeSeat,
-      turnEndsAt: state.turnEndsAt, winnerSeat: state.winnerSeat, board: state.board, units: state.units,
+      turnEndsAt: state.turnEndsAt, winnerSeat: state.winnerSeat, board: state.board, units: state.units, roads: state.roads,
       players: state.players.map(player => ({
         id: player.id, name: player.name, seat: player.seat, connected: player.connected,
-        baseHp: player.baseHp, energy: player.energy, handCount: player.hand.length, deckCount: player.deck.length
+        baseHp: player.baseHp, energy: player.energy, maxEnergy: player.maxEnergy, citizens: player.citizens,
+        baseLevel: player.baseLevel, handCount: player.hand.length, deckCount: player.deck.length
       }))
     }
   };

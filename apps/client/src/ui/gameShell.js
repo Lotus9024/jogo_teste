@@ -30,7 +30,7 @@ export function mountGameShell() {
       <aside id="hover-card" class="hover-card unit-card-preview" aria-hidden="true"></aside>
       <div id="match-state" class="match-state" hidden><b id="match-code"></b><span id="turn-label"></span><time id="turn-clock">01:00</time></div>
       <output id="game-error" class="game-error" aria-live="polite"></output>
-      <div class="base-health enemy-base-tag" role="img" aria-label="Vida do castelo inimigo: ${GAME_CONFIG.startingBaseHp} de ${GAME_CONFIG.startingBaseHp}"><i style="width:100%"></i></div>
+      <div class="base-health enemy-base-tag" role="img" aria-label="Vida do castelo inimigo: ${GAME_CONFIG.startingBaseHp} de ${GAME_CONFIG.startingBaseHp}"><b id="enemy-base-level">LV 1</b><i style="width:100%"></i></div>
       <section class="card-dock" aria-label="Mão de cartas">
         <div class="dock-label"><span>MÃO DO REINO</span><b id="hand-count">6 CARTAS</b></div>
         <button class="tray-nav tray-prev" id="tray-prev" aria-label="Ver cartas anteriores">‹</button>
@@ -39,9 +39,11 @@ export function mountGameShell() {
       </section>
       <button id="activate-instant" class="ability-command" hidden>ATIVAR HABILIDADE <span>2</span><kbd>F</kbd></button>
       <div class="bottom-command">
-        <div class="command-resource energy" aria-label="Energia"><b id="self-energy">10<em>/12</em></b></div>
+        <div class="command-resource level" tabindex="0" aria-describedby="level-requirement"><small>CASTELO</small><b id="self-level">LV 1</b><span id="level-requirement" role="tooltip">Nível 2: tenha 9 cidadãos em seu reino.</span></div>
+        <div class="command-resource energy" aria-label="Energia"><small>ENERGIA</small><b id="self-energy">10<em>/${GAME_CONFIG.maxEnergy}</em></b></div>
         <button id="end-turn">PASSAR TURNO</button>
-        <div class="command-resource health" aria-label="Vida"><b id="self-health">${GAME_CONFIG.startingBaseHp}<em>/${GAME_CONFIG.startingBaseHp}</em></b></div>
+        <div class="command-resource health" aria-label="Vida"><small>VIDA</small><b id="self-health">${GAME_CONFIG.startingBaseHp}<em>/${GAME_CONFIG.startingBaseHp}</em></b></div>
+        <div class="command-resource citizens" id="citizen-resource" aria-label="Cidadãos" hidden><small>CIDADÃOS</small><b><span aria-hidden="true">☺</span> <strong id="self-citizens">0</strong></b></div>
       </div>
       <div class="loading"><div class="loader-mark">✦</div><span>PREPARANDO O CAMPO</span></div>
     </main>`;

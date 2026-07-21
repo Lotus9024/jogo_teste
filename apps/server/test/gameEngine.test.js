@@ -16,13 +16,16 @@ test('inicia com cinco cartas privadas e dez de energia', () => {
   assert.equal(room.state.players[0].hand.length, 5);
   assert.equal(room.state.players[1].hand.length, 5);
   assert.equal(room.state.players[0].energy, 10);
+  assert.equal(room.state.players[0].maxEnergy, 10);
   assert.equal(room.state.players[0].baseHp, 10);
   assert.equal(GAME_CONFIG.turnDurationSeconds, 60);
 });
 
 test('invocação válida consome a carta e energia no servidor', () => {
   const { rooms, room, first } = match();
-  const player = room.state.players[0], instance = player.hand[0], cost = CARD_BY_ID[instance.cardId].cost;
+  const player = room.state.players[0];
+  player.hand[0].cardId = 'warrior';
+  const instance = player.hand[0], cost = CARD_BY_ID[instance.cardId].cost;
   rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: instance.instanceId, x: 6, z: 10 }, room.state.version);
   assert.equal(player.hand.length, 4);
   assert.equal(player.energy, 10 - cost);
@@ -31,6 +34,7 @@ test('invocação válida consome a carta e energia no servidor', () => {
 
 test('rejeita ação fora do turno, replay e posição adulterada', () => {
   const { rooms, room, first, second } = match();
+  room.state.players[1].hand[0].cardId = 'warrior';
   const secondCard = room.state.players[1].hand[0];
   assert.throws(() => rooms.action(room.code, second.id, { type: 'summon', cardInstanceId: secondCard.instanceId, x: 2, z: 5 }, room.state.version), /turno/);
   const oldVersion = room.state.version;
@@ -45,7 +49,7 @@ test('passar turno compra carta, entrega energia e reinicia o relógio', () => {
   const previousDeadline = room.state.turnEndsAt;
   rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
   assert.equal(room.state.activeSeat, 2);
-  assert.equal(room.state.players[1].energy, 11);
+  assert.equal(room.state.players[1].energy, 10);
   assert.equal(room.state.players[1].hand.length, 6);
   assert.ok(room.state.turnEndsAt >= previousDeadline);
 });
@@ -62,7 +66,9 @@ test('cartas usam os atributos definidos', () => {
       wooden_barrier: { hp: 2, damage: 0, move: 0, movementType: 'none', cost: 4 },
       tower: { hp: 5, damage: 0, move: 0, movementType: 'none', cost: 7 },
       operator: { hp: 1, damage: 0, move: 1, movementType: 'any', cost: 3 },
-      cannon: { hp: 2, damage: 4, move: 1, movementType: 'forward', cost: 7 }
+      cannon: { hp: 2, damage: 4, move: 1, movementType: 'forward', cost: 7 },
+      wooden_house: { hp: 1, damage: 0, move: 0, movementType: 'none', cost: 3 },
+      road: { hp: null, damage: 0, move: 0, movementType: 'none', cost: 1 }
     }
   );
   assert.deepEqual(

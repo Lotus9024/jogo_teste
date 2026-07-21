@@ -3,12 +3,12 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { isMountedArcher } from '../gameplay/unitState.js';
 import { UNIT_MODEL_SCALE } from './createCardUnit.js';
-import { makeArcher, makeGuard, makeTower, makeWarrior, setArcherMountedState } from './unitModels.js';
+import { makeArcher, makeGuard, makeTower, makeWarrior, makeWoodenHouse, setArcherMountedState } from './unitModels.js';
 
 const TILE_SIZE = 1.08;
 
 test('tropas mantêm rig, plataforma e silhueta dentro da casa', () => {
-  for (const factory of [makeWarrior, makeGuard, makeArcher, makeTower]) {
+  for (const factory of [makeWarrior, makeGuard, makeArcher, makeTower, makeWoodenHouse]) {
     const unit = factory();
     const size = new THREE.Box3().setFromObject(unit).getSize(new THREE.Vector3());
     assert.ok(unit.getObjectByName('rig'));

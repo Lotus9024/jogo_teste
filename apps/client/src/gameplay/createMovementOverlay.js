@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { forwardDeltaForSeat, gridCellsBetween, isAttackDistanceValid, isCannonTargetValid, movementDistance } from '@tronos/shared/cards';
+import { forwardDeltaForSeat, gridCellsBetween, isAttackDistanceValid, isCannonTargetValid, movementDistance, roadMovementBonus } from '@tronos/shared/cards';
 import { isMountedArcher, setAttackHighlight } from './unitState.js';
 
 export function createMovementOverlay({
@@ -11,6 +11,7 @@ export function createMovementOverlay({
   unitAtCell,
   baseSeatAtCell,
   baseCellsForSeat,
+  getRoads,
   getMatchContext
 }) {
   const geometry = new THREE.PlaneGeometry(tile * 0.82, tile * 0.82);
@@ -48,7 +49,7 @@ export function createMovementOverlay({
 
     const originX = Math.round((unit.position.x + half) / tile);
     const originZ = Math.round((unit.position.z + half) / tile);
-    const range = unit.userData.move;
+    const range = unit.userData.move + roadMovementBonus(originX, originZ, getRoads());
     if (unit.userData.cardId === 'cannon') {
       const forward = forwardDeltaForSeat(unit.userData.ownerSeat);
       const operator = unitAtCell(originX - forward.x, originZ - forward.z, unit);

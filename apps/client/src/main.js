@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CARD_BY_ID, forwardDeltaForSeat, gridCellsBetween, isAttackDistanceValid, isCannonTargetValid, isDeploymentCell, movementDistance } from '@tronos/shared/cards';
+import { CARD_BY_ID, ORTHOGONAL_DIRECTIONS, cellKey, citizensForSeat, forwardDeltaForSeat, gridCellsBetween, isAttackDistanceValid, isCannonTargetValid, isDeploymentCell, isRoadPlacementCell, movementDistance } from '@tronos/shared/cards';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { createCinematicCamera } from './core/createCinematicCamera.js';
 import { createGameScene } from './core/createGameScene.js';
@@ -11,6 +11,7 @@ import { createMovementOverlay } from './gameplay/createMovementOverlay.js';
 import { applyConstructionState as applyUnitConstructionState, isMountedArcher, setUnitTeamColor } from './gameplay/unitState.js';
 import { createCardUnit, UNIT_MODEL_SCALE } from './models/createCardUnit.js';
 import { makeArcher, makeGuard, makeWarrior, setArcherMountedState } from './models/unitModels.js';
+import { makeRoad } from './assets/models/roadModel.js';
 import { GameSocketClient, SERVER_EVENTS } from './network/gameSocket.js';
 import { mountGameShell } from './ui/gameShell.js';
 import { cardMarkup, cards, hideDeckPreview as hideCardPreview, showDeckPreview } from './ui/cardView.js';
@@ -31,7 +32,18 @@ const { board, tile, half, alliedKeep, enemyKeep, deck3D, topDeckCard, wisps, fi
 // even the outermost weapon silhouette inside the 1.08 × 1.08 footprint.
 const units=[makeWarrior(),makeGuard(),makeArcher()]; units[0].position.set(-2.16,.06,0);units[1].position.set(0,.06,0);units[2].position.set(2.16,.06,0);units.forEach((u,cardIndex)=>{const card=cards[cardIndex];u.scale.setScalar(UNIT_MODEL_SCALE);Object.assign(u.userData,{hoverable:true,cardId:card.id,cardIndex,hp:card.hp,maxHp:card.hp,damage:card.damage,move:card.move,movementType:card.movementType,minAttackRange:card.minAttackRange,attackRange:card.attackRange,cardType:card.type,cost:card.cost,ability:card.ability,abilityUsed:false,description:card.abilityText});ensureHealthBadge(u);scene.add(u)});
 const hoverables=[...units];
+const roads=[];const roadMeshes=[];
 const { unitAtCell, unitsAtCell, baseSeatAtCell, baseCellsForSeat, snapToTile } = createBoardCoordinates({ getUnits: () => units, tile, half });
+
+function roadConnections(road,allRoads){
+  const bases=new Set(baseCellsForSeat(road.ownerSeat).map(cell=>cellKey(cell.x,cell.z))),owned=new Set(allRoads.filter(item=>item.ownerSeat===road.ownerSeat).map(item=>cellKey(item.x,item.z)));
+  const names=['east','west','south','north'];return Object.fromEntries(ORTHOGONAL_DIRECTIONS.map((direction,index)=>{const key=cellKey(road.x+direction.x,road.z+direction.z);return[names[index],owned.has(key)||bases.has(key)]}));
+}
+function reconcileRoads(serverRoads){
+  roadMeshes.splice(0).forEach(mesh=>scene.remove(mesh));roads.splice(0,roads.length,...serverRoads.map(road=>({...road})));
+  roads.forEach(road=>{const mesh=makeRoad(roadConnections(road,roads),tile);mesh.position.set(road.x*tile-half,.072,road.z*tile-half);mesh.userData={roadId:road.id,ownerSeat:road.ownerSeat};roadMeshes.push(mesh);scene.add(mesh)});
+  app.dataset.roads=String(roads.length);
+}
 
 // Selection and unit status HUD.
 const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();let selected=null,dragged=null,dragMoved=false,justDragged=false,onlineState=null,selfSeat=null,onlineSocket=null,devMode=false;
@@ -40,7 +52,7 @@ const dragPoint=new THREE.Vector3();
 const archerMountPoint=new THREE.Vector3();
 const tileMarker=add(new THREE.PlaneGeometry(tile*.9,tile*.9),new THREE.MeshBasicMaterial({color:0xcaa45d,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide}),scene,[0,.075,0],[-Math.PI/2,0,0]);
 tileMarker.visible=false;
-const movementOverlay=createMovementOverlay({scene,app,units,tile,half,unitAtCell,baseSeatAtCell,baseCellsForSeat,getMatchContext:()=>({onlineState,selfSeat,devMode})});
+const movementOverlay=createMovementOverlay({scene,app,units,tile,half,unitAtCell,baseSeatAtCell,baseCellsForSeat,getRoads:()=>roads,getMatchContext:()=>({onlineState,selfSeat,devMode})});
 const deploymentOverlay=createDeploymentOverlay({scene,tile,half});
 const clearMovementGrid=()=>movementOverlay.clear();
 const showMovementGrid=unit=>movementOverlay.show(unit);
@@ -179,7 +191,9 @@ renderer.domElement.addEventListener('pointercancel',finishDrag,true);
 renderer.domElement.addEventListener('pointerleave',()=>hoverCard.classList.remove('visible'));
 
 let activePlayer=1,round=1;
-function endTurn(){if(onlineState)return sendOnlineAction({type:'end_turn'});activePlayer=activePlayer===1?2:1;if(activePlayer===1)round++;units.filter(unit=>unit.userData.underConstruction&&unit.userData.ownerSeat===activePlayer&&unit.userData.buildReadyRound<=round).forEach(unit=>applyConstructionState(unit,false));showDeploymentArea(false);syncInstantCommand()}
+function setKingdomProgressHud(citizens,level,enemyLevel=1){const citizenResource=document.querySelector('#citizen-resource');citizenResource.hidden=citizens<=0;document.querySelector('#self-citizens').textContent=String(citizens);document.querySelector('#self-level').textContent=`LV ${level}`;document.querySelector('#enemy-base-level').textContent=`LV ${enemyLevel}`;document.querySelector('#level-requirement').textContent=level>=2?'Nível 2 alcançado. Os próximos níveis serão adicionados depois.':'Nível 2: tenha 9 cidadãos em seu reino.'}
+function syncLocalKingdomHud(){const localUnits=units.map(unit=>({ownerSeat:unit.userData.ownerSeat??1,cardId:unit.userData.cardId,x:Math.round((unit.position.x+half)/tile),z:Math.round((unit.position.z+half)/tile),underConstruction:Boolean(unit.userData.underConstruction)})),citizens=citizensForSeat(1,localUnits,roads,GAME_CONFIG.boardSize),level=citizens>=GAME_CONFIG.level2CitizenRequirement?2:1;setKingdomProgressHud(citizens,level)}
+function endTurn(){if(onlineState)return sendOnlineAction({type:'end_turn'});activePlayer=activePlayer===1?2:1;if(activePlayer===1)round++;units.filter(unit=>unit.userData.underConstruction&&unit.userData.ownerSeat===activePlayer&&unit.userData.buildReadyRound<=round).forEach(unit=>applyConstructionState(unit,false));syncLocalKingdomHud();showDeploymentArea(false);syncInstantCommand()}
 document.querySelector('#end-turn').addEventListener('click',endTurn);addEventListener('keydown',e=>{if(e.key==='Enter')endTurn()});
 
 const deckPreview=document.querySelector('#deck-preview');
@@ -205,17 +219,22 @@ function cardTileAtPointer(e,cardIndex=Number(selectedCardElement()?.dataset.car
   const cell=boardCellAtPointer(e);if(!cell||!Number.isInteger(cardIndex))return null;
   const card=cards[cardIndex],occupants=unitsAtCell(cell.x,cell.z),tower=occupants.find(unit=>unit.userData.cardId==='tower'&&unit.userData.ownerSeat===deploymentSeat()&&!unit.userData.underConstruction);
   const mountable=card.id==='archer'&&tower&&occupants.length===1;
-  return{...cell,valid:isDeploymentCell(deploymentSeat(),cell.x,cell.z,GAME_CONFIG.boardSize)&&(!occupants.length||mountable),mountableTower:tower??null};
+  const roadBlocker=occupants.some(unit=>['construction','machine'].includes(unit.userData.cardType));
+  const roadOccupied=roads.some(road=>road.x===cell.x&&road.z===cell.z);
+  const valid=card.id==='road'
+    ? !baseSeatAtCell(cell.x,cell.z)&&!roadBlocker&&isRoadPlacementCell(deploymentSeat(),cell.x,cell.z,roads,GAME_CONFIG.boardSize)
+    : isDeploymentCell(deploymentSeat(),cell.x,cell.z,GAME_CONFIG.boardSize)&&(!occupants.length||mountable)&&!(roadOccupied&&['construction','machine'].includes(card.type));
+  return{...cell,valid,mountableTower:tower??null};
 }
 function makeSummonedUnit(cardIndex){
   return createCardUnit(cards[cardIndex],cardIndex);
 }
-function summonCard(cardIndex,x,z,mountableTower=null){const unit=makeSummonedUnit(cardIndex),card=cards[cardIndex];unit.position.set(x,.06,z);unit.userData.ownerSeat=activePlayer;unit.rotation.y=card.id==='cannon'&&activePlayer===2?Math.PI:0;units.push(unit);hoverables.push(unit);scene.add(unit);if(card.buildRounds){unit.userData.buildReadyRound=round+card.buildRounds;applyConstructionState(unit,true)}if(card.id==='archer'&&mountableTower)mountArcherLocally(unit,mountableTower);else selectUnit(unit,{cinematic:false})}
+function summonCard(cardIndex,x,z,mountableTower=null){const card=cards[cardIndex];if(card.id==='road'){reconcileRoads([...roads,{id:`local-road-${roads.length+1}`,ownerSeat:activePlayer,x:Math.round((x+half)/tile),z:Math.round((z+half)/tile)}]);syncLocalKingdomHud();return}const unit=makeSummonedUnit(cardIndex);unit.position.set(x,.06,z);unit.userData.ownerSeat=activePlayer;unit.rotation.y=card.id==='cannon'&&activePlayer===2?Math.PI:0;units.push(unit);hoverables.push(unit);scene.add(unit);if(card.buildRounds){unit.userData.buildReadyRound=round+card.buildRounds;applyConstructionState(unit,true)}if(card.id==='archer'&&mountableTower)mountArcherLocally(unit,mountableTower);else selectUnit(unit,{cinematic:false});syncLocalKingdomHud()}
 function playSelectedCardAtPointer(e){
   const cardNode=selectedCardElement();if(!cardNode)return false;
   if(onlineState&&onlineState.state.activeSeat!==selfSeat){showGameError('Aguarde o seu turno.');return true}
   const index=Number(cardNode.dataset.card),tileInfo=cardTileAtPointer(e,index);
-  if(!tileInfo?.valid){showGameError('Escolha uma casa livre a até 2 casas do seu reino.');return true}
+  if(!tileInfo?.valid){showGameError(cards[index].id==='road'?'Conecte a Rua ao castelo ou a outra Rua do seu reino.':'Escolha uma casa livre a até 2 casas do seu reino.');return true}
   if(onlineState)sendOnlineAction({type:'summon',cardInstanceId:cardNode.dataset.instance,x:tileInfo.x,z:tileInfo.z});
   else{summonCard(index,tileInfo.worldX,tileInfo.worldZ,tileInfo.mountableTower);cardNode.remove();document.querySelector('#hand-count').textContent=`${hand.querySelectorAll('.game-card').length} CARTAS`}
   cardNode.classList.remove('selected');showDeploymentArea(false);syncBottomCommand();return true;
@@ -253,7 +272,7 @@ renderer.domElement.addEventListener('pointermove',hoverDeck);
 renderer.domElement.addEventListener('pointerdown',e=>{if(e.button!==0||!deckAtPointer(e))return;e.preventDefault();e.stopPropagation();cameraTransition.cancel({restoreControls:false});deckPressed=true;controls.enabled=false},true);
 renderer.domElement.addEventListener('pointerup',e=>{if(!deckPressed)return;e.preventDefault();e.stopPropagation();deckPressed=false;controls.enabled=true;if(deckAtPointer(e))drawCardPreview()},true);
 renderer.domElement.addEventListener('pointerleave',()=>{deckHover=false;deckPressed=false;controls.enabled=true;renderer.domElement.style.cursor='';hideDeckPreview()});
-function moveTray(direction){handShift=THREE.MathUtils.clamp(handShift+direction*120,-360,360);hand.style.setProperty('--hand-shift',`${handShift}px`)}
+function moveTray(direction){const dock=document.querySelector('.card-dock'),maxShift=Math.max(0,hand.scrollWidth-dock.clientWidth+48);handShift=THREE.MathUtils.clamp(handShift+direction*120,-maxShift,0);hand.style.setProperty('--hand-shift',`${handShift}px`)}
 document.querySelector('#tray-prev').addEventListener('click',()=>moveTray(1));document.querySelector('#tray-next').addEventListener('click',()=>moveTray(-1));
 
 function sendOnlineAction(action){if(onlineState&&onlineSocket)onlineSocket.sendAction(action,onlineState.state.version)}
@@ -298,10 +317,11 @@ function applyOnlineState(payload){
   document.querySelector('#waiting-code').textContent=payload.code;document.querySelector('#waiting-room').hidden=false;document.querySelector('#match-code').textContent=`SALA ${payload.code}`;document.querySelector('#match-state').hidden=false;
   if(payload.state.phase==='waiting'){document.querySelector('#waiting-status').textContent='Aguardando o rei rival...';return}
   document.querySelector('#online-lobby').classList.add('closed');if(shouldSetPerspective)setOnlinePerspective();
-  if(previous&&payload.self.hand.length>previous.self.hand.length)animateServerDraw();renderOnlineHand(payload.self.hand);reconcileOnlineUnits(payload.state.units);
+  if(previous&&payload.self.hand.length>previous.self.hand.length)animateServerDraw();renderOnlineHand(payload.self.hand);reconcileRoads(payload.state.roads??[]);reconcileOnlineUnits(payload.state.units);
   const me=payload.state.players.find(player=>player.seat===selfSeat),enemy=payload.state.players.find(player=>player.seat!==selfSeat);if(!me||!enemy)return;
-  setResource('#self-energy',me.energy,GAME_CONFIG.maxEnergy);setResource('#self-health',me.baseHp,GAME_CONFIG.startingBaseHp);deckRemaining=me.deckCount;document.querySelector('#deck-count').textContent=String(deckRemaining);
+  setResource('#self-energy',me.energy,me.maxEnergy??GAME_CONFIG.maxEnergy);setResource('#self-health',me.baseHp,GAME_CONFIG.startingBaseHp);setKingdomProgressHud(me.citizens??0,me.baseLevel??1,enemy.baseLevel??1);deckRemaining=me.deckCount;document.querySelector('#deck-count').textContent=String(deckRemaining);
   document.querySelector('.enemy-base-tag i').style.width=`${Math.max(0,enemy.baseHp/GAME_CONFIG.startingBaseHp*100)}%`;
+  document.querySelector('.enemy-base-tag').setAttribute('aria-label',`Castelo inimigo nível ${enemy.baseLevel??1}, vida ${enemy.baseHp} de ${GAME_CONFIG.startingBaseHp}`);
   const mine=payload.state.activeSeat===selfSeat,finished=payload.state.phase==='finished';document.querySelector('#turn-label').textContent=finished?(payload.state.winnerSeat===selfSeat?'VITÓRIA':'DERROTA'):(mine?'SEU TURNO':'TURNO RIVAL');document.querySelector('#end-turn').disabled=!mine||finished;
 }
 const lobbyError=document.querySelector('#lobby-error'),gameError=document.querySelector('#game-error'),connectionState=document.querySelector('#connection-state');let gameErrorTimer;function showGameError(message){gameError.textContent=message;clearTimeout(gameErrorTimer);gameErrorTimer=setTimeout(()=>gameError.textContent='',2800)}onlineSocket=new GameSocketClient();
@@ -313,7 +333,7 @@ document.querySelectorAll('#create-room,#join-room').forEach(button=>button.disa
 document.querySelector('#room-code').addEventListener('input',event=>{event.target.value=event.target.value.toUpperCase().replace(/[^A-Z2-9]/g,'').slice(0,6)});
 document.querySelector('#create-room').addEventListener('click',()=>onlineSocket.createRoom(document.querySelector('#player-name').value));
 document.querySelector('#join-room').addEventListener('click',()=>onlineSocket.joinRoom(document.querySelector('#room-code').value,document.querySelector('#player-name').value));
-document.querySelector('#dev-mode').addEventListener('click',()=>{devMode=true;onlineState=null;selfSeat=null;app.dataset.mode='dev';document.querySelector('#online-lobby').classList.add('closed');document.querySelector('#match-state').hidden=false;document.querySelector('#match-code').textContent='DEV MODE';document.querySelector('#turn-label').textContent='TESTE LIVRE';document.querySelector('#turn-clock').textContent='∞';document.querySelector('#end-turn').disabled=false;setResource('#self-energy','∞','');setResource('#self-health',GAME_CONFIG.startingBaseHp,GAME_CONFIG.startingBaseHp);showDeploymentArea(false)});
+document.querySelector('#dev-mode').addEventListener('click',()=>{devMode=true;onlineState=null;selfSeat=null;app.dataset.mode='dev';document.querySelector('#online-lobby').classList.add('closed');document.querySelector('#match-state').hidden=false;document.querySelector('#match-code').textContent='DEV MODE';document.querySelector('#turn-label').textContent='TESTE LIVRE';document.querySelector('#turn-clock').textContent='∞';document.querySelector('#end-turn').disabled=false;setResource('#self-energy','∞','');setResource('#self-health',GAME_CONFIG.startingBaseHp,GAME_CONFIG.startingBaseHp);syncLocalKingdomHud();showDeploymentArea(false)});
 onlineSocket.connect();
 setInterval(()=>{if(!onlineState?.state.turnEndsAt)return;const remaining=Math.max(0,onlineState.state.turnEndsAt-Date.now()),minutes=Math.floor(remaining/60000),seconds=Math.floor(remaining%60000/1000);document.querySelector('#turn-clock').textContent=`${String(minutes).padStart(2,'0')}:${String(seconds).padStart(2,'0')}`},250);
 

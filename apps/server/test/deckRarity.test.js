@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CARD_BY_ID } from '@tronos/shared/cards';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
-import { createDeck } from '../src/game/createInitialState.js';
+import { createDeck, rarityForRoll } from '../src/game/createInitialState.js';
 
 test('sorteia cartas comuns e incomuns na proporção de dois para um', () => {
   const rarityRolls = Array.from({ length: GAME_CONFIG.deckSize }, (_, index) => index % 3);
@@ -25,4 +25,11 @@ test('pode sortear qualquer carta dentro da raridade escolhida', () => {
   const deck = createDeck(max => calls[call++ % calls.length] % max);
 
   assert.deepEqual(deck.slice(0, 3), ['archer', 'tower', 'cannon']);
+});
+
+test('nível dois usa chances 60% comum, 30% incomum e 10% rara', () => {
+  assert.deepEqual(Array.from({ length: 10 }, (_, roll) => rarityForRoll(2, roll)), [
+    'common', 'common', 'common', 'common', 'common', 'common',
+    'uncommon', 'uncommon', 'uncommon', 'rare'
+  ]);
 });

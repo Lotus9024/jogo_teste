@@ -15,6 +15,7 @@ const bootIcon = '<svg class="stat-boot" viewBox="0 0 24 24"><path d="M5 2h8v9.5
 const hourglassIcon = '<span aria-hidden="true">⌛</span>';
 
 function combatStats(card) {
+  if (card.type === 'terrain') return `<span aria-label="Vida"><small aria-hidden="true">♥</small><b>—</b></span><span aria-label="Dano"><small aria-hidden="true">⚔</small><b>—</b></span><span aria-label="Permanente"><small aria-hidden="true">∞</small><b>∞</b></span>`;
   const needsConstruction = Boolean(card.buildRounds);
   const damage = card.type === 'construction' ? '—' : card.damage;
   const lastLabel = needsConstruction ? 'Construção' : 'Movimento';

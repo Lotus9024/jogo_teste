@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { CARD_BY_ID, baseCellsForSeat, forwardDeltaForSeat, gridCellsBetween, isAttackDistanceValid, isCannonTargetValid, isDeploymentCell, movementDistance } from '@tronos/shared/cards';
+import { CARD_BY_ID, baseCellsForSeat, citizensForSeat, forwardDeltaForSeat, gridCellsBetween, isAttackDistanceValid, isCannonTargetValid, isDeploymentCell, isRoadPlacementCell, movementDistance, roadMovementBonus } from '@tronos/shared/cards';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
-import { drawCard } from './createInitialState.js';
+import { createDeck, drawCard } from './createInitialState.js';
 
 const fail = message => { throw new Error(message); };
 const distance = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.z - b.z);
@@ -18,6 +18,24 @@ function unitsAt(state, x, z, excludeId = null) { return state.units.filter(unit
 function unitAt(state, x, z, excludeId = null) { return unitsAt(state, x, z, excludeId)[0]; }
 function unitBlocksLine(state, from, to, excludeId = null) {
   return gridCellsBetween(from, to).some(cell => unitAt(state, cell.x, cell.z, excludeId));
+}
+
+function refreshKingdomProgress(state) {
+  state.players.forEach(player => {
+    player.citizens = citizensForSeat(player.seat, state.units, state.roads, GAME_CONFIG.boardSize);
+    if (player.baseLevel >= 2 || player.citizens < GAME_CONFIG.level2CitizenRequirement) return;
+    player.baseLevel = 2;
+    player.maxEnergy = GAME_CONFIG.level2MaxEnergy;
+    player.deck = createDeck(undefined, player.baseLevel, player.deck.length);
+  });
+}
+
+function healLevelTwoConstructions(state, seat) {
+  const player = state.players.find(item => item.seat === seat);
+  if (player?.baseLevel < 2 || state.round % 2 !== 0) return;
+  state.units.filter(unit => unit.ownerSeat === seat && CARD_BY_ID[unit.cardId]?.type === 'construction' && !unit.underConstruction).forEach(unit => {
+    unit.hp = Math.min(CARD_BY_ID[unit.cardId].hp, unit.hp + 1);
+  });
 }
 
 function cannonOperator(state, cannon) {
@@ -81,8 +99,10 @@ function endTurn(state) {
   state.units.forEach(unit => {
     if (unit.underConstruction && unit.ownerSeat === state.activeSeat && unit.buildReadyRound <= state.round) unit.underConstruction = false;
   });
+  refreshKingdomProgress(state);
+  healLevelTwoConstructions(state, state.activeSeat);
   const player = state.players.find(item => item.seat === state.activeSeat);
-  player.energy = Math.min(GAME_CONFIG.maxEnergy, player.energy + GAME_CONFIG.energyPerTurn);
+  player.energy = Math.min(player.maxEnergy, player.energy + GAME_CONFIG.energyPerTurn);
   drawCard(player);
   state.units.filter(unit => unit.ownerSeat === state.activeSeat).forEach(unit => {
     unit.actionUsed = false;
@@ -113,14 +133,19 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     const instance = player.hand[index], card = CARD_BY_ID[instance.cardId];
     if (!card) fail('Carta inválida.');
     const tower = mountableTowerAt(state, player, card, x, z);
-    if (!validCell(x, z) || !deploymentCell(player.seat, x, z) || inBase(x, z) || (unitAt(state, x, z) && !tower)) fail('Escolha uma casa livre a até 2 casas do seu reino.');
+    const roadBlocker = unitsAt(state, x, z).some(unit => ['construction', 'machine'].includes(CARD_BY_ID[unit.cardId]?.type));
+    const roadOccupied = state.roads.some(road => road.x === x && road.z === z);
+    if (card.id === 'road') {
+      if (!validCell(x, z) || inBase(x, z) || roadBlocker || !isRoadPlacementCell(player.seat, x, z, state.roads, GAME_CONFIG.boardSize)) fail('A Rua precisa estar conectada ao castelo ou a outra Rua do seu reino.');
+    } else if (!validCell(x, z) || !deploymentCell(player.seat, x, z) || inBase(x, z) || (unitAt(state, x, z) && !tower) || (roadOccupied && ['construction', 'machine'].includes(card.type))) fail('Escolha uma casa livre a até 2 casas do seu reino.');
     if (player.energy < card.cost) fail('Energia insuficiente.');
     player.energy -= card.cost; player.hand.splice(index, 1); player.discard.push(instance.cardId);
-    state.units.push({
-      id: randomUUID(), ownerSeat: player.seat, cardId: card.id, x, z, hp: card.hp, shield: 0,
-      actionUsed: true, abilityUsed: false, instantUsedRound: 0, empowered: false, mountedOnTowerId: tower?.id ?? null,
-      underConstruction: Boolean(card.buildRounds), buildReadyRound: card.buildRounds ? state.round + card.buildRounds : null
-    });
+    if (card.id === 'road') state.roads.push({ id: randomUUID(), ownerSeat: player.seat, x, z });
+    else state.units.push({
+        id: randomUUID(), ownerSeat: player.seat, cardId: card.id, x, z, hp: card.hp, shield: 0,
+        actionUsed: true, abilityUsed: false, instantUsedRound: 0, empowered: false, mountedOnTowerId: tower?.id ?? null,
+        underConstruction: Boolean(card.buildRounds), buildReadyRound: card.buildRounds ? state.round + card.buildRounds : null
+      });
   } else if (action.type === 'move') {
     requireTurn(state, player);
     const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
@@ -139,7 +164,8 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
       unit.x = x; unit.z = z; unit.actionUsed = true;
     } else {
     const tower = mountableTowerAt(state, player, card, x, z, unit.id);
-    if (!validCell(x, z) || inBase(x, z) || (unitAt(state, x, z, unit.id) && !tower) || movementDistance(card.movementType, unit, { x, z }) > card.move) fail('Movimento inválido.');
+    const movementRange = card.move + roadMovementBonus(unit.x, unit.z, state.roads);
+    if (!validCell(x, z) || inBase(x, z) || (unitAt(state, x, z, unit.id) && !tower) || movementDistance(card.movementType, unit, { x, z }) > movementRange) fail('Movimento inválido.');
     if (unitBlocksLine(state, unit, { x, z }, unit.id)) fail('O caminho está bloqueado por outra tropa.');
     unit.x = x; unit.z = z; unit.mountedOnTowerId = tower?.id ?? null; unit.actionUsed = true;
     }
@@ -209,6 +235,7 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     player.energy -= instant.cost;unit.instantUsedRound = state.round;
   } else fail('Ação não reconhecida.');
 
+  refreshKingdomProgress(state);
   state.version += 1;
   return state;
 }

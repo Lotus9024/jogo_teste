@@ -40,6 +40,19 @@ export const CARD_DEFINITIONS = Object.freeze([
     hp: 2, damage: 4, move: 1, movementType: 'forward', minAttackRange: 3, attackRange: 7, areaRadius: 2, cost: 7, buildRounds: 2, type: 'machine', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'MÁQUINA · CERCO', glyph: '◉',
     ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'O Canhão precisa de um Operador exatamente uma casa atrás.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
+  }),
+  Object.freeze({
+    id: 'wooden_house', name: 'Casa de madeira', description: 'Uma casa de madeira simples e frágil. Esta casa consegue hospedar até 3 cidadãos.',
+    hp: 1, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 3, buildRounds: 1, type: 'construction', rarity: 'COMUM', rarityClass: 'common', info: 'CONSTRUÇÃO · MORADIA', glyph: '⌂',
+    citizens: 3, connectedRoadCitizenBonus: 1,
+    ability: Object.freeze({ name: 'Hospedagem', cost: '—', description: 'Fornece 3 cidadãos e mais 1 quando conectada ao castelo por Ruas.', enabled: false }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
+  }),
+  Object.freeze({
+    id: 'road', name: 'Rua', description: 'Aumenta em 1 o movimento de quem estiver sobre ela. Casas conectadas à Rua recebem espaço para mais 1 cidadão. Deve estar ligada ao castelo ou a outra Rua.',
+    hp: null, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 1, type: 'terrain', indestructible: true, rarity: 'COMUM', rarityClass: 'common', info: 'TERRENO · RUA', glyph: '═',
+    ability: Object.freeze({ name: 'Caminho do reino', cost: '—', description: 'Terreno permanente que se conecta automaticamente e não pode ser destruído.', enabled: false }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   })
 ]);
 
@@ -103,4 +116,51 @@ export function isDeploymentCell(seat, x, z, boardSize = 15) {
   if (![1, 2].includes(seat) || x < 0 || x >= boardSize || z < 0 || z >= boardSize) return false;
   const value = deploymentDistance(seat, { x, z }, boardSize);
   return value >= 1 && value <= 2;
+}
+
+export const ORTHOGONAL_DIRECTIONS = Object.freeze([
+  Object.freeze({ x: 1, z: 0 }), Object.freeze({ x: -1, z: 0 }),
+  Object.freeze({ x: 0, z: 1 }), Object.freeze({ x: 0, z: -1 })
+]);
+
+export const cellKey = (x, z) => `${x}:${z}`;
+
+export function connectedRoadKeys(seat, roads, boardSize = 15) {
+  const owned = new Set(roads.filter(road => road.ownerSeat === seat).map(road => cellKey(road.x, road.z)));
+  const bases = new Set(baseCellsForSeat(seat, boardSize).map(cell => cellKey(cell.x, cell.z)));
+  const connected = new Set();
+  const queue = roads.filter(road => road.ownerSeat === seat && ORTHOGONAL_DIRECTIONS.some(direction => bases.has(cellKey(road.x + direction.x, road.z + direction.z))));
+  queue.forEach(road => connected.add(cellKey(road.x, road.z)));
+  for (let index = 0; index < queue.length; index += 1) {
+    const road = queue[index];
+    for (const direction of ORTHOGONAL_DIRECTIONS) {
+      const key = cellKey(road.x + direction.x, road.z + direction.z);
+      if (!owned.has(key) || connected.has(key)) continue;
+      connected.add(key);
+      const [x, z] = key.split(':').map(Number);
+      queue.push({ x, z });
+    }
+  }
+  return connected;
+}
+
+export function isRoadPlacementCell(seat, x, z, roads, boardSize = 15) {
+  if (x < 0 || x >= boardSize || z < 0 || z >= boardSize || roads.some(road => road.x === x && road.z === z)) return false;
+  const bases = new Set(baseCellsForSeat(seat, boardSize).map(cell => cellKey(cell.x, cell.z)));
+  const connected = connectedRoadKeys(seat, roads, boardSize);
+  return ORTHOGONAL_DIRECTIONS.some(direction => {
+    const key = cellKey(x + direction.x, z + direction.z);
+    return bases.has(key) || connected.has(key);
+  });
+}
+
+export function citizensForSeat(seat, units, roads, boardSize = 15) {
+  const connected = connectedRoadKeys(seat, roads, boardSize);
+  return units
+    .filter(unit => unit.ownerSeat === seat && unit.cardId === 'wooden_house' && !unit.underConstruction)
+    .reduce((total, house) => total + CARD_BY_ID.wooden_house.citizens + (ORTHOGONAL_DIRECTIONS.some(direction => connected.has(cellKey(house.x + direction.x, house.z + direction.z))) ? CARD_BY_ID.wooden_house.connectedRoadCitizenBonus : 0), 0);
+}
+
+export function roadMovementBonus(x, z, roads) {
+  return roads.some(road => road.x === x && road.z === z) ? 1 : 0;
 }
