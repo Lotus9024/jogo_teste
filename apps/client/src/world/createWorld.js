@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { M, add } from '../models/unitModels.js';
+import { M, add } from '../core/scenePrimitives.js';
 import { createIslandRocks } from './createIslandRocks.js';
 import { createIslandTrees } from './createIslandTrees.js';
 import { createMagicTerrain } from './createMagicTerrain.js';

@@ -3,10 +3,17 @@ import { CARD_BY_ID, isAttackDistanceValid, movementDistance } from '@tronos/sha
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { createCinematicCamera } from './core/createCinematicCamera.js';
 import { createGameScene } from './core/createGameScene.js';
-import { M, add, makeArcher, makeMage, makeWarrior, makeWoodBarrier, setWoodBarrierConstructionState, unitBase } from './models/unitModels.js';
+import { add } from './core/scenePrimitives.js';
+import { createBoardCoordinates } from './gameplay/boardCoordinates.js';
+import { createMovementOverlay } from './gameplay/createMovementOverlay.js';
+import { applyConstructionState as applyUnitConstructionState, setUnitTeamColor } from './gameplay/unitState.js';
+import { createCardUnit } from './models/createCardUnit.js';
+import { makeArcher, makeMage, makeWarrior } from './models/unitModels.js';
 import { GameSocketClient, SERVER_EVENTS } from './network/gameSocket.js';
 import { mountGameShell } from './ui/gameShell.js';
 import { cardMarkup, cards, hideDeckPreview as hideCardPreview, showDeckPreview } from './ui/cardView.js';
+import { setResource } from './ui/resourceView.js';
+import { ensureHealthBadge, updateHealthBadge } from './ui/unitHealthBadge.js';
 import { createWorld } from './world/createWorld.js';
 import './style.css';
 
@@ -21,10 +28,7 @@ const { board, tile, half, alliedKeep, enemyKeep, deck3D, topDeckCard, wisps, fi
 // even the outermost weapon silhouette inside the 1.08 × 1.08 footprint.
 const units=[makeMage(),makeWarrior(),makeArcher()]; units[0].position.set(-2.16,.06,0);units[1].position.set(0,.06,0);units[2].position.set(2.16,.06,0);units.forEach((u,cardIndex)=>{const card=cards[cardIndex];u.scale.setScalar(.64);Object.assign(u.userData,{hoverable:true,cardIndex,hp:card.hp,maxHp:card.hp,damage:card.damage,move:card.move,movementType:card.movementType,minAttackRange:card.minAttackRange,attackRange:card.attackRange,cardType:card.type,cost:card.cost,ability:card.ability,abilityUsed:false,description:card.abilityText});ensureHealthBadge(u);scene.add(u)});
 const hoverables=[...units];
-
-function drawHealthBadge(sprite,hp){const {canvas,context,texture}=sprite.userData;context.clearRect(0,0,canvas.width,canvas.height);context.font='bold 52px Arial';context.fillStyle='#e3544a';context.textAlign='center';context.textBaseline='middle';context.fillText('♥',32,34);context.font='bold 20px Arial';context.fillStyle='#fff7e8';context.fillText(String(Math.max(0,hp)),32,32);texture.needsUpdate=true}
-function ensureHealthBadge(unit){let badge=unit.getObjectByName('healthBadge');if(!badge){const canvas=document.createElement('canvas');canvas.width=64;canvas.height=64;const context=canvas.getContext('2d'),texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;const material=new THREE.SpriteMaterial({map:texture,transparent:true,depthTest:true,depthWrite:false});badge=new THREE.Sprite(material);badge.name='healthBadge';badge.position.set(.68,unit.userData.cardType==='construction'?2.15:2.95,0);badge.scale.set(.9,.9,1);badge.renderOrder=12;badge.userData={canvas,context,texture};unit.add(badge)}drawHealthBadge(badge,unit.userData.hp);return badge}
-function updateHealthBadge(unit){const badge=unit.getObjectByName('healthBadge');if(badge)drawHealthBadge(badge,unit.userData.hp)}
+const { unitAtCell, baseSeatAtCell, baseCellsForSeat, snapToTile } = createBoardCoordinates({ getUnits: () => units, tile, half });
 
 // Selection and unit status HUD.
 const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();let selected=null,dragged=null,dragMoved=false,justDragged=false,onlineState=null,selfSeat=null,onlineSocket=null,devMode=false;
@@ -32,29 +36,9 @@ const boardPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
 const dragPoint=new THREE.Vector3();
 const tileMarker=add(new THREE.PlaneGeometry(tile*.9,tile*.9),new THREE.MeshBasicMaterial({color:0xcaa45d,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide}),scene,[0,.075,0],[-Math.PI/2,0,0]);
 tileMarker.visible=false;
-const movementGeometry=new THREE.PlaneGeometry(tile*.82,tile*.82),movementMaterial=new THREE.MeshBasicMaterial({color:0x60b8e8,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide}),attackMaterial=new THREE.MeshBasicMaterial({color:0xff3b2e,transparent:true,opacity:.7,depthWrite:false,side:THREE.DoubleSide}),movementMarkers=[];
-function setAttackHighlight(unit,highlight){const ring=unit.getObjectByName('selectionRing');if(!ring)return;if(ring.userData.baseColor===undefined)ring.userData.baseColor=ring.material.color.getHex();const color=highlight?0xff2d20:ring.userData.baseColor;ring.material.color.setHex(color);ring.material.emissive.setHex(color);ring.material.emissiveIntensity=highlight?1.65:(ring.userData.baseEmissiveIntensity??.75);unit.userData.attackHighlighted=highlight}
-function setUnitTeamColor(unit,color){const ring=unit.getObjectByName('selectionRing'),platform=unit.getObjectByName('teamPlatform');[ring,platform].filter(Boolean).forEach(part=>{part.material.color.setHex(color);part.material.emissive.setHex(color)});if(ring){ring.userData.baseColor=color;ring.userData.baseEmissiveIntensity=.9;ring.material.emissiveIntensity=.9}if(platform){platform.userData.baseColor=color;platform.material.emissiveIntensity=.62}}
-function clearMovementGrid(){movementMarkers.splice(0).forEach(marker=>scene.remove(marker));units.filter(unit=>unit.userData.attackHighlighted).forEach(unit=>setAttackHighlight(unit,false));app.dataset.movementTiles='0';app.dataset.attackTiles='0'}
-function addMovementMarker(x,z,material){const marker=new THREE.Mesh(movementGeometry,material);marker.rotation.x=-Math.PI/2;marker.position.set(x*tile-half,.076,z*tile-half);scene.add(marker);movementMarkers.push(marker)}
-function unitAtCell(x,z,exclude=null){return units.find(unit=>unit!==exclude&&Math.round((unit.position.x+half)/tile)===x&&Math.round((unit.position.z+half)/tile)===z)??null}
-function baseSeatAtCell(x,z){if(x<6||x>8)return null;if(z<=2)return 2;if(z>=12)return 1;return null}
-function baseCellsForSeat(seat){const cells=[],centerZ=seat===1?13:1;for(let x=6;x<=8;x++)for(let z=centerZ-1;z<=centerZ+1;z++)cells.push({x,z});return cells}
-function showMovementGrid(unit){
-  clearMovementGrid();const onlineAllowed=onlineState&&unit.userData.ownerSeat===selfSeat&&onlineState.state.activeSeat===selfSeat&&!unit.userData.actionUsed;if(!devMode&&!onlineAllowed)return;
-  const originX=Math.round((unit.position.x+half)/tile),originZ=Math.round((unit.position.z+half)/tile),range=unit.userData.move;
-  for(let dx=-range;dx<=range;dx++)for(let dz=-range;dz<=range;dz++){
-    const x=originX+dx,z=originZ+dz,distance=movementDistance(unit.userData.movementType,{x:0,z:0},{x:dx,z:dz}),inCastle=Boolean(baseSeatAtCell(x,z)),occupied=Boolean(unitAtCell(x,z,unit));
-    if(!distance||distance>range||x<0||x>=15||z<0||z>=15||inCastle||occupied)continue;
-    addMovementMarker(x,z,movementMaterial);
-  }
-  const attackTargets=unit.userData.underConstruction||unit.userData.damage<=0?[]:units.filter(target=>{const targetDistance=Math.abs(target.position.x-unit.position.x)/tile+Math.abs(target.position.z-unit.position.z)/tile;return target!==unit&&(devMode||target.userData.ownerSeat!==selfSeat)&&isAttackDistanceValid(unit.userData,targetDistance)});
-  attackTargets.forEach(target=>{addMovementMarker(Math.round((target.position.x+half)/tile),Math.round((target.position.z+half)/tile),attackMaterial);setAttackHighlight(target,true)});
-  const opponentBaseCells=onlineState&&unit.userData.ownerSeat===selfSeat?baseCellsForSeat(selfSeat===1?2:1):[];
-  const baseInRange=opponentBaseCells.length>0&&isAttackDistanceValid(unit.userData,Math.min(...opponentBaseCells.map(cell=>Math.abs(cell.x-originX)+Math.abs(cell.z-originZ))));
-  if(baseInRange)opponentBaseCells.forEach(cell=>addMovementMarker(cell.x,cell.z,attackMaterial));
-  app.dataset.movementTiles=String(movementMarkers.length-attackTargets.length-(baseInRange?opponentBaseCells.length:0));app.dataset.attackTiles=String(attackTargets.length+(baseInRange?1:0));
-}
+const movementOverlay=createMovementOverlay({scene,app,units,tile,half,unitAtCell,baseSeatAtCell,baseCellsForSeat,getMatchContext:()=>({onlineState,selfSeat,devMode})});
+const clearMovementGrid=()=>movementOverlay.clear();
+const showMovementGrid=unit=>movementOverlay.show(unit);
 function unitAtPointer(e){
   const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;ray.setFromCamera(pointer,camera);
   const hits=ray.intersectObjects(units,true);if(!hits.length)return null;let u=hits[0].object;while(u.parent&&!u.userData.selectable)u=u.parent;return u.userData.selectable?u:null;
@@ -63,8 +47,7 @@ function hoverableAtPointer(e){
   const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;ray.setFromCamera(pointer,camera);
   const hits=ray.intersectObjects(hoverables,true);if(!hits.length)return null;let o=hits[0].object;while(o.parent&&!o.userData.hoverable)o=o.parent;return o.userData.hoverable?o:null;
 }
-function snapToTile(value){return THREE.MathUtils.clamp(Math.round((value+half)/tile)*tile-half,-half,half)}
-function applyConstructionState(unit,underConstruction){unit.userData.underConstruction=underConstruction;if(unit.userData.cardId==='wooden_barrier')setWoodBarrierConstructionState(unit,underConstruction);app.dataset.constructions=String(units.filter(item=>item.userData.underConstruction).length)}
+function applyConstructionState(unit,underConstruction){applyUnitConstructionState(unit,underConstruction,units,app)}
 function selectUnit(u,{cinematic=true}={}){if(selected){const previousRing=selected.getObjectByName('selectionRing');previousRing.material.emissiveIntensity=previousRing.userData.baseEmissiveIntensity??.75}selected=u;selected.getObjectByName('selectionRing').material.emissiveIntensity=1.6;showMovementGrid(u);if(cinematic)cameraTransition.focusBoard({side:selfSeat===2?-1:1})}
 function pick(e){if(justDragged){justDragged=false;return}const u=unitAtPointer(e);if(u)selectUnit(u)}
 function startDrag(e){
@@ -138,14 +121,7 @@ function cardTileAtPointer(e){
   return{x,z,valid:!occupied&&deployment};
 }
 function makeSummonedUnit(cardIndex){
-  const c=cards[cardIndex],factories={warrior:makeWarrior,guard:makeMage,archer:makeArcher,wooden_barrier:makeWoodBarrier};let unit;
-  if(factories[c.id])unit=factories[c.id]();
-  else{
-    const colors={common:0x858a85,uncommon:0x628c67,rare:0x5186a8,epic:0x8d5ab0,legendary:0xc68a34},color=colors[c.rarityClass];unit=new THREE.Group();unitBase(unit,color);
-    const rig=new THREE.Group();rig.name='rig';rig.position.y=.18;unit.add(rig);const tokenMat=new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.12,roughness:.55,metalness:.35});
-    add(new THREE.CylinderGeometry(.32,.44,.95,18),M.darkLeather,rig,[0,.68,0]);add(new THREE.OctahedronGeometry(.38,1),tokenMat,rig,[0,1.5,0]);add(new THREE.TorusGeometry(.35,.045,10,32),M.gold,rig,[0,1.5,0],[Math.PI/2,0,0]);
-  }
-  unit.name=c.name;unit.userData={...unit.userData,selectable:true,hoverable:true,cardId:c.id,cardIndex,name:c.name,role:c.info,hp:c.hp,maxHp:c.hp,damage:c.damage,move:c.move,movementType:c.movementType,minAttackRange:c.minAttackRange,attackRange:c.attackRange,cardType:c.type,buildRounds:c.buildRounds,cost:c.cost,ability:c.ability,abilityUsed:false,description:c.abilityText};unit.scale.setScalar(.64);ensureHealthBadge(unit);return unit;
+  return createCardUnit(cards[cardIndex],cardIndex);
 }
 function summonCard(cardIndex,x,z){const unit=makeSummonedUnit(cardIndex),card=cards[cardIndex];unit.position.set(x,.06,z);unit.userData.ownerSeat=activePlayer;units.push(unit);hoverables.push(unit);scene.add(unit);if(card.type==='construction'){unit.userData.buildReadyRound=round+card.buildRounds;applyConstructionState(unit,true)}selectUnit(unit,{cinematic:false})}
 hand.addEventListener('pointerdown',e=>{
@@ -185,7 +161,6 @@ function moveTray(direction){handShift=THREE.MathUtils.clamp(handShift+direction
 document.querySelector('#tray-prev').addEventListener('click',()=>moveTray(1));document.querySelector('#tray-next').addEventListener('click',()=>moveTray(-1));
 
 function sendOnlineAction(action){if(onlineState&&onlineSocket)onlineSocket.sendAction(action,onlineState.state.version)}
-function setResource(selector,value,max){const element=document.querySelector(selector);element.textContent=String(value);if(max!==''){const limit=document.createElement('em');limit.textContent=`/${max}`;element.appendChild(limit)}}
 function renderOnlineHand(instances){
   hand.replaceChildren();
   for(const instance of instances){const c=CARD_BY_ID[instance.cardId],index=cards.findIndex(card=>card.id===instance.cardId);if(!c||index<0||!/^[-0-9a-f]{36}$/i.test(instance.instanceId))continue;const holder=document.createElement('div');holder.innerHTML=cardMarkup(cards[index],index);const node=holder.firstElementChild;node.dataset.instance=instance.instanceId;hand.appendChild(node)}

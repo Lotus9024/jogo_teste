@@ -1,16 +1,5 @@
 import * as THREE from 'three';
-
-export const M={
-  stone:new THREE.MeshStandardMaterial({color:0x353c37,emissive:0x080a08,emissiveIntensity:.22,roughness:.91,metalness:.03}), stoneDark:new THREE.MeshStandardMaterial({color:0x202622,emissive:0x040504,emissiveIntensity:.18,roughness:.96}),
-  iron:new THREE.MeshStandardMaterial({color:0x777b7a,roughness:.31,metalness:.86}), steel:new THREE.MeshStandardMaterial({color:0xa9adaa,roughness:.22,metalness:.92}),
-  leather:new THREE.MeshStandardMaterial({color:0x4a2c20,roughness:.72}), darkLeather:new THREE.MeshStandardMaterial({color:0x211b19,roughness:.82}),
-  skin:new THREE.MeshStandardMaterial({color:0xa97156,roughness:.72}), red:new THREE.MeshStandardMaterial({color:0x682b25,roughness:.76}),
-  green:new THREE.MeshStandardMaterial({color:0x34443a,roughness:.82}), blue:new THREE.MeshStandardMaterial({color:0x263a4a,roughness:.78}),
-  wood:new THREE.MeshStandardMaterial({color:0x5b3821,roughness:.7}), cloth:new THREE.MeshStandardMaterial({color:0x29282d,roughness:.92}),
-  gold:new THREE.MeshStandardMaterial({color:0xb08a43,roughness:.32,metalness:.76}), void:new THREE.MeshStandardMaterial({color:0x030405,roughness:1}),
-  magic:new THREE.MeshBasicMaterial({color:0x9473ff}), base:new THREE.MeshStandardMaterial({color:0x181d1b,roughness:.72,metalness:.25})
-};
-export function add(geo,mat,parent,pos=[0,0,0],rot=[0,0,0],scale=[1,1,1]){const o=new THREE.Mesh(geo,mat);o.position.set(...pos);o.rotation.set(...rot);o.scale.set(...scale);const materials=Array.isArray(mat)?mat:[mat],lit=materials.some(material=>material?.isMeshStandardMaterial||material?.isMeshPhysicalMaterial||material?.isMeshLambertMaterial||material?.isMeshPhongMaterial);o.castShadow=lit;o.receiveShadow=lit;parent.add(o);return o}
+import { M, add } from '../core/scenePrimitives.js';
 function capsule(r,l,mat,parent,pos,rot=[0,0,0]){return add(new THREE.CapsuleGeometry(r,l,12,20),mat,parent,pos,rot)}
 export function unitBase(parent,color=0xb08a43){
   add(new THREE.CylinderGeometry(.54,.59,.15,48),M.base,parent,[0,.08,0]);
