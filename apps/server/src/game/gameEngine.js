@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { CARD_BY_ID, baseCellsForSeat, isAttackDistanceValid, isDeploymentCell, movementDistance } from '@tronos/shared/cards';
+import { CARD_BY_ID, baseCellsForSeat, forwardDeltaForSeat, gridCellsBetween, isAttackDistanceValid, isCannonTargetValid, isDeploymentCell, movementDistance } from '@tronos/shared/cards';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { drawCard } from './createInitialState.js';
 
@@ -16,6 +16,17 @@ function validCell(x, z) { return x >= 0 && x < GAME_CONFIG.boardSize && z >= 0 
 function deploymentCell(seat, x, z) { return isDeploymentCell(seat, x, z, GAME_CONFIG.boardSize); }
 function unitsAt(state, x, z, excludeId = null) { return state.units.filter(unit => unit.id !== excludeId && unit.x === x && unit.z === z); }
 function unitAt(state, x, z, excludeId = null) { return unitsAt(state, x, z, excludeId)[0]; }
+function unitBlocksLine(state, from, to, excludeId = null) {
+  return gridCellsBetween(from, to).some(cell => unitAt(state, cell.x, cell.z, excludeId));
+}
+
+function cannonOperator(state, cannon) {
+  const forward = forwardDeltaForSeat(cannon.ownerSeat);
+  return state.units.find(unit => unit.cardId === 'operator'
+    && unit.ownerSeat === cannon.ownerSeat
+    && unit.x === cannon.x - forward.x
+    && unit.z === cannon.z - forward.z) ?? null;
+}
 
 function mountedTower(state, unit) {
   if (!unit.mountedOnTowerId) return null;
@@ -38,6 +49,12 @@ function damageUnit(state, target, damage) {
   return true;
 }
 
+function fireCannonAt(state, cannon, targetCell, card) {
+  state.units
+    .filter(unit => distance(unit, targetCell) <= card.areaRadius)
+    .forEach(unit => damageUnit(state, unit, card.damage));
+}
+
 function mountableTowerAt(state, player, card, x, z, movingUnitId = null) {
   if (card.id !== 'archer') return null;
   const occupants = unitsAt(state, x, z, movingUnitId);
@@ -50,11 +67,11 @@ function fireTowerVolley(state, player, archer, instant) {
   const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
   for (const [dx, dz] of directions) {
     const target = state.units
-      .filter(unit => unit.ownerSeat !== player.seat)
+      .filter(unit => unit.id !== archer.id)
       .map(unit => ({ unit, step: dx ? (unit.x - archer.x) / dx : (unit.z - archer.z) / dz }))
       .filter(({ unit, step }) => step >= 1 && step <= instant.range && unit.x === archer.x + dx * step && unit.z === archer.z + dz * step)
       .sort((a, b) => a.step - b.step)[0]?.unit;
-    if (target) damageUnit(state, target, instant.damage);
+    if (target?.ownerSeat !== player.seat) damageUnit(state, target, instant.damage);
   }
 }
 
@@ -102,7 +119,7 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     state.units.push({
       id: randomUUID(), ownerSeat: player.seat, cardId: card.id, x, z, hp: card.hp, shield: 0,
       actionUsed: true, abilityUsed: false, instantUsedRound: 0, empowered: false, mountedOnTowerId: tower?.id ?? null,
-      underConstruction: card.type === 'construction', buildReadyRound: card.type === 'construction' ? state.round + card.buildRounds : null
+      underConstruction: Boolean(card.buildRounds), buildReadyRound: card.buildRounds ? state.round + card.buildRounds : null
     });
   } else if (action.type === 'move') {
     requireTurn(state, player);
@@ -111,9 +128,21 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     if (unit.actionUsed) fail('Esta unidade já agiu neste turno.');
     if (unit.underConstruction || card.type === 'construction') fail('Esta construção não pode se mover.');
     if (mountedTower(state, unit)) fail('O arqueiro montado não pode se mover.');
+    if (card.id === 'cannon') {
+      const forward = forwardDeltaForSeat(player.seat);
+      const operator = cannonOperator(state, unit);
+      const destination = { x: unit.x + forward.x, z: unit.z + forward.z };
+      if (!operator || operator.actionUsed) fail('O Canhão precisa de um Operador disponível exatamente atrás.');
+      if (x !== destination.x || z !== destination.z) fail('O Canhão avança somente uma casa para frente.');
+      if (!validCell(x, z) || inBase(x, z) || unitAt(state, x, z)) fail('A casa à frente do Canhão está bloqueada.');
+      operator.x = unit.x; operator.z = unit.z; operator.actionUsed = true;
+      unit.x = x; unit.z = z; unit.actionUsed = true;
+    } else {
     const tower = mountableTowerAt(state, player, card, x, z, unit.id);
     if (!validCell(x, z) || inBase(x, z) || (unitAt(state, x, z, unit.id) && !tower) || movementDistance(card.movementType, unit, { x, z }) > card.move) fail('Movimento inválido.');
+    if (unitBlocksLine(state, unit, { x, z }, unit.id)) fail('O caminho está bloqueado por outra tropa.');
     unit.x = x; unit.z = z; unit.mountedOnTowerId = tower?.id ?? null; unit.actionUsed = true;
+    }
   } else if (action.type === 'attack') {
     requireTurn(state, player);
     const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
@@ -122,15 +151,32 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     if (unit.underConstruction) fail('A construção ainda não foi concluída.');
     if (card.damage <= 0 || card.attackRange <= 0) fail('Esta carta não pode atacar.');
     const damage = card.damage + (unit.empowered ? 8 : 0);
+    const operator = card.id === 'cannon' ? cannonOperator(state, unit) : null;
+    if (card.id === 'cannon' && (!operator || operator.actionUsed)) fail('O Canhão precisa de um Operador disponível exatamente atrás.');
     if (action.targetUnitId) {
-      const target = state.units.find(item => item.id === action.targetUnitId && item.ownerSeat !== player.seat) ?? fail('Alvo inválido.');
-      if (!isAttackDistanceValid(card, distance(unit, target))) fail('Alvo fora de alcance.');
+      const target = state.units.find(item => item.id === action.targetUnitId && (card.id === 'cannon' || item.ownerSeat !== player.seat) && item.id !== unit.id) ?? fail('Alvo inválido.');
+      if (card.id === 'cannon' ? !isCannonTargetValid(unit, target) : !isAttackDistanceValid(card, distance(unit, target))) fail('Alvo fora de alcance.');
+      if (unitBlocksLine(state, unit, target, unit.id)) fail('A linha de ataque está bloqueada por outra tropa.');
+      if (card.id === 'cannon') {
+        fireCannonAt(state, unit, target, card);
+        operator.actionUsed = true;
+      } else {
       const defeatedCell = { x: target.x, z: target.z };
       const defeated = damageUnit(state, target, damage);
-      if (defeated && card.id !== 'archer' && !unitAt(state, defeatedCell.x, defeatedCell.z)) { unit.x = defeatedCell.x; unit.z = defeatedCell.z; }
+      if (defeated && !['archer', 'cannon'].includes(card.id) && !unitAt(state, defeatedCell.x, defeatedCell.z)) { unit.x = defeatedCell.x; unit.z = defeatedCell.z; }
+      }
+    } else if (card.id === 'cannon' && Number.isInteger(action.x) && Number.isInteger(action.z)) {
+      const targetCell = { x: integer(action.x), z: integer(action.z) };
+      if (!validCell(targetCell.x, targetCell.z) || !isCannonTargetValid(unit, targetCell)) fail('Alvo fora de alcance.');
+      if (unitBlocksLine(state, unit, targetCell, unit.id)) fail('A linha de ataque está bloqueada por outra tropa.');
+      fireCannonAt(state, unit, targetCell, card);
+      operator.actionUsed = true;
     } else if (action.targetBaseSeat === opponent.seat) {
-      if (!isAttackDistanceValid(card, Math.min(...baseCells(opponent.seat).map(cell => distance(unit, cell))))) fail('Base fora de alcance.');
+      const reachableBaseCells = baseCells(opponent.seat).filter(cell => (card.id === 'cannon' ? isCannonTargetValid(unit, cell) : isAttackDistanceValid(card, distance(unit, cell))) && !unitBlocksLine(state, unit, cell, unit.id));
+      const cannonBaseCell = card.id === 'cannon' ? reachableBaseCells[0] : null;
+      if (!reachableBaseCells.length) fail('Base fora de alcance ou linha de ataque bloqueada.');
       opponent.baseHp = Math.max(0, opponent.baseHp - damage);
+      if (card.id === 'cannon') { fireCannonAt(state, unit, cannonBaseCell, card); operator.actionUsed = true; }
       if (!opponent.baseHp) { state.phase = 'finished'; state.winnerSeat = player.seat; state.turnEndsAt = null; }
     } else fail('Alvo inválido.');
     unit.empowered = false; unit.actionUsed = true;

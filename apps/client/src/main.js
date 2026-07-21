@@ -1,15 +1,16 @@
 import * as THREE from 'three';
-import { CARD_BY_ID, isAttackDistanceValid, isDeploymentCell, movementDistance } from '@tronos/shared/cards';
+import { CARD_BY_ID, forwardDeltaForSeat, gridCellsBetween, isAttackDistanceValid, isCannonTargetValid, isDeploymentCell, movementDistance } from '@tronos/shared/cards';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { createCinematicCamera } from './core/createCinematicCamera.js';
 import { createGameScene } from './core/createGameScene.js';
 import { add } from './core/scenePrimitives.js';
 import { createBoardCoordinates } from './gameplay/boardCoordinates.js';
 import { createDeploymentOverlay } from './gameplay/createDeploymentOverlay.js';
+import { createDamageEffects } from './gameplay/damageEffects.js';
 import { createMovementOverlay } from './gameplay/createMovementOverlay.js';
 import { applyConstructionState as applyUnitConstructionState, isMountedArcher, setUnitTeamColor } from './gameplay/unitState.js';
 import { createCardUnit, UNIT_MODEL_SCALE } from './models/createCardUnit.js';
-import { makeArcher, makeGuard, makeWarrior } from './models/unitModels.js';
+import { makeArcher, makeGuard, makeWarrior, setArcherMountedState } from './models/unitModels.js';
 import { GameSocketClient, SERVER_EVENTS } from './network/gameSocket.js';
 import { mountGameShell } from './ui/gameShell.js';
 import { cardMarkup, cards, hideDeckPreview as hideCardPreview, showDeckPreview } from './ui/cardView.js';
@@ -22,12 +23,13 @@ mountGameShell();
 const app = document.querySelector('#game');
 app.focus({ preventScroll: true });
 const { scene, renderer, camera, controls, updateDynamicLighting } = createGameScene(app);
+const damageEffects = createDamageEffects(scene);
 const cameraTransition = createCinematicCamera({ camera, controls, app });
 const { board, tile, half, alliedKeep, enemyKeep, deck3D, topDeckCard, wisps, fireLights, updateTerrain } = createWorld(scene, renderer);
 
 // Each miniature is snapped to the exact center of a tile. Scale 0.64 keeps
 // even the outermost weapon silhouette inside the 1.08 × 1.08 footprint.
-const units=[makeWarrior(),makeGuard(),makeArcher()]; units[0].position.set(-2.16,.06,0);units[1].position.set(0,.06,0);units[2].position.set(2.16,.06,0);units.forEach((u,cardIndex)=>{const card=cards[cardIndex];u.scale.setScalar(UNIT_MODEL_SCALE);Object.assign(u.userData,{hoverable:true,cardIndex,hp:card.hp,maxHp:card.hp,damage:card.damage,move:card.move,movementType:card.movementType,minAttackRange:card.minAttackRange,attackRange:card.attackRange,cardType:card.type,cost:card.cost,ability:card.ability,abilityUsed:false,description:card.abilityText});ensureHealthBadge(u);scene.add(u)});
+const units=[makeWarrior(),makeGuard(),makeArcher()]; units[0].position.set(-2.16,.06,0);units[1].position.set(0,.06,0);units[2].position.set(2.16,.06,0);units.forEach((u,cardIndex)=>{const card=cards[cardIndex];u.scale.setScalar(UNIT_MODEL_SCALE);Object.assign(u.userData,{hoverable:true,cardId:card.id,cardIndex,hp:card.hp,maxHp:card.hp,damage:card.damage,move:card.move,movementType:card.movementType,minAttackRange:card.minAttackRange,attackRange:card.attackRange,cardType:card.type,cost:card.cost,ability:card.ability,abilityUsed:false,description:card.abilityText});ensureHealthBadge(u);scene.add(u)});
 const hoverables=[...units];
 const { unitAtCell, unitsAtCell, baseSeatAtCell, baseCellsForSeat, snapToTile } = createBoardCoordinates({ getUnits: () => units, tile, half });
 
@@ -35,6 +37,7 @@ const { unitAtCell, unitsAtCell, baseSeatAtCell, baseCellsForSeat, snapToTile } 
 const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();let selected=null,dragged=null,dragMoved=false,justDragged=false,onlineState=null,selfSeat=null,onlineSocket=null,devMode=false;
 const boardPlane=new THREE.Plane(new THREE.Vector3(0,1,0),0);
 const dragPoint=new THREE.Vector3();
+const archerMountPoint=new THREE.Vector3();
 const tileMarker=add(new THREE.PlaneGeometry(tile*.9,tile*.9),new THREE.MeshBasicMaterial({color:0xcaa45d,transparent:true,opacity:.28,depthWrite:false,side:THREE.DoubleSide}),scene,[0,.075,0],[-Math.PI/2,0,0]);
 tileMarker.visible=false;
 const movementOverlay=createMovementOverlay({scene,app,units,tile,half,unitAtCell,baseSeatAtCell,baseCellsForSeat,getMatchContext:()=>({onlineState,selfSeat,devMode})});
@@ -70,34 +73,62 @@ function boardCellAtPointer(e){
   return{x:Math.round((worldX+half)/tile),z:Math.round((worldZ+half)/tile),worldX,worldZ};
 }
 function canCommandUnit(unit){return Boolean(unit&&(devMode||onlineState&&unit.userData.ownerSeat===selfSeat&&onlineState.state.activeSeat===selfSeat&&!unit.userData.actionUsed))}
-function mountArcherLocally(unit,tower){unit.position.set(tower.position.x,1.25,tower.position.z);unit.userData.mountedOnTowerId=towerId(tower);unit.userData.attackRange=CARD_BY_ID.archer.attackRange+1;selectUnit(unit,{cinematic:false})}
+function placeArcherOnTower(unit,tower){
+  const mount=tower.getObjectByName('archerMount');tower.updateMatrixWorld(true);
+  if(mount)unit.position.copy(mount.getWorldPosition(archerMountPoint));else unit.position.set(tower.position.x,.94,tower.position.z);
+  setArcherMountedState(unit,true);
+}
+function mountArcherLocally(unit,tower){placeArcherOnTower(unit,tower);unit.userData.mountedOnTowerId=towerId(tower);unit.userData.attackRange=CARD_BY_ID.archer.attackRange+1;selectUnit(unit,{cinematic:false})}
 function moveOrAttackUnit(unit,destination,explicitTarget=null,originPosition=unit.position.clone()){
   const origin={x:Math.round((originPosition.x+half)/tile),z:Math.round((originPosition.z+half)/tile)};
   const occupants=unitsAtCell(destination.x,destination.z,unit),target=explicitTarget??occupants.find(item=>item!==unit)??null;
   const opponentBaseSeat=selfSeat===1?2:1,baseTarget=onlineState&&baseSeatAtCell(destination.x,destination.z)===opponentBaseSeat;
   const mountable=unit.userData.cardId==='archer'&&target?.userData.cardId==='tower'&&target.userData.ownerSeat===unit.userData.ownerSeat&&!target.userData.underConstruction&&occupants.every(item=>item===target);
   const hostileTarget=target&&target.userData.ownerSeat!==unit.userData.ownerSeat;
+  const forward=forwardDeltaForSeat(unit.userData.ownerSeat);
+  const cannonTarget=unit.userData.cardId==='cannon'&&isCannonTargetValid({...origin,ownerSeat:unit.userData.ownerSeat},destination);
+  const cannonMove=unit.userData.cardId==='cannon'&&destination.x===origin.x+forward.x&&destination.z===origin.z+forward.z;
   if(isMountedArcher(unit)&&!hostileTarget&&!baseTarget){unit.position.copy(originPosition);showGameError('O arqueiro na torre não pode se mover.');return}
+  const blockedByUnit=gridCellsBetween(origin,destination).some(cell=>unitAtCell(cell.x,cell.z,unit));
+  if(blockedByUnit){unit.position.copy(originPosition);showGameError(target||baseTarget?'A linha de ataque está bloqueada por outra tropa.':'O caminho está bloqueado por outra tropa.');return}
   if(onlineState){
     unit.position.copy(originPosition);
     if(mountable)return sendOnlineAction({type:'move',unitId:unit.userData.serverUnitId,...destination});
-    if(target&&target.userData.ownerSeat!==selfSeat){const targetDistance=Math.abs(destination.x-origin.x)+Math.abs(destination.z-origin.z);if(isAttackDistanceValid(unit.userData,targetDistance))sendOnlineAction({type:'attack',unitId:unit.userData.serverUnitId,targetUnitId:target.userData.serverUnitId});else showGameError('Alvo fora de alcance.');}
+    if(cannonMove)return sendOnlineAction({type:'move',unitId:unit.userData.serverUnitId,...destination});
+    if(target&&(target.userData.ownerSeat!==selfSeat||cannonTarget)){const targetDistance=Math.abs(destination.x-origin.x)+Math.abs(destination.z-origin.z),validTarget=unit.userData.cardId==='cannon'?cannonTarget:isAttackDistanceValid(unit.userData,targetDistance);if(validTarget)sendOnlineAction({type:'attack',unitId:unit.userData.serverUnitId,targetUnitId:target.userData.serverUnitId});else showGameError('Alvo fora de alcance.');}
     else if(target)showGameError('Esta casa já está ocupada.');
     else if(baseTarget)sendOnlineAction({type:'attack',unitId:unit.userData.serverUnitId,targetBaseSeat:opponentBaseSeat});
+    else if(cannonTarget)sendOnlineAction({type:'attack',unitId:unit.userData.serverUnitId,x:destination.x,z:destination.z});
+    else if(unit.userData.cardId==='cannon')showGameError('Escolha a casa verde à frente ou uma casa vermelha de disparo.');
     else sendOnlineAction({type:'move',unitId:unit.userData.serverUnitId,...destination});
     return;
   }
   if(!devMode)return;
   const moveDistance=movementDistance(unit.userData.movementType,origin,destination);
   if(mountable){unit.position.copy(originPosition);if(moveDistance<=unit.userData.move)mountArcherLocally(unit,target);else showGameError('Movimento fora de alcance.');return}
+  if(cannonMove){
+    const operator=unitAtCell(origin.x-forward.x,origin.z-forward.z,unit);
+    if(operator?.userData.cardId!=='operator'||operator.userData.ownerSeat!==unit.userData.ownerSeat){unit.position.copy(originPosition);return showGameError('O Canhão precisa de um Operador exatamente atrás.');}
+    if(target||baseSeatAtCell(destination.x,destination.z)){unit.position.copy(originPosition);return showGameError('A casa à frente do Canhão está bloqueada.');}
+    operator.position.set(origin.x*tile-half,.06,origin.z*tile-half);unit.position.set(destination.worldX,.06,destination.worldZ);return;
+  }
+  if(unit.userData.cardId==='cannon'&&cannonTarget){
+    const operator=unitAtCell(origin.x-forward.x,origin.z-forward.z,unit);unit.position.copy(originPosition);
+    if(operator?.userData.cardId!=='operator'||operator.userData.ownerSeat!==unit.userData.ownerSeat)return showGameError('O Canhão precisa de um Operador exatamente atrás.');
+    [...units].filter(candidate=>Math.abs(Math.round((candidate.position.x+half)/tile)-destination.x)+Math.abs(Math.round((candidate.position.z+half)/tile)-destination.z)<=unit.userData.areaRadius).forEach(candidate=>{damageEffects.show(candidate.position,unit.userData.damage);candidate.userData.hp-=unit.userData.damage;updateHealthBadge(candidate);if(candidate.userData.hp<=0){units.splice(units.indexOf(candidate),1);hoverables.splice(hoverables.indexOf(candidate),1);scene.remove(candidate)}});return;
+  }
   if(target){
     const defeatedPosition=target.position.clone();unit.position.copy(originPosition);
     const targetDistance=Math.abs(destination.x-origin.x)+Math.abs(destination.z-origin.z);
-    if(!isAttackDistanceValid(unit.userData,targetDistance))return showGameError('Alvo fora de alcance.');
-    target.userData.hp-=unit.userData.damage;updateHealthBadge(target);app.dataset.lastAttack=`${unit.userData.name}->${target.userData.name}:${Math.max(0,target.userData.hp)}`;
-    if(target.userData.hp<=0){units.splice(units.indexOf(target),1);hoverables.splice(hoverables.indexOf(target),1);scene.remove(target);if(unit.userData.cardId!=='archer'&&!unitsAtCell(destination.x,destination.z,unit).length)unit.position.set(defeatedPosition.x,.06,defeatedPosition.z)}
+    if(!cannonTarget&&!isAttackDistanceValid(unit.userData,targetDistance))return showGameError('Alvo fora de alcance.');
+    damageEffects.show(target.position,unit.userData.damage);target.userData.hp-=unit.userData.damage;updateHealthBadge(target);app.dataset.lastAttack=`${unit.userData.name}->${target.userData.name}:${Math.max(0,target.userData.hp)}`;
+    if(target.userData.hp<=0){
+      const removedTowerId=towerId(target);units.splice(units.indexOf(target),1);hoverables.splice(hoverables.indexOf(target),1);scene.remove(target);
+      units.filter(candidate=>candidate.userData.mountedOnTowerId===removedTowerId).forEach(candidate=>{candidate.userData.mountedOnTowerId=null;candidate.userData.attackRange=CARD_BY_ID[candidate.userData.cardId].attackRange;candidate.position.y=.06;setArcherMountedState(candidate,false)});
+      if(unit.userData.cardId!=='archer'&&!unitsAtCell(destination.x,destination.z,unit).length)unit.position.set(defeatedPosition.x,.06,defeatedPosition.z);
+    }
   }else if(moveDistance>unit.userData.move){unit.position.copy(originPosition);showGameError('Movimento fora de alcance.');}
-  else{unit.position.set(destination.worldX,.06,destination.worldZ);unit.userData.mountedOnTowerId=null;unit.userData.attackRange=CARD_BY_ID[unit.userData.cardId].attackRange}
+  else{unit.position.set(destination.worldX,.06,destination.worldZ);unit.userData.mountedOnTowerId=null;setArcherMountedState(unit,false);unit.userData.attackRange=CARD_BY_ID[unit.userData.cardId].attackRange}
 }
 function pick(e){
   if(justDragged){justDragged=false;return}
@@ -164,6 +195,7 @@ let cardDrag=null,suppressCardClick=false;
 function selectedCardElement(){return hand.querySelector('.game-card.selected')}
 function deploymentSeat(){return onlineState?selfSeat:activePlayer}
 function showDeploymentArea(emphasized=false){deploymentOverlay.show(deploymentSeat(),emphasized)}
+showDeploymentArea(false);
 function syncBottomCommand(){bottomCommand.classList.toggle('hidden-by-card',Boolean(cardDrag||hand.querySelector('.game-card:hover')||hand.querySelector('.game-card.selected')))}
 hand.addEventListener('pointerover',e=>{if(e.target.closest('.game-card'))syncBottomCommand()});
 hand.addEventListener('pointerout',e=>{if(e.target.closest('.game-card'))requestAnimationFrame(syncBottomCommand)});
@@ -178,7 +210,7 @@ function cardTileAtPointer(e,cardIndex=Number(selectedCardElement()?.dataset.car
 function makeSummonedUnit(cardIndex){
   return createCardUnit(cards[cardIndex],cardIndex);
 }
-function summonCard(cardIndex,x,z,mountableTower=null){const unit=makeSummonedUnit(cardIndex),card=cards[cardIndex];unit.position.set(x,.06,z);unit.userData.ownerSeat=activePlayer;units.push(unit);hoverables.push(unit);scene.add(unit);if(card.type==='construction'){unit.userData.buildReadyRound=round+card.buildRounds;applyConstructionState(unit,true)}if(card.id==='archer'&&mountableTower)mountArcherLocally(unit,mountableTower);else selectUnit(unit,{cinematic:false})}
+function summonCard(cardIndex,x,z,mountableTower=null){const unit=makeSummonedUnit(cardIndex),card=cards[cardIndex];unit.position.set(x,.06,z);unit.userData.ownerSeat=activePlayer;unit.rotation.y=card.id==='cannon'&&activePlayer===2?Math.PI:0;units.push(unit);hoverables.push(unit);scene.add(unit);if(card.buildRounds){unit.userData.buildReadyRound=round+card.buildRounds;applyConstructionState(unit,true)}if(card.id==='archer'&&mountableTower)mountArcherLocally(unit,mountableTower);else selectUnit(unit,{cinematic:false})}
 function playSelectedCardAtPointer(e){
   const cardNode=selectedCardElement();if(!cardNode)return false;
   if(onlineState&&onlineState.state.activeSeat!==selfSeat){showGameError('Aguarde o seu turno.');return true}
@@ -230,8 +262,8 @@ function activateSelectedInstant(){
   if(onlineState){sendOnlineAction({type:'use_instant',unitId:selected.userData.serverUnitId});return}
   const directions=[[1,0],[-1,0],[0,1],[0,-1]],origin={x:Math.round((selected.position.x+half)/tile),z:Math.round((selected.position.z+half)/tile)};
   for(const [dx,dz] of directions){
-    const target=units.filter(unit=>unit!==selected&&unit.userData.ownerSeat!==selected.userData.ownerSeat).map(unit=>{const x=Math.round((unit.position.x+half)/tile),z=Math.round((unit.position.z+half)/tile),step=dx?(x-origin.x)/dx:(z-origin.z)/dz;return{unit,x,z,step}}).filter(item=>item.step>=1&&item.step<=3&&item.x===origin.x+dx*item.step&&item.z===origin.z+dz*item.step).sort((a,b)=>a.step-b.step)[0]?.unit;
-    if(target){target.userData.hp-=2;updateHealthBadge(target);if(target.userData.hp<=0){units.splice(units.indexOf(target),1);hoverables.splice(hoverables.indexOf(target),1);scene.remove(target)}}
+    const target=units.filter(unit=>unit!==selected).map(unit=>{const x=Math.round((unit.position.x+half)/tile),z=Math.round((unit.position.z+half)/tile),step=dx?(x-origin.x)/dx:(z-origin.z)/dz;return{unit,x,z,step}}).filter(item=>item.step>=1&&item.step<=3&&item.x===origin.x+dx*item.step&&item.z===origin.z+dz*item.step).sort((a,b)=>a.step-b.step)[0]?.unit;
+    if(target&&target.userData.ownerSeat!==selected.userData.ownerSeat){target.userData.hp-=2;updateHealthBadge(target);if(target.userData.hp<=0){units.splice(units.indexOf(target),1);hoverables.splice(hoverables.indexOf(target),1);scene.remove(target)}}
   }
   selected.userData.instantUsedRound=round;syncInstantCommand();
 }
@@ -248,11 +280,14 @@ function onlineUnit(data){
   unit.userData={...unit.userData,serverUnitId:data.id,ownerSeat:data.ownerSeat,cardId:data.cardId,cardIndex:index,hp:data.hp,maxHp:card.hp,actionUsed:data.actionUsed,abilityUsed:data.abilityUsed,instantUsedRound:data.instantUsedRound,mountedOnTowerId:data.mountedOnTowerId,buildReadyRound:data.buildReadyRound,attackRange:card.attackRange+(data.cardId==='archer'&&data.mountedOnTowerId?1:0)};
   updateHealthBadge(unit);
   const color=data.ownerSeat===1?0x168cff:0xff352f;setUnitTeamColor(unit,color);
-  applyConstructionState(unit,Boolean(data.underConstruction));unit.position.set(data.x*tile-half,data.mountedOnTowerId?1.25:.06,data.z*tile-half);return unit;
+  applyConstructionState(unit,Boolean(data.underConstruction));unit.position.set(data.x*tile-half,.06,data.z*tile-half);unit.rotation.y=data.cardId==='cannon'&&data.ownerSeat===2?Math.PI:0;setArcherMountedState(unit,false);return unit;
 }
 function reconcileOnlineUnits(serverUnits){
+  const nextById=new Map(serverUnits.map(data=>[data.id,data]));
+  units.forEach(unit=>{const next=nextById.get(unit.userData.serverUnitId),lost=Math.max(0,unit.userData.hp-(next?.hp??0));if(lost)damageEffects.show(unit.position,lost)});
   clearMovementGrid();units.splice(0).forEach(unit=>scene.remove(unit));hoverables.splice(0);selected=null;syncInstantCommand();
   serverUnits.forEach(data=>{const unit=onlineUnit(data);units.push(unit);hoverables.push(unit);scene.add(unit)});
+  units.filter(isMountedArcher).forEach(unit=>{const tower=towerForArcher(unit);if(tower)placeArcherOnTower(unit,tower)});
   app.dataset.onlineUnits=String(serverUnits.length);
 }
 function setOnlinePerspective(){cameraTransition.cancel();camera.position.set(0,16,selfSeat===1?5.2:-5.2);camera.lookAt(0,0,0);controls.target.set(0,.2,0);controls.update();app.dataset.seat=String(selfSeat);app.dataset.perspectiveResets=String(Number(app.dataset.perspectiveResets??0)+1)}
@@ -286,5 +321,5 @@ const clock=new THREE.Clock();
 const enemyBaseTag=document.querySelector('.enemy-base-tag');
 const baseTagPoint=new THREE.Vector3();
 function positionEnemyStatus(){const target=selfSeat===2?alliedKeep:enemyKeep;target.getWorldPosition(baseTagPoint);baseTagPoint.y+=4.9;baseTagPoint.project(camera);enemyBaseTag.style.left=`${(baseTagPoint.x*.5+.5)*innerWidth}px`;enemyBaseTag.style.top=`${(-baseTagPoint.y*.5+.5)*innerHeight}px`;enemyBaseTag.style.visibility=baseTagPoint.z<1?'visible':'hidden';}
-function animate(){requestAnimationFrame(animate);const t=clock.getElapsedTime();controls.update();cameraTransition.update();updateDynamicLighting(t);updateTerrain(t);positionEnemyStatus();topDeckCard.position.y=THREE.MathUtils.lerp(topDeckCard.position.y,deckHover ? .98 : .766,.14);topDeckCard.rotation.z=THREE.MathUtils.lerp(topDeckCard.rotation.z,deckHover ? -.08 : 0,.12);units.forEach((u,i)=>{const rig=u.getObjectByName('rig');rig.position.y=.18+Math.sin(t*1.35+i*1.7)*.012;rig.rotation.z=Math.sin(t*.8+i)*.006;u.traverse(o=>{if(o.userData.magic){o.rotation.y=t*1.5;o.position.y=2.23+Math.sin(t*2.5)*.045;}})});wisps.forEach((w,i)=>{w.position.x=w.userData.baseX+Math.sin(t*.12+i)*.55;w.material.opacity=.012+i*.003+Math.sin(t*.35+i)*.004;});fireLights.forEach((light,i)=>{const pulse=.91+Math.sin(t*7.4+light.userData.phase)*.065+Math.sin(t*13.1+i)*.025;light.intensity=light.userData.baseIntensity*pulse;});renderer.render(scene,camera)}
+function animate(){requestAnimationFrame(animate);const delta=clock.getDelta(),t=clock.elapsedTime;controls.update();cameraTransition.update();damageEffects.update(delta);updateDynamicLighting(t);updateTerrain(t);positionEnemyStatus();topDeckCard.position.y=THREE.MathUtils.lerp(topDeckCard.position.y,deckHover ? .98 : .766,.14);topDeckCard.rotation.z=THREE.MathUtils.lerp(topDeckCard.rotation.z,deckHover ? -.08 : 0,.12);units.forEach((u,i)=>{const rig=u.getObjectByName('rig');rig.position.y=.18+Math.sin(t*1.35+i*1.7)*.012;rig.rotation.z=Math.sin(t*.8+i)*.006;u.traverse(o=>{if(o.userData.magic){o.rotation.y=t*1.5;o.position.y=2.23+Math.sin(t*2.5)*.045;}})});wisps.forEach((w,i)=>{w.position.x=w.userData.baseX+Math.sin(t*.12+i)*.55;w.material.opacity=.012+i*.003+Math.sin(t*.35+i)*.004;});fireLights.forEach((light,i)=>{const pulse=.91+Math.sin(t*7.4+light.userData.phase)*.065+Math.sin(t*13.1+i)*.025;light.intensity=light.userData.baseIntensity*pulse;});renderer.render(scene,camera)}
 function resize(){const aspect=innerWidth/innerHeight,view=innerWidth<700?12.6:11.45;camera.left=-view*aspect;camera.right=view*aspect;camera.top=view;camera.bottom=-view;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.7))}addEventListener('resize',resize);resize();animate();setTimeout(()=>document.querySelector('.loading').classList.add('done'),500);

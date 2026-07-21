@@ -26,7 +26,7 @@ export function ensureHealthBadge(unit) {
     const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: true, depthWrite: false });
     badge = new THREE.Sprite(material);
     badge.name = 'healthBadge';
-    badge.position.set(0.68, unit.userData.cardType === 'construction' ? 2.15 : 2.95, 0);
+    badge.position.set(0.68, unit.userData.cardType === 'construction' || unit.userData.cardType === 'machine' ? 2.15 : 2.95, 0);
     badge.scale.set(0.9, 0.9, 1);
     badge.renderOrder = 12;
     badge.userData = { canvas, context, texture };

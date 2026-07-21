@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { M, add } from '../core/scenePrimitives.js';
 import { ensureHealthBadge } from '../ui/unitHealthBadge.js';
+import { makeCannon } from '../assets/models/cannonModel.js';
+import { makeOperator } from '../assets/models/operatorModel.js';
 import { makeArcher, makeGuard, makeTower, makeWarrior, makeWoodBarrier, unitBase } from './unitModels.js';
 
 const UNIT_FACTORIES = Object.freeze({
@@ -8,7 +10,9 @@ const UNIT_FACTORIES = Object.freeze({
   guard: makeGuard,
   archer: makeArcher,
   wooden_barrier: makeWoodBarrier,
-  tower: makeTower
+  tower: makeTower,
+  operator: makeOperator,
+  cannon: makeCannon
 });
 
 export const UNIT_MODEL_SCALE = 0.55;
@@ -47,6 +51,7 @@ export function createCardUnit(card, cardIndex) {
     movementType: card.movementType,
     minAttackRange: card.minAttackRange,
     attackRange: card.attackRange,
+    areaRadius: card.areaRadius,
     cardType: card.type,
     buildRounds: card.buildRounds,
     cost: card.cost,

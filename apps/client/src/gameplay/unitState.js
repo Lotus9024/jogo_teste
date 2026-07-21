@@ -1,4 +1,5 @@
 import { setTowerConstructionState, setWoodBarrierConstructionState } from '../models/unitModels.js';
+import { setCannonConstructionState } from '../assets/models/cannonModel.js';
 
 export function isMountedArcher(unit) {
   return unit?.userData.cardId === 'archer' && Boolean(unit.userData.mountedOnTowerId);
@@ -37,5 +38,6 @@ export function applyConstructionState(unit, underConstruction, units, app) {
   unit.userData.underConstruction = underConstruction;
   if (unit.userData.cardId === 'wooden_barrier') setWoodBarrierConstructionState(unit, underConstruction);
   if (unit.userData.cardId === 'tower') setTowerConstructionState(unit, underConstruction);
+  if (unit.userData.cardId === 'cannon') setCannonConstructionState(unit, underConstruction);
   app.dataset.constructions = String(units.filter(item => item.userData.underConstruction).length);
 }

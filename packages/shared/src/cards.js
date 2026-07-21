@@ -28,6 +28,18 @@ export const CARD_DEFINITIONS = Object.freeze([
     hp: 5, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 7, buildRounds: 2, type: 'construction', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'CONSTRUÇÃO · TORRE', glyph: '♜',
     ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'A torre precisa de um arqueiro para funcionar.', enabled: false }),
     instant: Object.freeze({ name: 'Rajada cardinal', cost: 2, cooldownRounds: 1, range: 3, damage: 2, description: 'Dispara uma flecha em cada direção reta, alcançando até 3 casas e causando 2 de dano.', enabled: true })
+  }),
+  Object.freeze({
+    id: 'operator', name: 'Operador', description: 'Esse operador pode operar tudo, ou quase tudo. Posicione-o atrás de uma máquina para fazê-la funcionar.',
+    hp: 1, damage: 0, move: 1, movementType: 'any', minAttackRange: 0, attackRange: 0, cost: 3, rarity: 'COMUM', rarityClass: 'common', info: 'HUMANO · OPERADOR', glyph: '⚙',
+    ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade.', enabled: false }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
+  }),
+  Object.freeze({
+    id: 'cannon', name: 'Canhão', description: 'Uma máquina de cerco que exige um Operador exatamente atrás dela. Dispara de 3 a 7 casas e sua explosão também atinge aliados.',
+    hp: 2, damage: 4, move: 1, movementType: 'forward', minAttackRange: 3, attackRange: 7, areaRadius: 2, cost: 7, buildRounds: 2, type: 'machine', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'MÁQUINA · CERCO', glyph: '◉',
+    ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'O Canhão precisa de um Operador exatamente uma casa atrás.', enabled: false }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   })
 ]);
 
@@ -38,6 +50,34 @@ export function movementDistance(movementType, from, to) {
   if (movementType === 'straight') return dx === 0 || dz === 0 ? dx + dz : Number.POSITIVE_INFINITY;
   if (movementType === 'any') return Math.max(dx, dz);
   return dx + dz;
+}
+
+export function gridCellsBetween(from, to) {
+  const dx = to.x - from.x, dz = to.z - from.z;
+  const steps = Math.max(Math.abs(dx), Math.abs(dz));
+  if (steps <= 1) return [];
+  const cells = [], seen = new Set();
+  for (let step = 1; step < steps; step += 1) {
+    const x = Math.round(from.x + dx * step / steps);
+    const z = Math.round(from.z + dz * step / steps);
+    const key = `${x}:${z}`;
+    if (!seen.has(key)) { seen.add(key); cells.push({ x, z }); }
+  }
+  return cells;
+}
+
+export function forwardDeltaForSeat(seat) {
+  return { x: 0, z: seat === 1 ? -1 : 1 };
+}
+
+export function isCannonTargetValid(cannon, target) {
+  const forward = forwardDeltaForSeat(cannon.ownerSeat);
+  const step = forward.z ? (target.z - cannon.z) / forward.z : (target.x - cannon.x) / forward.x;
+  return Number.isInteger(step)
+    && step >= CARD_BY_ID.cannon.minAttackRange
+    && step <= CARD_BY_ID.cannon.attackRange
+    && target.x === cannon.x + forward.x * step
+    && target.z === cannon.z + forward.z * step;
 }
 
 export function isAttackDistanceValid(card, value) {

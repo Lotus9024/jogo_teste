@@ -15,10 +15,11 @@ const bootIcon = '<svg class="stat-boot" viewBox="0 0 24 24"><path d="M5 2h8v9.5
 const hourglassIcon = '<span aria-hidden="true">⌛</span>';
 
 function combatStats(card) {
+  const needsConstruction = Boolean(card.buildRounds);
   const damage = card.type === 'construction' ? '—' : card.damage;
-  const lastLabel = card.type === 'construction' ? 'Construção' : 'Movimento';
-  const lastIcon = card.type === 'construction' ? hourglassIcon : bootIcon;
-  const lastValue = card.type === 'construction' ? `${card.buildRounds}R` : card.move;
+  const lastLabel = needsConstruction ? 'Construção' : 'Movimento';
+  const lastIcon = needsConstruction ? hourglassIcon : bootIcon;
+  const lastValue = needsConstruction ? `${card.buildRounds}R` : card.move;
   return `<span aria-label="Vida"><small aria-hidden="true">♥</small><b data-stat="hp">${card.hp}</b></span><span aria-label="Dano"><small aria-hidden="true">⚔</small><b>${damage}</b></span><span aria-label="${lastLabel}"><small aria-hidden="true">${lastIcon}</small><b>${lastValue}</b></span>`;
 }
 
