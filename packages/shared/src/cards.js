@@ -13,7 +13,7 @@ export const CARD_DEFINITIONS = Object.freeze([
   }),
   Object.freeze({
     id: 'archer', name: 'Arqueiro', description: 'Um arqueiro silencioso que ataca apenas de longe, ele ataca apenas a 3 e 4 blocos de distância de si mesmo, mantendo a distância. Ele ao matar uma criatura não ocupa a posição dela.',
-    hp: 2, damage: 2, move: 2, movementType: 'any', minAttackRange: 3, attackRange: 4, cost: 5, rarity: 'COMUM', rarityClass: 'common', info: 'HUMANO · ATIRADOR', glyph: '➶',
+    hp: 2, damage: 2, move: 2, movementType: 'any', minAttackRange: 3, attackRange: 4, cost: 6, rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'HUMANO · ATIRADOR', glyph: '➶',
     ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
@@ -36,7 +36,7 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'cannon', name: 'Canhão', description: 'Uma máquina de cerco que exige um Operador exatamente atrás dela. Dispara de 3 a 7 casas e sua explosão também atinge aliados.',
+    id: 'cannon', name: 'Canhão', description: 'Uma poderosa máquina de cerco que exige um Operador posicionado exatamente atrás para se mover e disparar. Seu projétil atinge alvos entre 3 e 7 quadrados de distância, causando dano em uma área de 2 quadrados. O disparo não distingue amigos de inimigos e também pode atingir tropas aliadas.',
     hp: 2, damage: 4, move: 1, movementType: 'forward', minAttackRange: 3, attackRange: 7, areaRadius: 2, cost: 7, buildRounds: 2, type: 'machine', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'MÁQUINA · CERCO', glyph: '◉',
     ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'O Canhão precisa de um Operador exatamente uma casa atrás.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })

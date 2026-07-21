@@ -58,7 +58,7 @@ test('cartas usam os atributos definidos', () => {
     {
       warrior: { hp: 3, damage: 2, move: 2, movementType: 'straight', cost: 4 },
       guard: { hp: 4, damage: 1, move: 1, movementType: 'any', cost: 4 },
-      archer: { hp: 2, damage: 2, move: 2, movementType: 'any', cost: 5 },
+      archer: { hp: 2, damage: 2, move: 2, movementType: 'any', cost: 6 },
       wooden_barrier: { hp: 2, damage: 0, move: 0, movementType: 'none', cost: 4 },
       tower: { hp: 5, damage: 0, move: 0, movementType: 'none', cost: 7 },
       operator: { hp: 1, damage: 0, move: 1, movementType: 'any', cost: 3 },
@@ -76,6 +76,10 @@ test('cartas usam os atributos definidos', () => {
   assert.deepEqual(
     { minAttackRange: CARD_BY_ID.archer.minAttackRange, attackRange: CARD_BY_ID.archer.attackRange, ability: CARD_BY_ID.archer.ability.name },
     { minAttackRange: 3, attackRange: 4, ability: 'Nenhuma' }
+  );
+  assert.deepEqual(
+    { rarity: CARD_BY_ID.archer.rarity, rarityClass: CARD_BY_ID.archer.rarityClass },
+    { rarity: 'INCOMUM', rarityClass: 'uncommon' }
   );
   assert.equal(CARD_BY_ID.wooden_barrier.buildRounds, 1);
   assert.equal(CARD_BY_ID.tower.buildRounds, 2);
