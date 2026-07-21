@@ -34,6 +34,17 @@ export function createCinematicCamera({ camera, controls, app }) {
   }
 
   function focusBoard({ side = 1 } = {}) {
+    const offset = camera.position.clone().sub(controls.target);
+    const polarAngle = Math.atan2(Math.hypot(offset.x, offset.z), Math.max(0.001, offset.y));
+    if (polarAngle <= 0.45) {
+      controls.enabled = true;
+      app.classList.remove('camera-transitioning');
+      app.style.removeProperty('--camera-motion-blur');
+      app.dataset.cameraTransition = 'skipped-top-down';
+      app.dataset.cameraFinal = 'top-down';
+      app.dataset.cameraFocusSkipped = String(Number(app.dataset.cameraFocusSkipped ?? 0) + 1);
+      return false;
+    }
     startPosition.copy(camera.position);
     startTarget.copy(controls.target);
     startZoom = camera.zoom;
@@ -46,6 +57,7 @@ export function createCinematicCamera({ camera, controls, app }) {
     app.dataset.cameraTransition = 'active';
     app.dataset.cameraFinal = 'moving';
     app.dataset.cameraFocusCount = String(Number(app.dataset.cameraFocusCount ?? 0) + 1);
+    return true;
   }
 
   function cancel({ restoreControls = true } = {}) {

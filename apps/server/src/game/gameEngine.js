@@ -23,12 +23,10 @@ function unitAt(state, x, z) { return state.units.find(unit => unit.x === x && u
 
 function endTurn(state) {
   state.activeSeat = state.activeSeat === 1 ? 2 : 1;
-  if (state.activeSeat === 1) {
-    state.round += 1;
-    state.units.forEach(unit => {
-      if (unit.underConstruction && unit.buildReadyRound <= state.round) unit.underConstruction = false;
-    });
-  }
+  if (state.activeSeat === 1) state.round += 1;
+  state.units.forEach(unit => {
+    if (unit.underConstruction && unit.ownerSeat === state.activeSeat && unit.buildReadyRound <= state.round) unit.underConstruction = false;
+  });
   const player = state.players.find(item => item.seat === state.activeSeat);
   player.energy = Math.min(GAME_CONFIG.maxEnergy, player.energy + GAME_CONFIG.energyPerTurn);
   drawCard(player);
@@ -86,8 +84,12 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     if (action.targetUnitId) {
       const target = state.units.find(item => item.id === action.targetUnitId && item.ownerSeat !== player.seat) ?? fail('Alvo inválido.');
       if (!isAttackDistanceValid(card, distance(unit, target))) fail('Alvo fora de alcance.');
+      const defeatedCell = { x: target.x, z: target.z };
       const absorbed = Math.min(target.shield ?? 0, damage); target.shield -= absorbed; target.hp -= damage - absorbed;
-      if (target.hp <= 0) state.units.splice(state.units.indexOf(target), 1);
+      if (target.hp <= 0) {
+        state.units.splice(state.units.indexOf(target), 1);
+        if (card.id !== 'archer') { unit.x = defeatedCell.x; unit.z = defeatedCell.z; }
+      }
     } else if (action.targetBaseSeat === opponent.seat) {
       if (!isAttackDistanceValid(card, Math.min(...baseCells(opponent.seat).map(cell => distance(unit, cell))))) fail('Base fora de alcance.');
       opponent.baseHp = Math.max(0, opponent.baseHp - damage);

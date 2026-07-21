@@ -19,8 +19,12 @@ const { board, tile, half, alliedKeep, enemyKeep, deck3D, topDeckCard, wisps, fi
 
 // Each miniature is snapped to the exact center of a tile. Scale 0.64 keeps
 // even the outermost weapon silhouette inside the 1.08 × 1.08 footprint.
-const units=[makeMage(),makeWarrior(),makeArcher()]; units[0].position.set(-2.16,.06,0);units[1].position.set(0,.06,0);units[2].position.set(2.16,.06,0);units.forEach((u,cardIndex)=>{const card=cards[cardIndex];u.scale.setScalar(.64);Object.assign(u.userData,{hoverable:true,cardIndex,hp:card.hp,maxHp:card.hp,damage:card.damage,move:card.move,movementType:card.movementType,minAttackRange:card.minAttackRange,attackRange:card.attackRange,cardType:card.type,cost:card.cost,ability:card.ability,abilityUsed:false,description:card.abilityText});scene.add(u)});
+const units=[makeMage(),makeWarrior(),makeArcher()]; units[0].position.set(-2.16,.06,0);units[1].position.set(0,.06,0);units[2].position.set(2.16,.06,0);units.forEach((u,cardIndex)=>{const card=cards[cardIndex];u.scale.setScalar(.64);Object.assign(u.userData,{hoverable:true,cardIndex,hp:card.hp,maxHp:card.hp,damage:card.damage,move:card.move,movementType:card.movementType,minAttackRange:card.minAttackRange,attackRange:card.attackRange,cardType:card.type,cost:card.cost,ability:card.ability,abilityUsed:false,description:card.abilityText});ensureHealthBadge(u);scene.add(u)});
 const hoverables=[...units];
+
+function drawHealthBadge(sprite,hp){const {canvas,context,texture}=sprite.userData;context.clearRect(0,0,canvas.width,canvas.height);context.fillStyle='rgba(4,7,9,.88)';context.beginPath();context.roundRect(4,5,120,46,18);context.fill();context.strokeStyle='rgba(220,207,180,.52)';context.lineWidth=2;context.stroke();context.font='bold 28px Arial';context.fillStyle='#e3544a';context.textAlign='center';context.fillText('♥',35,39);context.font='bold 27px Arial';context.fillStyle='#f3ead7';context.fillText(String(Math.max(0,hp)),82,39);texture.needsUpdate=true}
+function ensureHealthBadge(unit){let badge=unit.getObjectByName('healthBadge');if(!badge){const canvas=document.createElement('canvas');canvas.width=128;canvas.height=56;const context=canvas.getContext('2d'),texture=new THREE.CanvasTexture(canvas);texture.colorSpace=THREE.SRGBColorSpace;const material=new THREE.SpriteMaterial({map:texture,transparent:true,depthTest:true,depthWrite:false});badge=new THREE.Sprite(material);badge.name='healthBadge';badge.position.set(0,unit.userData.cardType==='construction'?2.25:3.15,0);badge.scale.set(1.85,.81,1);badge.renderOrder=12;badge.userData={canvas,context,texture};unit.add(badge)}drawHealthBadge(badge,unit.userData.hp);return badge}
+function updateHealthBadge(unit){const badge=unit.getObjectByName('healthBadge');if(badge)drawHealthBadge(badge,unit.userData.hp)}
 
 // Selection and unit status HUD.
 const ray=new THREE.Raycaster(),pointer=new THREE.Vector2();let selected=null,dragged=null,dragMoved=false,justDragged=false,onlineState=null,selfSeat=null,onlineSocket=null,devMode=false;
@@ -83,7 +87,7 @@ function finishDrag(e){
     if(onlineState){dragged.position.copy(dragged.userData.dragOrigin);if(target&&target.userData.ownerSeat!==selfSeat){const targetDistance=Math.abs(target.position.x-dragged.userData.dragOrigin.x)/tile+Math.abs(target.position.z-dragged.userData.dragOrigin.z)/tile;if(isAttackDistanceValid(dragged.userData,targetDistance))sendOnlineAction({type:'attack',unitId:dragged.userData.serverUnitId,targetUnitId:target.userData.serverUnitId});else showGameError('Alvo fora de alcance.');}else if(target)showGameError('Esta casa já está ocupada.');else if(baseTarget)sendOnlineAction({type:'attack',unitId:dragged.userData.serverUnitId,targetBaseSeat:opponentBaseSeat});else sendOnlineAction({type:'move',unitId:dragged.userData.serverUnitId,...destination});}
     else if(devMode){
       const moveDistance=movementDistance(dragged.userData.movementType,origin,destination);
-      if(target&&target!==dragged){const targetDistance=Math.abs(target.position.x-dragged.userData.dragOrigin.x)/tile+Math.abs(target.position.z-dragged.userData.dragOrigin.z)/tile;dragged.position.copy(dragged.userData.dragOrigin);if(isAttackDistanceValid(dragged.userData,targetDistance)){target.userData.hp-=dragged.userData.damage;app.dataset.lastAttack=`${dragged.userData.name}->${target.userData.name}:${Math.max(0,target.userData.hp)}`;if(target.userData.hp<=0){units.splice(units.indexOf(target),1);hoverables.splice(hoverables.indexOf(target),1);scene.remove(target)}}else showGameError('Alvo fora de alcance.');}
+      if(target&&target!==dragged){const targetDistance=Math.abs(target.position.x-dragged.userData.dragOrigin.x)/tile+Math.abs(target.position.z-dragged.userData.dragOrigin.z)/tile,defeatedPosition=target.position.clone();dragged.position.copy(dragged.userData.dragOrigin);if(isAttackDistanceValid(dragged.userData,targetDistance)){target.userData.hp-=dragged.userData.damage;updateHealthBadge(target);app.dataset.lastAttack=`${dragged.userData.name}->${target.userData.name}:${Math.max(0,target.userData.hp)}`;if(target.userData.hp<=0){units.splice(units.indexOf(target),1);hoverables.splice(hoverables.indexOf(target),1);scene.remove(target);if(dragged.userData.cardId!=='archer')dragged.position.set(defeatedPosition.x,.06,defeatedPosition.z)}}else showGameError('Alvo fora de alcance.');}
       else if(moveDistance>dragged.userData.move){dragged.position.copy(dragged.userData.dragOrigin);showGameError('Movimento fora de alcance.');}
     }
   }
@@ -96,7 +100,7 @@ function showHover(e){
   if(dragged){hoverCard.classList.remove('visible');return}const o=hoverableAtPointer(e);if(!o){hoverCard.classList.remove('visible');hoverCard.setAttribute('aria-hidden','true');return}
   hoverCard.innerHTML=cardMarkup(cards[o.userData.cardIndex],o.userData.cardIndex);const preview=hoverCard.firstElementChild;preview.classList.remove('selected');preview.tabIndex=-1;
   const hpValue=preview.querySelector('[data-stat="hp"]');if(hpValue)hpValue.textContent=String(Math.max(0,o.userData.hp));
-  if(o.userData.underConstruction){preview.querySelector('.card-ability strong').textContent='EM CONSTRUÇÃO';preview.querySelector('.ability-cost').textContent='1R';preview.querySelector('.card-ability p').textContent='Será concluída ao começar a próxima rodada.'}
+  if(o.userData.underConstruction){preview.querySelector('.card-ability strong').textContent='EM CONSTRUÇÃO';preview.querySelector('.ability-cost').textContent='1R';preview.querySelector('.card-ability p').textContent='Será concluída no início do próximo turno do seu dono.'}
   hoverCard.style.left=`${Math.min(e.clientX+18,innerWidth-262)}px`;hoverCard.style.top=`${Math.min(e.clientY+18,innerHeight-422)}px`;hoverCard.classList.add('visible');hoverCard.setAttribute('aria-hidden','false');
 }
 renderer.domElement.addEventListener('click',pick);
@@ -108,7 +112,7 @@ renderer.domElement.addEventListener('pointercancel',finishDrag,true);
 renderer.domElement.addEventListener('pointerleave',()=>hoverCard.classList.remove('visible'));
 
 let activePlayer=1,round=1;
-function endTurn(){if(onlineState)return sendOnlineAction({type:'end_turn'});activePlayer=activePlayer===1?2:1;if(activePlayer===1){round++;units.filter(unit=>unit.userData.underConstruction&&unit.userData.buildReadyRound<=round).forEach(unit=>applyConstructionState(unit,false))}}
+function endTurn(){if(onlineState)return sendOnlineAction({type:'end_turn'});activePlayer=activePlayer===1?2:1;if(activePlayer===1)round++;units.filter(unit=>unit.userData.underConstruction&&unit.userData.ownerSeat===activePlayer&&unit.userData.buildReadyRound<=round).forEach(unit=>applyConstructionState(unit,false))}
 document.querySelector('#end-turn').addEventListener('click',endTurn);addEventListener('keydown',e=>{if(e.key==='Enter')endTurn()});
 
 const deckPreview=document.querySelector('#deck-preview');
@@ -141,9 +145,9 @@ function makeSummonedUnit(cardIndex){
     const rig=new THREE.Group();rig.name='rig';rig.position.y=.18;unit.add(rig);const tokenMat=new THREE.MeshStandardMaterial({color,emissive:color,emissiveIntensity:.12,roughness:.55,metalness:.35});
     add(new THREE.CylinderGeometry(.32,.44,.95,18),M.darkLeather,rig,[0,.68,0]);add(new THREE.OctahedronGeometry(.38,1),tokenMat,rig,[0,1.5,0]);add(new THREE.TorusGeometry(.35,.045,10,32),M.gold,rig,[0,1.5,0],[Math.PI/2,0,0]);
   }
-  unit.name=c.name;unit.userData={...unit.userData,selectable:true,hoverable:true,cardId:c.id,cardIndex,name:c.name,role:c.info,hp:c.hp,maxHp:c.hp,damage:c.damage,move:c.move,movementType:c.movementType,minAttackRange:c.minAttackRange,attackRange:c.attackRange,cardType:c.type,buildRounds:c.buildRounds,cost:c.cost,ability:c.ability,abilityUsed:false,description:c.abilityText};unit.scale.setScalar(.64);return unit;
+  unit.name=c.name;unit.userData={...unit.userData,selectable:true,hoverable:true,cardId:c.id,cardIndex,name:c.name,role:c.info,hp:c.hp,maxHp:c.hp,damage:c.damage,move:c.move,movementType:c.movementType,minAttackRange:c.minAttackRange,attackRange:c.attackRange,cardType:c.type,buildRounds:c.buildRounds,cost:c.cost,ability:c.ability,abilityUsed:false,description:c.abilityText};unit.scale.setScalar(.64);ensureHealthBadge(unit);return unit;
 }
-function summonCard(cardIndex,x,z){const unit=makeSummonedUnit(cardIndex),card=cards[cardIndex];unit.position.set(x,.06,z);units.push(unit);hoverables.push(unit);scene.add(unit);if(card.type==='construction'){unit.userData.buildReadyRound=round+card.buildRounds;applyConstructionState(unit,true)}selectUnit(unit,{cinematic:false})}
+function summonCard(cardIndex,x,z){const unit=makeSummonedUnit(cardIndex),card=cards[cardIndex];unit.position.set(x,.06,z);unit.userData.ownerSeat=activePlayer;units.push(unit);hoverables.push(unit);scene.add(unit);if(card.type==='construction'){unit.userData.buildReadyRound=round+card.buildRounds;applyConstructionState(unit,true)}selectUnit(unit,{cinematic:false})}
 hand.addEventListener('pointerdown',e=>{
   const card=e.target.closest('.game-card');if(!card||e.button!==0||onlineState&&onlineState.state.activeSeat!==selfSeat)return;e.preventDefault();cameraTransition.cancel({restoreControls:false});card.setPointerCapture(e.pointerId);controls.enabled=false;
   cardDrag={card,index:Number(card.dataset.card),instanceId:card.dataset.instance,startX:e.clientX,startY:e.clientY,moved:false,ghost:null,tile:null};syncBottomCommand();
@@ -191,6 +195,7 @@ function renderOnlineHand(instances){
 function onlineUnit(data){
   const index=cards.findIndex(card=>card.id===data.cardId),unit=makeSummonedUnit(index),card=cards[index];
   unit.userData={...unit.userData,serverUnitId:data.id,ownerSeat:data.ownerSeat,cardId:data.cardId,cardIndex:index,hp:data.hp,maxHp:card.hp,actionUsed:data.actionUsed,abilityUsed:data.abilityUsed,buildReadyRound:data.buildReadyRound};
+  updateHealthBadge(unit);
   const color=data.ownerSeat===1?0x168cff:0xff352f;setUnitTeamColor(unit,color);
   applyConstructionState(unit,Boolean(data.underConstruction));unit.position.set(data.x*tile-half,.06,data.z*tile-half);return unit;
 }
