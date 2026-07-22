@@ -16,6 +16,13 @@ export function createUnitActionController(options) {
   } = options;
   const local = createLocalCombatController(options);
 
+  function markHenryAction(unit, action) {
+    if (unit.userData.cardId !== 'henry') return;
+    if (action === 'move') unit.userData.movedThisTurn = true;
+    if (action === 'attack') unit.userData.attackedThisTurn = true;
+    unit.userData.actionUsed = Boolean(unit.userData.movedThisTurn && unit.userData.attackedThisTurn);
+  }
+
   function canCommandUnit(unit) {
     return Boolean(unit && (state.devMode
       ? unit.userData.ownerSeat === state.activePlayer
@@ -109,7 +116,9 @@ export function createUnitActionController(options) {
     else if (unit.userData.cardId === 'cannon' && cannonTarget) local.fireCannon(unit, destination, origin, originPosition, forward);
     else if (target) {
       const targetDistance = Math.abs(destination.x - origin.x) + Math.abs(destination.z - origin.z);
-      local.attackTarget(unit, target, destination, origin, originPosition, cannonTarget || isAttackDistanceValid(unit.userData, targetDistance));
+      if (local.attackTarget(unit, target, destination, origin, originPosition, cannonTarget || isAttackDistanceValid(unit.userData, targetDistance))) {
+        markHenryAction(unit, 'attack');
+      }
     } else if (moveDistance > unit.userData.move) {
       unit.position.copy(originPosition);
       callbacks.showGameError?.('Movimento fora de alcance.');
@@ -119,6 +128,7 @@ export function createUnitActionController(options) {
       setArcherMountedState(unit, false);
       unit.userData.attackRange = CARD_BY_ID[unit.userData.cardId].attackRange;
       local.applyLocalFireEntry(unit);
+      markHenryAction(unit, 'move');
     }
   }
 

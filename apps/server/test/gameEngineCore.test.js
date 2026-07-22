@@ -55,6 +55,7 @@ test('cartas usam os atributos definidos', () => {
     {
       warrior: { hp: 3, damage: 2, move: 2, movementType: 'straight', cost: 4 },
       guard: { hp: 4, damage: 1, move: 1, movementType: 'any', cost: 4 },
+      henry: { hp: 1, damage: 1, move: 1, movementType: 'any', cost: 4 },
       archer: { hp: 2, damage: 2, move: 1, movementType: 'any', cost: 6 },
       wooden_barrier: { hp: 3, damage: 0, move: 0, movementType: 'none', cost: 2 },
       tower: { hp: 5, damage: 0, move: 0, movementType: 'none', cost: 7 },

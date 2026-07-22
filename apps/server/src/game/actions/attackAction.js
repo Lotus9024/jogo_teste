@@ -28,7 +28,8 @@ export function attackAction(state, player, opponent, action) {
   const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
   const card = attackCard(state, unit, CARD_BY_ID[unit.cardId]);
   if (card.id === 'mage') fail('Escolha uma ou duas casas para conjurar o fogo.');
-  if (unit.actionUsed) fail('Esta unidade já agiu neste turno.');
+  if (card.id === 'henry' && unit.attackedThisTurn) fail('Esta unidade já atacou neste turno.');
+  if (card.id !== 'henry' && unit.actionUsed) fail('Esta unidade já agiu neste turno.');
   if (unit.underConstruction) fail('A construção ainda não foi concluída.');
   if (card.damage <= 0 || card.attackRange <= 0) fail('Esta carta não pode atacar.');
   const damage = card.damage + (unit.empowered ? 8 : 0);
@@ -41,7 +42,10 @@ export function attackAction(state, player, opponent, action) {
   else fail('Alvo inválido.');
 
   unit.empowered = false;
-  unit.actionUsed = true;
+  if (card.id === 'henry') {
+    unit.attackedThisTurn = true;
+    unit.actionUsed = Boolean(unit.movedThisTurn);
+  } else unit.actionUsed = true;
 }
 
 function attackUnit(state, player, action, unit, card, damage, operator) {

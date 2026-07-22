@@ -30,7 +30,8 @@ export function summonAction(state, player, _opponent, action) {
   const hp = card.id === 'goblin' ? goblinSpawnHp(player.seat, x, z, state.units) : card.hp;
   state.units.push({
     id: randomUUID(), ownerSeat: player.seat, cardId: card.id, x, z, hp, maxHp: hp, shield: 0,
-    actionUsed: true, abilityUsed: false, abilityReadyTurn: 0, instantUsedRound: 0, instantReadyTurn: 0, empowered: false, mountedOnTowerId: tower?.id ?? null,
+    actionUsed: card.id !== 'henry', movedThisTurn: false, attackedThisTurn: false,
+    abilityUsed: false, abilityReadyTurn: 0, instantUsedRound: 0, instantReadyTurn: 0, empowered: false, mountedOnTowerId: tower?.id ?? null,
     underConstruction: Boolean(card.buildRounds), buildReadyRound: card.buildRounds ? state.round + card.buildRounds : null
   });
 }

@@ -15,6 +15,32 @@ test('guerreiro só anda reto e guarda pode andar na diagonal', () => {
   assert.deepEqual({ x: other.room.state.units[0].x, z: other.room.state.units[0].z }, { x: 5, z: 10 });
 });
 
+test('Henry entra pronto e pode mover e atacar uma vez em qualquer ordem', () => {
+  const movingFirst = match();
+  const player = movingFirst.room.state.players[0];
+  player.hand.push({ instanceId: 'henry-card', cardId: 'henry' });
+  movingFirst.rooms.action(movingFirst.room.code, movingFirst.first.id, {
+    type: 'summon', cardInstanceId: 'henry-card', x: 6, z: 10,
+  }, movingFirst.room.state.version);
+  const henry = movingFirst.room.state.units.find(unit => unit.cardId === 'henry');
+  movingFirst.room.state.units.push({ id: 'henry-target', ownerSeat: 2, cardId: 'guard', x: 7, z: 9, hp: 4, shield: 0, actionUsed: false });
+  assert.equal(henry.actionUsed, false);
+  movingFirst.rooms.action(movingFirst.room.code, movingFirst.first.id, { type: 'move', unitId: henry.id, x: 7, z: 10 }, movingFirst.room.state.version);
+  assert.deepEqual({ moved: henry.movedThisTurn, attacked: henry.attackedThisTurn, used: henry.actionUsed }, { moved: true, attacked: false, used: false });
+  movingFirst.rooms.action(movingFirst.room.code, movingFirst.first.id, { type: 'attack', unitId: henry.id, targetUnitId: 'henry-target' }, movingFirst.room.state.version);
+  assert.deepEqual({ moved: henry.movedThisTurn, attacked: henry.attackedThisTurn, used: henry.actionUsed }, { moved: true, attacked: true, used: true });
+  assert.throws(() => movingFirst.rooms.action(movingFirst.room.code, movingFirst.first.id, { type: 'move', unitId: henry.id, x: 6, z: 10 }, movingFirst.room.state.version), /movimentou/);
+
+  const attackingFirst = match();
+  attackingFirst.room.state.units.push(
+    { id: 'henry-ready', ownerSeat: 1, cardId: 'henry', x: 6, z: 10, hp: 1, shield: 0, actionUsed: false, movedThisTurn: false, attackedThisTurn: false },
+    { id: 'target-ready', ownerSeat: 2, cardId: 'guard', x: 6, z: 9, hp: 4, shield: 0, actionUsed: false }
+  );
+  attackingFirst.rooms.action(attackingFirst.room.code, attackingFirst.first.id, { type: 'attack', unitId: 'henry-ready', targetUnitId: 'target-ready' }, attackingFirst.room.state.version);
+  attackingFirst.rooms.action(attackingFirst.room.code, attackingFirst.first.id, { type: 'move', unitId: 'henry-ready', x: 7, z: 10 }, attackingFirst.room.state.version);
+  assert.deepEqual({ x: attackingFirst.room.state.units[0].x, z: attackingFirst.room.state.units[0].z, used: attackingFirst.room.state.units[0].actionUsed }, { x: 7, z: 10, used: true });
+});
+
 test('não consome a ação ao tentar mover para a própria casa', () => {
   const { rooms, room, first } = match();
   const unit = { id: 'same-cell', ownerSeat: 1, cardId: 'guard', x: 4, z: 9, hp: 4, shield: 0, actionUsed: false, abilityUsed: false, instantUsedRound: 0, empowered: false };

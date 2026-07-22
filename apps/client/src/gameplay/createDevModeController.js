@@ -76,6 +76,8 @@ export function createDevModeController(options) {
     finishLocalRoadsForSeat(state.activePlayer);
     units.filter(unit => unit.userData.ownerSeat === state.activePlayer).forEach(unit => {
       unit.userData.actionUsed = false;
+      unit.userData.movedThisTurn = false;
+      unit.userData.attackedThisTurn = false;
       unit.userData.abilityUsed = false;
     });
     syncTurnRoundStatus(state.activePlayer, state.round);

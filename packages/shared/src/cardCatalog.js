@@ -12,6 +12,12 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
+    id: 'henry', name: 'Henry', description: 'Henry tem pernas curtas, mas é ágil. Pode se movimentar e atacar no mesmo turno, em qualquer ordem, e entra em campo pronto para agir.',
+    hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 4, rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'HUMANO · ÁGIL', glyph: '⚡',
+    ability: Object.freeze({ name: 'Agilidade', cost: '—', description: 'Pode realizar um movimento e um ataque no mesmo turno, em qualquer ordem. Entra em campo pronto para agir.', enabled: false }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
+  }),
+  Object.freeze({
     id: 'archer', name: 'Arqueiro', description: 'Um arqueiro silencioso que ataca apenas de longe, a 3 ou 4 blocos de distância. Pode atacar por cima de barreiras, mas não de tropas. Ao matar uma criatura, não ocupa a posição dela.',
     hp: 2, damage: 2, move: 1, movementType: 'any', minAttackRange: 3, attackRange: 4, cost: 6, rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'HUMANO · ATIRADOR', glyph: '➶',
     ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade.', enabled: false }),

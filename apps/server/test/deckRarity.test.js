@@ -24,7 +24,7 @@ test('pode sortear qualquer carta dentro da raridade escolhida', () => {
   let call = 0;
   const deck = createDeck(max => calls[call++ % calls.length] % max);
 
-  assert.deepEqual(deck.slice(0, 3), ['archer', 'tower', 'cannon']);
+  assert.deepEqual(deck.slice(0, 3), ['henry', 'archer', 'tower']);
 });
 
 test('nível dois usa chances 60% comum, 30% incomum e 10% rara', () => {

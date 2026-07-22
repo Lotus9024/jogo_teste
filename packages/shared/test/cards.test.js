@@ -12,6 +12,15 @@ test('descrição do arqueiro explica o bloqueio de linha', () => {
   assert.match(CARD_BY_ID.archer.description, /por cima de barreiras, mas não de tropas/i);
 });
 
+test('Henry expõe agilidade, entrada pronta e os atributos definidos', () => {
+  assert.deepEqual(
+    { hp: CARD_BY_ID.henry.hp, damage: CARD_BY_ID.henry.damage, move: CARD_BY_ID.henry.move, cost: CARD_BY_ID.henry.cost, rarity: CARD_BY_ID.henry.rarityClass },
+    { hp: 1, damage: 1, move: 1, cost: 4, rarity: 'uncommon' }
+  );
+  assert.match(CARD_BY_ID.henry.description, /movimentar e atacar.*qualquer ordem/i);
+  assert.match(CARD_BY_ID.henry.ability.description, /entra em campo pronto/i);
+});
+
 test('zona de lançamento ocupa somente as duas casas ao redor do reino', () => {
   assert.equal(isDeploymentCell(1, 6, 11), true);
   assert.equal(isDeploymentCell(1, 6, 10), true);

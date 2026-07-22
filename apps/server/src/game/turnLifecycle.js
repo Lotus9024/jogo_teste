@@ -26,6 +26,8 @@ export function endTurn(state) {
   drawCard(player, { round: state.round });
   state.units.filter(unit => unit.ownerSeat === state.activeSeat).forEach(unit => {
     unit.actionUsed = false;
+    unit.movedThisTurn = false;
+    unit.attackedThisTurn = false;
     unit.abilityUsed = false;
     unit.shield = 0;
   });

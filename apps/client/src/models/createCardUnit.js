@@ -3,12 +3,13 @@ import { M, add } from '../core/scenePrimitives.js';
 import { ensureHealthBadge } from '../ui/unitHealthBadge.js';
 import { makeCannon } from '../assets/models/cannonModel.js';
 import { makeOperator } from '../assets/models/operatorModel.js';
-import { makeArcher, makeGoblin, makeGoblinTower, makeGuard, makeMage, makeTower, makeWarrior, makeWoodBarrier, makeWoodenHouse, unitBase } from './unitModels.js';
+import { makeArcher, makeGoblin, makeGoblinTower, makeGuard, makeHenry, makeMage, makeTower, makeWarrior, makeWoodBarrier, makeWoodenHouse, unitBase } from './unitModels.js';
 import { prepareConstructionUnit } from './prepareConstructionUnit.js';
 
 const UNIT_FACTORIES = Object.freeze({
   warrior: makeWarrior,
   guard: makeGuard,
+  henry: makeHenry,
   archer: makeArcher,
   wooden_barrier: makeWoodBarrier,
   tower: makeTower,
@@ -64,6 +65,8 @@ export function createCardUnit(card, cardIndex) {
     cost: card.cost,
     ability: card.ability,
     abilityUsed: false,
+    movedThisTurn: false,
+    attackedThisTurn: false,
     abilityReadyTurn: 0,
     instantReadyTurn: 0,
     description: card.abilityText

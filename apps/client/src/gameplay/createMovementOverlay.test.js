@@ -113,3 +113,30 @@ test('canhão marca o primeiro alvo, mas não casas depois dele', () => {
   assert.equal(app.dataset.movementTiles, '1');
   assert.equal(app.dataset.attackTiles, '2');
 });
+
+test('Henry esconde somente a ação que já utilizou', () => {
+  const scene = new THREE.Scene();
+  const app = { dataset: {} };
+  const source = unit('henry', 1, 5, 5);
+  Object.assign(source.userData, { cardId: 'henry', move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, damage: 1, movedThisTurn: true, attackedThisTurn: false });
+  const enemy = unit('enemy', 2, 6, 5);
+  const units = [source, enemy];
+  const overlay = createMovementOverlay({
+    scene, app, units, tile: 1, half: 0,
+    unitAtCell: (x, z, excluded) => units.find(candidate => candidate !== excluded && candidate.position.x === x && candidate.position.z === z),
+    baseSeatAtCell: () => null,
+    baseCellsForSeat: () => [],
+    getRoads: () => [],
+    getMatchContext: () => ({ onlineState: { state: { activeSeat: 1 } }, selfSeat: 1, devMode: false })
+  });
+
+  overlay.show(source);
+  assert.equal(app.dataset.movementTiles, '0');
+  assert.equal(app.dataset.attackTiles, '1');
+
+  source.userData.movedThisTurn = false;
+  source.userData.attackedThisTurn = true;
+  overlay.show(source);
+  assert.ok(Number(app.dataset.movementTiles) > 0);
+  assert.equal(app.dataset.attackTiles, '0');
+});

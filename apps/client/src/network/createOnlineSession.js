@@ -49,6 +49,8 @@ export function createOnlineSession({
       hp: data.hp,
       maxHp: data.maxHp ?? card.hp,
       actionUsed: data.actionUsed,
+      movedThisTurn: Boolean(data.movedThisTurn),
+      attackedThisTurn: Boolean(data.attackedThisTurn),
       abilityUsed: data.abilityUsed,
       abilityReadyTurn: data.abilityReadyTurn ?? 0,
       instantUsedRound: data.instantUsedRound,

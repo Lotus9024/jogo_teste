@@ -7,7 +7,8 @@ export function moveAction(state, player, _opponent, action) {
   requireTurn(state, player);
   const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
   const x = integer(action.x), z = integer(action.z), card = CARD_BY_ID[unit.cardId];
-  if (unit.actionUsed) fail('Esta unidade já agiu neste turno.');
+  if (card.id === 'henry' && unit.movedThisTurn) fail('Esta unidade já se movimentou neste turno.');
+  if (card.id !== 'henry' && unit.actionUsed) fail('Esta unidade já agiu neste turno.');
   if (unit.underConstruction || card.type === 'construction') fail('Esta construção não pode se mover.');
   if (mountedTower(state, unit)) fail('O arqueiro montado não pode se mover.');
   if (card.id === 'cannon') {
@@ -22,7 +23,10 @@ export function moveAction(state, player, _opponent, action) {
   unit.x = x;
   unit.z = z;
   unit.mountedOnTowerId = tower?.id ?? null;
-  unit.actionUsed = true;
+  if (card.id === 'henry') {
+    unit.movedThisTurn = true;
+    unit.actionUsed = Boolean(unit.attackedThisTurn);
+  } else unit.actionUsed = true;
   applyFireEntryDamage(state, unit);
 }
 

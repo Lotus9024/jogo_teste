@@ -61,6 +61,8 @@ export function createMovementOverlay({
     const originX = Math.round((unit.position.x + half) / tile);
     const originZ = Math.round((unit.position.z + half) / tile);
     const range = unit.userData.move + roadMovementBonus(originX, originZ, getRoads());
+    const movementAvailable = unit.userData.cardId !== 'henry' || !unit.userData.movedThisTurn;
+    const attackAvailable = unit.userData.cardId !== 'henry' || !unit.userData.attackedThisTurn;
     if (unit.userData.cardId === 'cannon') {
       const forward = forwardDeltaForSeat(unit.userData.ownerSeat);
       const operator = unitAtCell(originX - forward.x, originZ - forward.z, unit);
@@ -70,7 +72,7 @@ export function createMovementOverlay({
         && !operator.userData.actionUsed
         && !unitAtCell(x, z, unit)
         && !baseSeatAtCell(x, z)) addMarker(x, z, movementMaterial);
-    } else if (!isMountedArcher(unit)) for (let dx = -range; dx <= range; dx += 1) {
+    } else if (movementAvailable && !isMountedArcher(unit)) for (let dx = -range; dx <= range; dx += 1) {
       for (let dz = -range; dz <= range; dz += 1) {
         const x = originX + dx;
         const z = originZ + dz;
@@ -85,7 +87,7 @@ export function createMovementOverlay({
       }
     }
 
-    const attackTargets = unit.userData.underConstruction || unit.userData.damage <= 0 || unit.userData.cardId === 'mage' ? [] : units.filter(target => {
+    const attackTargets = !attackAvailable || unit.userData.underConstruction || unit.userData.damage <= 0 || unit.userData.cardId === 'mage' ? [] : units.filter(target => {
       const targetCell = { x: Math.round((target.position.x + half) / tile), z: Math.round((target.position.z + half) / tile) };
       const distance = Math.abs(targetCell.x - originX) + Math.abs(targetCell.z - originZ);
       const cannonCanTarget = unit.userData.cardId === 'cannon' && isCannonTargetValid({ x: originX, z: originZ, ownerSeat: unit.userData.ownerSeat }, targetCell);
@@ -106,7 +108,7 @@ export function createMovementOverlay({
       setAttackHighlight(target, true);
     });
 
-    const opponentBaseCells = onlineState && unit.userData.ownerSeat === selfSeat ? baseCellsForSeat(selfSeat === 1 ? 2 : 1) : [];
+    const opponentBaseCells = attackAvailable && onlineState && unit.userData.ownerSeat === selfSeat ? baseCellsForSeat(selfSeat === 1 ? 2 : 1) : [];
     const reachableBaseCells = opponentBaseCells.filter(cell => (unit.userData.cardId === 'cannon'
       ? isCannonTargetValid({ x: originX, z: originZ, ownerSeat: unit.userData.ownerSeat }, cell)
       : isAttackDistanceValid(unit.userData, Math.abs(cell.x - originX) + Math.abs(cell.z - originZ)))

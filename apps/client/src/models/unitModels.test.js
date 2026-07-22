@@ -8,6 +8,7 @@ import { UNIT_MODEL_SCALE } from './createCardUnit.js';
 import {
   makeArcher,
   makeGuard,
+  makeHenry,
   makeMage,
   makeTower,
   makeWarrior,
@@ -21,7 +22,7 @@ import {
 const TILE_SIZE = 1.08;
 
 test('tropas mantêm rig, plataforma e silhueta dentro da casa', () => {
-  for (const factory of [makeWarrior, makeGuard, makeArcher, makeMage, makeTower, makeWoodBarrier, makeWoodenHouse]) {
+  for (const factory of [makeWarrior, makeGuard, makeHenry, makeArcher, makeMage, makeTower, makeWoodBarrier, makeWoodenHouse]) {
     const unit = factory();
     const size = new THREE.Box3().setFromObject(unit).getSize(new THREE.Vector3());
     assert.ok(unit.getObjectByName('rig'));
@@ -30,6 +31,14 @@ test('tropas mantêm rig, plataforma e silhueta dentro da casa', () => {
     assert.ok(size.x * UNIT_MODEL_SCALE <= TILE_SIZE);
     assert.ok(size.z * UNIT_MODEL_SCALE <= TILE_SIZE);
   }
+});
+
+test('Henry tem silhueta baixa e duas lâminas próprias', () => {
+  const henry = makeHenry();
+  assert.equal(henry.userData.role, 'HUMANO · ÁGIL');
+  assert.ok(henry.getObjectByName('henryLeftBlade'));
+  assert.ok(henry.getObjectByName('henryRightBlade'));
+  assert.ok(henry.getObjectByName('henryScarf'));
 });
 
 test('Mago possui cajado, orbe de fogo e identidade arcana', () => {

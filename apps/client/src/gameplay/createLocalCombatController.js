@@ -113,13 +113,13 @@ export function createLocalCombatController({
     unit.position.copy(originPosition);
     if (!validDistance) {
       callbacks.showGameError?.('Alvo fora de alcance.');
-      return;
+      return false;
     }
     damageEffects.show(target.position, unit.userData.damage);
     target.userData.hp -= unit.userData.damage;
     updateHealthBadge(target);
     app.dataset.lastAttack = `${unit.userData.name}->${target.userData.name}:${Math.max(0, target.userData.hp)}`;
-    if (target.userData.hp > 0) return;
+    if (target.userData.hp > 0) return true;
     const removedTowerId = relations.towerId(target);
     units.splice(units.indexOf(target), 1);
     hoverables.splice(hoverables.indexOf(target), 1);
@@ -133,6 +133,7 @@ export function createLocalCombatController({
     if (unit.userData.cardId !== 'archer' && !unitsAtCell(destination.x, destination.z, unit).length) {
       unit.position.set(defeatedPosition.x, 0.06, defeatedPosition.z);
     }
+    return true;
   }
 
   return {
