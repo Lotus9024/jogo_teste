@@ -24,25 +24,7 @@ function addPerimeterFrame(board, size, material) {
   board.add(frame);
 }
 
-function addRunicInlays(board, tile, half, size) {
-  const runeMaterial = new THREE.MeshBasicMaterial({ color: 0x8f63d8, transparent: true, opacity: 0.5, toneMapped: false });
-  const centralRing = add(new THREE.TorusGeometry(tile * 1.06, 0.018, 6, 64), runeMaterial, board, [0, 0.062, 0], [-Math.PI / 2, 0, 0]);
-  centralRing.name = 'Selo violeta central';
-  centralRing.castShadow = false;
-
-  for (let index = 0; index < 8; index += 1) {
-    const angle = index * Math.PI / 4;
-    const radius = tile * 0.74;
-    const glyph = add(
-      new THREE.BoxGeometry(tile * 0.28, 0.012, 0.025),
-      runeMaterial,
-      board,
-      [Math.cos(angle) * radius, 0.063, Math.sin(angle) * radius],
-      [0, -angle, 0]
-    );
-    glyph.castShadow = false;
-  }
-
+function addSurfaceCracks(board, tile, half, size) {
   const crackMaterial = new THREE.MeshBasicMaterial({ color: 0x5f3b88, transparent: true, opacity: 0.32, toneMapped: false });
   for (let index = 0; index < size; index += 1) {
     const x = ((index * 5) % size) * tile - half;
@@ -86,7 +68,7 @@ export function createBoard(scene, { flameOuter, flameCore }) {
   }
 
   addPerimeterFrame(board, boardSize, frameStone);
-  addRunicInlays(board, tile, half, N);
+  addSurfaceCracks(board, tile, half, N);
 
   for (const x of [-1, 1]) {
     for (const z of [-1, 1]) {

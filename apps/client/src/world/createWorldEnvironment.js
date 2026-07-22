@@ -25,8 +25,46 @@ function addGraveStone(environment, material, x, z, rotation = 0) {
   environment.add(grave);
 }
 
+function addRuinedWall(environment, material, x, z, rotation = 0) {
+  const wall = new THREE.Group();
+  wall.name = 'Muralha desmoronada fora do tabuleiro';
+  wall.position.set(x, -0.5, z);
+  wall.rotation.y = rotation;
+  const blocks = [
+    [-0.86, 0.2, 0, 0.72, 0.4], [-0.28, 0.24, 0.02, 0.5, 0.48],
+    [0.22, 0.19, -0.01, 0.48, 0.38], [0.72, 0.14, 0.03, 0.52, 0.28],
+    [-0.55, 0.57, 0, 0.5, 0.34], [-0.08, 0.63, 0.01, 0.4, 0.42]
+  ];
+  blocks.forEach(([bx, by, bz, width, height], index) => {
+    add(
+      new THREE.BoxGeometry(width, height, 0.34, 2, 2, 1),
+      material,
+      wall,
+      [bx, by, bz],
+      [0, (index % 3 - 1) * 0.045, (index % 2 ? -1 : 1) * 0.035]
+    );
+  });
+  add(new THREE.BoxGeometry(0.7, 0.26, 0.32), material, wall, [1.12, 0.08, 0.28], [0.08, 0.42, 0.16]);
+  add(new THREE.BoxGeometry(0.46, 0.2, 0.28), material, wall, [-1.22, 0.06, -0.36], [-0.12, -0.28, -0.08]);
+  environment.add(wall);
+}
+
+function addCollapsedArch(environment, material, x, z, rotation = 0) {
+  const arch = new THREE.Group();
+  arch.name = 'Arco arruinado fora do tabuleiro';
+  arch.position.set(x, -0.5, z);
+  arch.rotation.y = rotation;
+  for (const side of [-1, 1]) {
+    add(new THREE.BoxGeometry(0.42, 1.15, 0.44, 2, 4, 2), material, arch, [side * 0.7, 0.58, 0], [0, 0, side * 0.035]);
+    add(new THREE.BoxGeometry(0.56, 0.22, 0.52), material, arch, [side * 0.7, 1.2, 0], [0, 0, side * 0.08]);
+  }
+  add(new THREE.BoxGeometry(0.72, 0.3, 0.42), material, arch, [-0.24, 1.26, 0], [0, 0, -0.2]);
+  add(new THREE.BoxGeometry(0.55, 0.27, 0.4), material, arch, [0.34, 0.14, 0.42], [0.14, -0.24, 0.38]);
+  environment.add(arch);
+}
+
 function addWatchFires(scene, environment, fireLights, flameOuter, flameCore) {
-  for (const [x, z] of [[-9.2, 0], [9.2, 0]]) {
+  for (const [x, z] of [[-12.25, 0], [12.25, 0]]) {
     add(new THREE.CylinderGeometry(0.22, 0.29, 0.3, 12), M.iron, environment, [x, -0.35, z]);
     add(new THREE.ConeGeometry(0.19, 0.52, 9), flameOuter, environment, [x, 0.03, z]);
     add(new THREE.ConeGeometry(0.1, 0.34, 9), flameCore, environment, [x, 0.09, z]);
@@ -76,20 +114,29 @@ export function createWorldEnvironment(scene, renderer, { quality, fireLights, f
 
   const ashStone = new THREE.MeshStandardMaterial({ color: 0x443b4d, emissive: 0x0d0812, emissiveIntensity: 0.18, roughness: 0.98 });
   [
-    [-9.25, -3.4, 1.5, 0.08],
-    [-9.6, 2.8, 0.9, -0.13],
-    [9.35, -2.6, 1.2, 0.12],
-    [9.7, 3.7, 1.65, -0.06],
-    [-4.2, 9.2, 0.75, 0.16],
-    [4.7, -9.15, 1.05, -0.12]
+    [-12.65, -4.4, 1.5, 0.08],
+    [-12.4, 3.8, 0.9, -0.13],
+    [12.45, -3.7, 1.2, 0.12],
+    [12.7, 4.6, 1.65, -0.06],
+    [-5.4, 12.35, 0.75, 0.16],
+    [5.9, -12.35, 1.05, -0.12]
   ].forEach(args => addBrokenPillar(environment, ashStone, ...args));
   [
-    [-8.9, 1.1, -0.1],
-    [-8.7, 6.3, 0.15],
-    [8.7, -6.2, -0.2],
-    [8.9, 0.9, 0.12],
-    [8.75, 5.4, -0.08]
+    [-12.15, 1.1, -0.1],
+    [-11.95, 6.8, 0.15],
+    [11.95, -6.7, -0.2],
+    [12.15, 1.2, 0.12],
+    [11.9, 6.1, -0.08]
   ].forEach(args => addGraveStone(environment, ashStone, ...args));
+  [
+    [-12.4, -7.2, 0.18],
+    [12.45, 7.1, Math.PI + 0.12],
+    [-6.8, 12.4, Math.PI / 2 - 0.16]
+  ].forEach(args => addRuinedWall(environment, ashStone, ...args));
+  [
+    [7.4, -12.25, -0.08],
+    [-7.6, 12.3, Math.PI + 0.1]
+  ].forEach(args => addCollapsedArch(environment, ashStone, ...args));
 
   addWatchFires(scene, environment, fireLights, flameOuter, flameCore);
   const wisps = addMist(environment);
