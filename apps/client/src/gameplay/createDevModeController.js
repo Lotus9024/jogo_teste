@@ -101,6 +101,7 @@ export function createDevModeController(options) {
   }
 
   function initializeDevMode() {
+    callbacks.activatePreferredGraphics?.();
     Object.assign(state, { devMode: true, onlineState: null, activePlayer: 1, round: 1, selfSeat: 1 });
     app.dataset.mode = 'dev';
     document.querySelector('#online-lobby').classList.add('closed');

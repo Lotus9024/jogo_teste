@@ -1,10 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-const TREE_MODELS = [
-  '/assets/models/trees/tree-1.glb',
-  '/assets/models/trees/tree-2.glb'
-];
+const TREE_MODEL = '/assets/models/trees/tree-1.glb';
 
 function seededRandom(seed) {
   let state = seed >>> 0;
@@ -59,8 +56,7 @@ function createPlacements() {
       x: Math.cos(angle) * 16.8 * radial,
       z: Math.sin(angle) * 14.25 * radial,
       rotation: random() * Math.PI * 2,
-      scale: 0.85 + random() * 0.25,
-      variant: placements.length % 2
+      scale: 0.85 + random() * 0.25
     };
     const tooClose = placements.some(tree => {
       const dx = tree.x - candidate.x;
@@ -83,12 +79,12 @@ export function createIslandTrees({ autoLoad = true } = {}) {
     if (started) return;
     started = true;
     const loader = new GLTFLoader();
-    Promise.all(TREE_MODELS.map(url => loadTree(loader, url)))
-    .then(models => {
-      const trees = models.map(prepareTree);
+    loadTree(loader, TREE_MODEL)
+    .then(model => {
+      const treeSource = prepareTree(model);
       createPlacements().forEach(spec => {
-        const tree = trees[spec.variant].clone(true);
-        tree.name = `Árvore personalizada ${spec.variant + 1}`;
+        const tree = treeSource.clone(true);
+        tree.name = 'Árvore personalizada otimizada';
         tree.position.set(spec.x, -0.54, spec.z);
         tree.rotation.y = spec.rotation;
         tree.scale.setScalar(spec.scale);

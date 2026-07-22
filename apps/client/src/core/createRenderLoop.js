@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { animateAbilityBadges } from '../ui/unitHealthBadge.js';
+import { pixelRatioForQuality } from './gameSettings.js';
 
 export function createRenderLoop({
   renderer,
@@ -24,8 +25,10 @@ export function createRenderLoop({
 }) {
   const clock = new THREE.Clock();
   const enemyBaseTag = document.querySelector('.enemy-base-tag');
+  const lobby = document.querySelector('#online-lobby');
   const baseTagPoint = new THREE.Vector3();
   let lastStatusUpdate = 0;
+  let lastFrameAt = 0;
   let running = false;
 
   function positionEnemyStatus() {
@@ -38,9 +41,12 @@ export function createRenderLoop({
     enemyBaseTag.style.visibility = baseTagPoint.z < 1 ? 'visible' : 'hidden';
   }
 
-  function animate() {
+  function animate(frameAt = 0) {
     if (!running) return;
     requestAnimationFrame(animate);
+    const frameInterval = document.hidden ? 250 : (lobby?.classList.contains('closed') ? 0 : 1000 / 30);
+    if (frameAt - lastFrameAt < frameInterval) return;
+    lastFrameAt = frameAt;
     const delta = clock.getDelta();
     const time = clock.elapsedTime;
     const quality = getGraphicsQuality();
@@ -98,7 +104,7 @@ export function createRenderLoop({
     camera.bottom = -view;
     camera.updateProjectionMatrix();
     renderer.setSize(innerWidth, innerHeight);
-    renderer.setPixelRatio(Math.min(devicePixelRatio, getGraphicsQuality() === 'low' ? 0.9 : 1.7));
+    renderer.setPixelRatio(pixelRatioForQuality(getGraphicsQuality()));
   }
 
   function start() {

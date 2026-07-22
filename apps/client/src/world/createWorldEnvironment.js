@@ -96,6 +96,20 @@ export function createWorldEnvironment(scene, renderer, { quality, fireLights, f
   scene.add(environment);
 
   const updateTerrain = elapsed => updateMagicTerrain(elapsed);
+  let highFidelityScheduled = false;
+  function scheduleHighFidelityAssets() {
+    if (highFidelityScheduled) return;
+    highFidelityScheduled = true;
+    const loadRocks = () => islandRocks.userData.load?.();
+    const loadTrees = () => islandTrees.userData.load?.();
+    if (globalThis.requestIdleCallback) {
+      globalThis.requestIdleCallback(loadRocks, { timeout: 2200 });
+      globalThis.requestIdleCallback(loadTrees, { timeout: 4200 });
+    } else {
+      setTimeout(loadRocks, 500);
+      setTimeout(loadTrees, 1400);
+    }
+  }
   function setGraphicsQuality(nextQuality) {
     const high = nextQuality === 'high';
     setTerrainQuality(nextQuality);
@@ -103,10 +117,7 @@ export function createWorldEnvironment(scene, renderer, { quality, fireLights, f
     islandTrees.visible = high;
     wisps.forEach(wisp => { wisp.visible = high; });
     fireLights.forEach(light => { light.visible = high; });
-    if (high) {
-      islandRocks.userData.load?.();
-      islandTrees.userData.load?.();
-    }
+    if (high) scheduleHighFidelityAssets();
   }
 
   setGraphicsQuality(quality);

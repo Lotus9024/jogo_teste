@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createMagicSky } from './createMagicSky.js';
+import { pixelRatioForQuality } from './gameSettings.js';
 
 export function createGameScene(app, { quality = 'high' } = {}) {
   const scene = new THREE.Scene();
@@ -8,7 +9,7 @@ export function createGameScene(app, { quality = 'high' } = {}) {
   scene.fog = new THREE.FogExp2(0x111923, 0.0185);
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, quality === 'low' ? 0.9 : 1.7));
+  renderer.setPixelRatio(pixelRatioForQuality(quality));
   renderer.setSize(innerWidth, innerHeight);
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -54,7 +55,7 @@ export function createGameScene(app, { quality = 'high' } = {}) {
   sun.position.set(-7.8, 14.2, -5.4);
   sun.target = sunTarget;
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.mapSize.set(1024, 1024);
   sun.shadow.camera.left = -13;
   sun.shadow.camera.right = 13;
   sun.shadow.camera.top = 13;
@@ -80,7 +81,7 @@ export function createGameScene(app, { quality = 'high' } = {}) {
 
   function setGraphicsQuality(nextQuality) {
     const low = nextQuality === 'low';
-    renderer.setPixelRatio(Math.min(devicePixelRatio, low ? 0.9 : 1.7));
+    renderer.setPixelRatio(pixelRatioForQuality(nextQuality));
     renderer.shadowMap.enabled = !low;
     sun.castShadow = !low;
     renderer.shadowMap.needsUpdate = !low;

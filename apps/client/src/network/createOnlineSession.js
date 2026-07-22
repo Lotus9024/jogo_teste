@@ -119,6 +119,7 @@ export function createOnlineSession({
       document.querySelector('#waiting-status').textContent = 'Aguardando o rei rival...';
       return;
     }
+    callbacks.activatePreferredGraphics?.();
     document.querySelector('#online-lobby').classList.add('closed');
     if (shouldSetPerspective) setPerspective();
     if (previous && payload.self.hand.length > previous.self.hand.length) handController.animateServerDraw();

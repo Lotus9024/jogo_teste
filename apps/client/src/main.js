@@ -15,6 +15,7 @@ const {
   tile, half, alliedKeep, enemyKeep, deck3D, topDeckCard, wisps, fireLights,
   updateTerrain, setWorldGraphicsQuality, mageEffects, units, hoverables,
   boardCoordinates, boardPresentation, relations, movementOverlay, deploymentOverlay,
+  activatePreferredGraphics,
 } = createGameRuntime();
 const { roads, fires, fireMeshes } = boardPresentation;
 
@@ -84,6 +85,7 @@ Object.assign(callbacks, {
   clearMovementGrid: interaction.clearMovementGrid,
   damageLocalUnit: actions.damageLocalUnit,
   syncAbilityBadges: abilities.syncAbilityBadges,
+  activatePreferredGraphics,
 });
 
 // Keep the settings Escape listener ahead of gallery listeners, matching the

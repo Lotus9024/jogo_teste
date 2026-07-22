@@ -1,5 +1,13 @@
 export const GRAPHICS_QUALITY = Object.freeze({ LOW: 'low', HIGH: 'high' });
 
+export function bootGraphicsQuality() {
+  return GRAPHICS_QUALITY.LOW;
+}
+
+export function pixelRatioForQuality(quality, pixelRatio = globalThis.devicePixelRatio ?? 1) {
+  return Math.min(Number(pixelRatio) || 1, quality === GRAPHICS_QUALITY.LOW ? 0.85 : 1.3);
+}
+
 export function recommendedGraphicsQuality(device = {}) {
   const memory = Number(device.deviceMemory ?? 8);
   const cores = Number(device.hardwareConcurrency ?? 8);
