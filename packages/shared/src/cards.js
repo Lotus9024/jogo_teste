@@ -58,7 +58,7 @@ export const CARD_DEFINITIONS = Object.freeze([
     id: 'mage', name: 'Mago', description: 'Conjura fogo em uma ou duas casas a até 4 quadrados, mesmo com unidades à frente. O impacto causa 2 de dano e as chamas causam mais 1 se uma tropa permanecer ou entrar nelas antes de desaparecerem.',
     hp: 2, damage: 2, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 4, maxFireCells: 2, cost: 6, rarity: 'RARA', rarityClass: 'rare', info: 'ARCANO · CONJURADOR', glyph: '✦',
     ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'O fogo é conjurado pelo ícone acima do Mago.', enabled: false }),
-    instant: Object.freeze({ name: 'Círculo ácido', cost: 4, cooldownTurns: 2, damage: 3, radius: 1, description: 'Em qualquer turno, espalha ácido nas casas ao redor do Mago. Todas as tropas atingidas sofrem 3 de dano, inclusive as aliadas. Recarrega após 1 rodada.', enabled: true })
+    instant: Object.freeze({ name: 'Ácido (Instantâneo)', cost: 4, cooldownTurns: 2, damage: 3, radius: 1, description: 'Em qualquer turno, espalha ácido nas casas ao redor do Mago. Todas as tropas atingidas sofrem 3 de dano, inclusive as aliadas. Recarrega após 1 rodada.', enabled: true })
   })
 ]);
 

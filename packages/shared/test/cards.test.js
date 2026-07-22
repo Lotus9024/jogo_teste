@@ -86,5 +86,6 @@ test('Mago é raro e expõe fogo e ácido com os atributos definidos', () => {
     { cost: CARD_BY_ID.mage.instant.cost, damage: CARD_BY_ID.mage.instant.damage, radius: CARD_BY_ID.mage.instant.radius, cooldown: CARD_BY_ID.mage.instant.cooldownTurns },
     { cost: 4, damage: 3, radius: 1, cooldown: 2 }
   );
+  assert.equal(CARD_BY_ID.mage.instant.name, 'Ácido (Instantâneo)');
   assert.equal(CARD_BY_ID.mage.ability.enabled, false);
 });

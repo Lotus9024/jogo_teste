@@ -14,18 +14,21 @@ function drawHealthBadge(sprite, hp) {
   texture.needsUpdate = true;
 }
 
-function drawMageFireBadge(sprite, active = false) {
+function drawMageFireBadge(sprite, active = false, cooling = false) {
   const { canvas, context, texture } = sprite.userData;
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   context.font = '46px "Segoe UI Emoji", Arial';
-  context.shadowColor = active ? '#ffcf45' : 'rgba(255, 89, 25, .35)';
-  context.shadowBlur = active ? 18 : 5;
-  context.globalAlpha = active ? 1 : 0.72;
+  context.filter = cooling ? 'grayscale(1)' : 'none';
+  context.shadowColor = cooling ? 'rgba(120, 125, 122, .25)' : active ? '#ffcf45' : 'rgba(255, 89, 25, .35)';
+  context.shadowBlur = cooling ? 2 : active ? 18 : 5;
+  context.globalAlpha = cooling ? 0.48 : active ? 1 : 0.72;
   context.fillText('🔥', 32, 34);
   context.globalAlpha = 1;
   context.shadowBlur = 0;
+  context.filter = 'none';
+  sprite.userData.cooling = cooling;
   texture.needsUpdate = true;
 }
 
@@ -44,7 +47,7 @@ function ensureMageFireBadge(unit) {
   badge.position.set(-0.68, 2.95, 0);
   badge.scale.set(0.78, 0.78, 1);
   badge.renderOrder = 13;
-  badge.userData = { canvas, context, texture, mageFireTrigger: true, active: false };
+  badge.userData = { canvas, context, texture, mageFireTrigger: true, active: false, cooling: false };
   unit.add(badge);
   drawMageFireBadge(badge, false);
   return badge;
@@ -96,7 +99,7 @@ export function ensureAbilityBadge(unit) {
   texture.colorSpace = THREE.SRGBColorSpace;
   badge = new THREE.Sprite(new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false, depthWrite: false }));
   badge.name = name;
-  badge.position.set(0.72, abilityTrigger === 'acid' ? 0.48 : 0.38, 0);
+  badge.position.set(abilityTrigger === 'acid' ? -0.72 : 0.72, abilityTrigger === 'acid' ? 0.48 : 0.38, 0);
   badge.scale.set(0.72, 0.72, 1);
   badge.renderOrder = 15;
   badge.userData = { canvas, context, texture, abilityTrigger, loading: false, enabled: false };
@@ -152,5 +155,11 @@ export function setMageFireBadgeActive(unit, active) {
   const badge = ensureMageFireBadge(unit);
   if (!badge || badge.userData.active === active) return;
   badge.userData.active = active;
-  drawMageFireBadge(badge, active);
+  drawMageFireBadge(badge, active, badge.userData.cooling);
+}
+
+export function setMageFireBadgeCooling(unit, cooling) {
+  const badge = ensureMageFireBadge(unit);
+  if (!badge || badge.userData.cooling === cooling) return;
+  drawMageFireBadge(badge, badge.userData.active, cooling);
 }

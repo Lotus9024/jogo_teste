@@ -19,7 +19,7 @@ import { GameSocketClient, SERVER_EVENTS } from './network/gameSocket.js';
 import { mountGameShell } from './ui/gameShell.js';
 import { cardMarkup, cards, hideDeckPreview as hideCardPreview, showDeckPreview } from './ui/cardView.js';
 import { setResource } from './ui/resourceView.js';
-import { animateAbilityBadges, setAbilityBadgeState, setMageFireBadgeActive, updateHealthBadge } from './ui/unitHealthBadge.js';
+import { animateAbilityBadges, setAbilityBadgeState, setMageFireBadgeActive, setMageFireBadgeCooling, updateHealthBadge } from './ui/unitHealthBadge.js';
 import { createWorld } from './world/createWorld.js';
 import './style.css';
 
@@ -92,6 +92,7 @@ function syncAbilityBadges(){
     if(unit.userData.cardId==='mage'){
       const remaining=Math.max(0,(unit.userData.instantReadyTurn??0)-turn),owned=onlineState?unit.userData.ownerSeat===selfSeat:unit.userData.ownerSeat===activePlayer;
       setAbilityBadgeState(unit,{remaining,enabled:owned&&!remaining&&!unit.userData.underConstruction&&Boolean(!me||me.energy>=CARD_BY_ID.mage.instant.cost)});
+      setMageFireBadgeCooling(unit,Boolean(unit.userData.actionUsed));
     }
     if(unit.userData.cardId==='tower'){
       const archer=archerForTower(unit),remaining=Math.max(0,(archer?.userData.abilityReadyTurn??0)-turn),owned=onlineState?unit.userData.ownerSeat===selfSeat:unit.userData.ownerSeat===activePlayer,ownTurn=(onlineState?.state.activeSeat??activePlayer)===unit.userData.ownerSeat;
@@ -431,6 +432,7 @@ function castMageFireLocally(cells){
   reconcileFires([...fires,...additions]);
   additions.forEach(fire=>{const target=unitAtCell(fire.x,fire.z);if(target)damageLocalUnit(target,CARD_BY_ID.mage.damage)});
   selected.userData.actionUsed=true;
+  syncAbilityBadges();
 }
 function activateMageFire(){
   const owned=devMode?selected?.userData.ownerSeat===activePlayer:selected?.userData.ownerSeat===selfSeat;
