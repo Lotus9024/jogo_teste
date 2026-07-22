@@ -26,6 +26,7 @@ function refreshKingdomProgress(state) {
     if (player.baseLevel >= 2 || player.citizens < GAME_CONFIG.level2CitizenRequirement || completedRoadCount(player.seat, state.roads) < GAME_CONFIG.level2RoadRequirement) return;
     player.baseLevel = 2;
     player.maxEnergy = GAME_CONFIG.level2MaxEnergy;
+    player.energy = Math.min(player.maxEnergy, player.energy + GAME_CONFIG.level2EnergyBonus);
     player.deck = createDeck(undefined, player.baseLevel, player.deck.length);
   });
 }

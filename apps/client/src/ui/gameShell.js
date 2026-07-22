@@ -44,7 +44,7 @@ export function mountGameShell() {
         <button id="dev-delete-unit" class="dev-danger-button">EXCLUIR</button>
       </section>
       <div class="bottom-command">
-        <div class="command-resource level" tabindex="0" aria-describedby="level-requirement"><small>CASTELO</small><b id="self-level">LV 1</b><span id="level-requirement" role="tooltip">Nível 2: tenha 9 cidadãos e 2 ruas concluídas em seu reino.</span></div>
+        <div class="command-resource level" tabindex="0" aria-describedby="level-requirement"><small>CASTELO</small><b id="self-level">LV 1</b><span id="level-requirement" role="tooltip">Nível 2: tenha 9 cidadãos e 2 ruas concluídas em seu reino. Ao evoluir, receba 2 de energia imediatamente.</span></div>
         <div class="command-resource energy" aria-label="Energia"><small>ENERGIA</small><b id="self-energy">10<em>/${GAME_CONFIG.maxEnergy}</em></b></div>
         <button id="end-turn">PASSAR TURNO</button>
         <div class="command-resource health" aria-label="Vida"><small>VIDA</small><b id="self-health">${GAME_CONFIG.startingBaseHp}<em>/${GAME_CONFIG.startingBaseHp}</em></b></div>

@@ -5,6 +5,7 @@ export const GAME_CONFIG = Object.freeze({
   startingEnergy: 10,
   maxEnergy: 10,
   level2MaxEnergy: 12,
+  level2EnergyBonus: 2,
   level2CitizenRequirement: 9,
   level2RoadRequirement: 2,
   energyPerTurn: 4,

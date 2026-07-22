@@ -68,9 +68,13 @@ test('nível dois exige nove cidadãos e duas Ruas concluídas', () => {
   assert.equal(blue.baseLevel, 1);
   rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: secondRoad.instanceId, x: 7, z: 10 }, room.state.version);
   rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
+  blue.energy = 3;
   rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
   assert.equal(blue.baseLevel, 2);
   assert.equal(blue.maxEnergy, 12);
+  assert.equal(blue.energy, 9);
+  rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
+  assert.equal(blue.energy, 9);
 });
 
 test('base nível dois recupera uma vida das construções a cada duas rodadas', () => {
