@@ -1,6 +1,7 @@
 import { CARD_BY_ID } from '@tronos/shared/cards';
 import { setAbilityBadgeState, setMageFireBadgeCooling } from '../ui/unitHealthBadge.js';
 import { createMageAbilityController } from './createMageAbilityController.js';
+import { createGoblinTowerAbilityController } from './createGoblinTowerAbilityController.js';
 
 export function createAbilityController(options) {
   const { state, app, tile, half, units, relations, callbacks } = options;
@@ -40,12 +41,21 @@ export function createAbilityController(options) {
             && !unit.userData.underConstruction && (!me || me.energy >= CARD_BY_ID.tower.ability.cost)),
         });
       }
+      if (unit.userData.cardId === 'goblin_tower') {
+        const ownTurn = (state.onlineState?.state.activeSeat ?? state.activePlayer) === unit.userData.ownerSeat;
+        setAbilityBadgeState(unit, {
+          remaining: 0,
+          enabled: Boolean(owned && ownTurn && !unit.userData.actionUsed && !unit.userData.underConstruction
+            && (!me || me.energy >= CARD_BY_ID.goblin_tower.ability.cost)),
+        });
+      }
     });
   }
 
   const mage = createMageAbilityController({
     ...options, currentRound, currentTurnIndex, syncAbilityBadges,
   });
+  const goblinTower = createGoblinTowerAbilityController({ ...options, syncAbilityBadges });
 
   function activateTowerAbility() {
     const selected = state.selected;
@@ -89,6 +99,7 @@ export function createAbilityController(options) {
       if (event.key.toLowerCase() !== 'f' || event.repeat || event.target.closest?.('input,textarea')) return;
       event.preventDefault();
       if (state.selected?.userData.cardId === 'mage') mage.activateAcid();
+      else if (state.selected?.userData.cardId === 'goblin_tower') goblinTower.activate();
       else activateTowerAbility();
     });
   }
@@ -99,7 +110,7 @@ export function createAbilityController(options) {
     currentTurnIndex,
     syncInstantCommand,
     syncAbilityBadges,
-    clearMageTargets: mage.clearTargets,
+    clearMageTargets() { mage.clearTargets(); goblinTower.clearTargets(); },
     showMageTargets: mage.showTargets,
     syncMageCommands: mage.syncCommands,
     toggleMageFireCell: mage.toggleFireCell,
@@ -107,5 +118,8 @@ export function createAbilityController(options) {
     activateMageFire: mage.activateFire,
     activateMageAcid: mage.activateAcid,
     isMageAiming: mage.isAiming,
+    activateGoblinTower: goblinTower.activate,
+    chooseGoblinCell: goblinTower.choose,
+    isGoblinTowerAiming: goblinTower.isAiming,
   };
 }

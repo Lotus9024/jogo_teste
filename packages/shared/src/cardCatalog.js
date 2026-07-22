@@ -49,9 +49,21 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'road', name: 'Rua', description: 'Aumenta em 1 o movimento de quem estiver sobre ela. Casas conectadas à Rua recebem espaço para mais 1 cidadão. Deve estar ligada ao castelo ou a outra Rua.',
+    id: 'road', name: 'Rua', description: 'Aumenta em 1 o movimento de quem estiver sobre ela. Conecta-se visualmente a Casas, que recebem espaço para mais 1 cidadão quando ligadas ao castelo. Deve estar ligada ao castelo ou a outra Rua.',
     hp: null, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 1, buildRounds: 1, type: 'terrain', indestructible: true, rarity: 'COMUM', rarityClass: 'common', info: 'TERRENO · RUA', glyph: '═',
     ability: Object.freeze({ name: 'Caminho do reino', cost: '—', description: 'Terreno permanente que se conecta automaticamente e não pode ser destruído.', enabled: false }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
+  }),
+  Object.freeze({
+    id: 'goblin', name: 'Goblin', description: 'Um goblin frágil, mas que tem coragem de roubar ouro.',
+    hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 2, rarity: 'COMUM', rarityClass: 'common', info: 'GOBLIN · SAQUEADOR', glyph: '♟',
+    ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade.', enabled: false }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
+  }),
+  Object.freeze({
+    id: 'goblin_tower', name: 'Torre Goblin', description: 'Goblin invocado ao lado da torre nasce com +1 de vida. Cada Goblin aliado na arena reduz em 1 o custo desta torre.',
+    hp: 5, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 10, minimumCost: 1, goblinDiscount: 1, buildRounds: 1, type: 'construction', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · GOBLIN', glyph: '♜',
+    ability: Object.freeze({ name: 'Reforço Goblin', cost: 3, description: 'Consome um Goblin do seu baralho e o invoca em qualquer casa livre da arena. Ele nasce sem poder agir neste turno.', enabled: true }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({

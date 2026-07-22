@@ -1,5 +1,5 @@
 import { attackAction, mageFireAction } from './attackAction.js';
-import { useAbilityAction, useInstantAction } from './abilityAction.js';
+import { summonGoblinAction, useAbilityAction, useInstantAction } from './abilityAction.js';
 import { moveAction } from './moveAction.js';
 import { summonAction } from './summonAction.js';
 import { discardAction } from './discardAction.js';
@@ -16,5 +16,6 @@ export const ACTION_HANDLERS = Object.freeze({
   mage_fire: mageFireAction,
   attack: attackAction,
   use_ability: useAbilityAction,
-  use_instant: useInstantAction
+  use_instant: useInstantAction,
+  summon_goblin: summonGoblinAction
 });

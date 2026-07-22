@@ -46,7 +46,7 @@ export function createGameRuntime() {
   const hoverables = [];
   const boardCoordinates = createBoardCoordinates({ getUnits: () => units, tile, half });
   const boardPresentation = createBoardPresentation({
-    scene, app, tile, half, baseCellsForSeat: boardCoordinates.baseCellsForSeat,
+    scene, app, tile, half, baseCellsForSeat: boardCoordinates.baseCellsForSeat, getUnits: () => units,
   });
   const relations = createUnitRelations(units);
   const movementOverlay = createMovementOverlay({

@@ -60,6 +60,7 @@ export function createCardSummoningController({
     units.push(unit);
     hoverables.push(unit);
     scene.add(unit);
+    if (card.id === 'wooden_house') boardPresentation.reconcileRoads(roads);
     if (card.buildRounds && !state.devInstantBuild) {
       unit.userData.buildReadyRound = state.round + card.buildRounds;
       applyConstructionState(unit, true);

@@ -17,6 +17,9 @@ export function createUnitPointerHandlers({
       if (abilityHit.abilityTrigger === 'acid') {
         if (state.selected !== abilityHit.unit) interaction.selectUnit(abilityHit.unit, { cinematic: false });
         abilities.activateMageAcid();
+      } else if (abilityHit.abilityTrigger === 'goblin_tower') {
+        if (state.selected !== abilityHit.unit) interaction.selectUnit(abilityHit.unit, { cinematic: false });
+        abilities.activateGoblinTower();
       } else {
         const archer = relations.archerForTower(abilityHit.unit);
         if (archer) {
@@ -52,6 +55,10 @@ export function createUnitPointerHandlers({
     }
     const unit = interaction.unitAtPointer(event);
     const destination = interaction.boardCellAtPointer(event);
+    if (abilities.isGoblinTowerAiming() && state.selected?.userData.cardId === 'goblin_tower' && destination) {
+      abilities.chooseGoblinCell(destination);
+      return;
+    }
     if (abilities.isMageAiming() && state.selected?.userData.cardId === 'mage' && destination) {
       abilities.toggleMageFireCell(destination);
       return;

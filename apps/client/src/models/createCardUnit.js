@@ -3,7 +3,7 @@ import { M, add } from '../core/scenePrimitives.js';
 import { ensureHealthBadge } from '../ui/unitHealthBadge.js';
 import { makeCannon } from '../assets/models/cannonModel.js';
 import { makeOperator } from '../assets/models/operatorModel.js';
-import { makeArcher, makeGuard, makeMage, makeTower, makeWarrior, makeWoodBarrier, makeWoodenHouse, unitBase } from './unitModels.js';
+import { makeArcher, makeGoblin, makeGoblinTower, makeGuard, makeMage, makeTower, makeWarrior, makeWoodBarrier, makeWoodenHouse, unitBase } from './unitModels.js';
 
 const UNIT_FACTORIES = Object.freeze({
   warrior: makeWarrior,
@@ -14,7 +14,9 @@ const UNIT_FACTORIES = Object.freeze({
   operator: makeOperator,
   cannon: makeCannon,
   wooden_house: makeWoodenHouse,
-  mage: makeMage
+  mage: makeMage,
+  goblin: makeGoblin,
+  goblin_tower: makeGoblinTower
 });
 
 export const UNIT_MODEL_SCALE = 0.55;

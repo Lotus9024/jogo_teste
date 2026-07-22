@@ -6,6 +6,7 @@ import { makeOperator } from '../assets/models/operatorModel.js';
 import { makeRoad, setRoadConstructionState } from '../assets/models/roadModel.js';
 import { makeWoodenHouse, setWoodenHouseConstructionState } from '../assets/models/woodenHouseModel.js';
 import { UNIT_MODEL_SCALE } from './createCardUnit.js';
+import { createBoardPresentation } from '../gameplay/createBoardPresentation.js';
 
 test('canhão possui silhueta de cerco e estados de construção', () => {
   const cannon = makeCannon();
@@ -56,4 +57,18 @@ test('Rua desenha apenas o centro e as direções conectadas', () => {
   assert.equal(road.getObjectByName('roadBuiltParts').visible, false);
   assert.equal(road.getObjectByName('roadConstructionParts').visible, true);
   assert.ok(road.getObjectByName('roadConstructionParts').children.length >= 5);
+});
+
+test('Rua estende o caminho até uma Casa de madeira adjacente', () => {
+  const scene = new THREE.Scene();
+  const house = makeWoodenHouse();
+  house.userData.ownerSeat = 1;
+  house.userData.cardId = 'wooden_house';
+  house.position.set(1, 0, 0);
+  const presentation = createBoardPresentation({
+    scene, app: { dataset: {} }, tile: 1, half: 0,
+    baseCellsForSeat: () => [], getUnits: () => [house],
+  });
+  presentation.reconcileRoads([{ id: 'road-house', ownerSeat: 1, x: 0, z: 0, underConstruction: false }]);
+  assert.equal(presentation.roadMeshes[0].getObjectByName('roadBuiltParts').children.length, 3);
 });

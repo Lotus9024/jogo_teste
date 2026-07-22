@@ -1,3 +1,4 @@
+import { effectiveCardCost } from '@tronos/shared/cards';
 import { cardMarkup, cards } from './cardView.js';
 import { createCardSummoningController } from './createCardSummoningController.js';
 import { createCardDiscardController } from './createCardDiscardController.js';
@@ -35,13 +36,15 @@ export function createHandController(options) {
     return summoning.playSelectedCardAtPointer(event, selectedCardElement());
   }
 
-  function renderOnlineHand(instances) {
+  function renderOnlineHand(instances, serverUnits = []) {
     hand.replaceChildren();
     for (const instance of instances) {
       const index = cards.findIndex(card => card.id === instance.cardId);
       if (index < 0 || !/^[-0-9a-f]{36}$/i.test(instance.instanceId)) continue;
       const holder = document.createElement('div');
-      holder.innerHTML = cardMarkup(cards[index], index);
+      const card = cards[index];
+      const cost = effectiveCardCost(card.id, state.selfSeat, serverUnits);
+      holder.innerHTML = cardMarkup({ ...card, cost }, index);
       const node = holder.firstElementChild;
       node.dataset.instance = instance.instanceId;
       hand.appendChild(node);

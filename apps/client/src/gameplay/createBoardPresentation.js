@@ -2,7 +2,7 @@ import { ORTHOGONAL_DIRECTIONS, cellKey } from '@tronos/shared/cards';
 import { makeFireHazard } from '../assets/models/fireHazardModel.js';
 import { makeRoad } from '../assets/models/roadModel.js';
 
-export function createBoardPresentation({ scene, app, tile, half, baseCellsForSeat }) {
+export function createBoardPresentation({ scene, app, tile, half, baseCellsForSeat, getUnits = () => [] }) {
   const roads = [];
   const roadMeshes = [];
   const fires = [];
@@ -15,12 +15,19 @@ export function createBoardPresentation({ scene, app, tile, half, baseCellsForSe
         .filter(item => item.ownerSeat === road.ownerSeat && !item.underConstruction)
         .map(item => cellKey(item.x, item.z)),
     );
+    const houses = new Set(getUnits()
+      .filter(unit => unit.userData.ownerSeat === road.ownerSeat
+        && unit.userData.cardId === 'wooden_house' && !unit.userData.underConstruction)
+      .map(unit => cellKey(
+        Math.round((unit.position.x + half) / tile),
+        Math.round((unit.position.z + half) / tile),
+      )));
     const names = ['east', 'west', 'south', 'north'];
 
     return Object.fromEntries(
       ORTHOGONAL_DIRECTIONS.map((direction, index) => {
         const key = cellKey(road.x + direction.x, road.z + direction.z);
-        return [names[index], owned.has(key) || bases.has(key)];
+        return [names[index], owned.has(key) || bases.has(key) || houses.has(key)];
       }),
     );
   }

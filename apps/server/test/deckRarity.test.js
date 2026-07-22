@@ -33,7 +33,7 @@ test('nível dois usa chances 60% comum, 30% incomum e 10% rara', () => {
     'uncommon', 'uncommon', 'uncommon', 'rare'
   ]);
   let call = 0;
-  const deck = createDeck(max => (call++ % 2 === 0 ? 9 : 0) % max, 2, 1);
+  const deck = createDeck(max => (call++ % 2 === 0 ? 9 : 1) % max, 2, 1);
   assert.deepEqual(deck, ['mage']);
 });
 
@@ -50,7 +50,7 @@ test('reduz o peso de Operador conforme a quantidade presente na mão', () => {
   const random = max => { totals.push(max); return 0; };
   weightedCardForRarity('common', { hand: [{ cardId: 'operator' }] }, 4, random);
   weightedCardForRarity('common', { hand: [{ cardId: 'operator' }, { cardId: 'operator' }] }, 4, random);
-  assert.deepEqual(totals, [590, 570]);
+  assert.deepEqual(totals, [690, 670]);
 });
 
 test('aumenta o peso da Casa em 25% a partir da rodada cinco até ela ser comprada', () => {
@@ -61,7 +61,7 @@ test('aumenta o peso da Casa em 25% a partir da rodada cinco até ela ser compra
   weightedCardForRarity('common', player, 5, random);
   player.hasDrawnHouse = true;
   weightedCardForRarity('common', player, 6, random);
-  assert.deepEqual(totals, [600, 625, 600]);
+  assert.deepEqual(totals, [700, 725, 700]);
 });
 
 test('comprar Casa encerra o bônus de proteção contra azar', () => {

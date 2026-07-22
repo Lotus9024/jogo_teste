@@ -47,7 +47,7 @@ export function createOnlineSession({
       cardId: data.cardId,
       cardIndex: index,
       hp: data.hp,
-      maxHp: card.hp,
+      maxHp: data.maxHp ?? card.hp,
       actionUsed: data.actionUsed,
       abilityUsed: data.abilityUsed,
       abilityReadyTurn: data.abilityReadyTurn ?? 0,
@@ -123,10 +123,10 @@ export function createOnlineSession({
     document.querySelector('#online-lobby').classList.add('closed');
     if (shouldSetPerspective) setPerspective();
     if (previous && payload.self.hand.length > previous.self.hand.length) handController.animateServerDraw();
-    handController.renderOnlineHand(payload.self.hand);
-    boardPresentation.reconcileRoads(payload.state.roads ?? []);
+    handController.renderOnlineHand(payload.self.hand, payload.state.units);
     boardPresentation.reconcileFires(payload.state.fires ?? []);
     reconcileOnlineUnits(payload.state.units);
+    boardPresentation.reconcileRoads(payload.state.roads ?? []);
     const me = payload.state.players.find(player => player.seat === state.selfSeat);
     const enemy = payload.state.players.find(player => player.seat !== state.selfSeat);
     if (!me || !enemy) return;

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CARD_BY_ID, citizensForSeat, completedRoadCount, connectedRoadKeys, deploymentDistance, forwardDeltaForSeat, gridCellsBetween, isCannonTargetValid, isDeploymentCell, isRoadPlacementCell, roadMovementBonus } from '../src/cards.js';
+import { CARD_BY_ID, citizensForSeat, completedRoadCount, connectedRoadKeys, deploymentDistance, effectiveCardCost, forwardDeltaForSeat, goblinSpawnHp, gridCellsBetween, isCannonTargetValid, isDeploymentCell, isRoadPlacementCell, roadMovementBonus } from '../src/cards.js';
 
 test('calcula as casas intermediarias de uma linha no tabuleiro', () => {
   assert.deepEqual(gridCellsBetween({ x: 2, z: 2 }, { x: 5, z: 2 }), [{ x: 3, z: 2 }, { x: 4, z: 2 }]);
@@ -88,4 +88,21 @@ test('Mago é raro e expõe fogo e ácido com os atributos definidos', () => {
   );
   assert.equal(CARD_BY_ID.mage.instant.name, 'Ácido (Instantâneo)');
   assert.equal(CARD_BY_ID.mage.ability.enabled, false);
+});
+
+test('Torre Goblin reduz o custo e fortalece Goblins adjacentes', () => {
+  const units = [
+    { ownerSeat: 1, cardId: 'goblin', x: 4, z: 4 },
+    { ownerSeat: 1, cardId: 'goblin', x: 5, z: 4 },
+    { ownerSeat: 2, cardId: 'goblin', x: 6, z: 4 },
+    { ownerSeat: 1, cardId: 'goblin_tower', x: 7, z: 7, underConstruction: false },
+  ];
+  assert.equal(effectiveCardCost('goblin_tower', 1, units), 8);
+  assert.equal(effectiveCardCost('goblin_tower', 2, units), 9);
+  assert.equal(goblinSpawnHp(1, 7, 6, units), 2);
+  assert.equal(goblinSpawnHp(1, 5, 5, units), 1);
+  assert.deepEqual(
+    { hp: CARD_BY_ID.goblin_tower.hp, cost: CARD_BY_ID.goblin_tower.cost, buildRounds: CARD_BY_ID.goblin_tower.buildRounds, rarity: CARD_BY_ID.goblin_tower.rarityClass },
+    { hp: 5, cost: 10, buildRounds: 1, rarity: 'rare' },
+  );
 });

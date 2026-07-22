@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { CARD_BY_ID, isRoadPlacementCell } from '@tronos/shared/cards';
+import { CARD_BY_ID, effectiveCardCost, goblinSpawnHp, isRoadPlacementCell } from '@tronos/shared/cards';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { mountableTowerAt } from '../combat.js';
 import { deploymentCell, fail, inBase, integer, unitAt, unitsAt, validCell } from '../gameQueries.js';
@@ -18,16 +18,18 @@ export function summonAction(state, player, _opponent, action) {
   if (card.id === 'road') {
     if (!validCell(x, z) || inBase(x, z) || roadBlocker || !isRoadPlacementCell(player.seat, x, z, state.roads, GAME_CONFIG.boardSize)) fail('A Rua precisa estar conectada ao castelo ou a outra Rua do seu reino.');
   } else if (!validCell(x, z) || !deploymentCell(player.seat, x, z) || inBase(x, z) || (unitAt(state, x, z) && !tower) || (roadOccupied && ['construction', 'machine'].includes(card.type))) fail('Escolha uma casa livre a até 2 casas do seu reino.');
-  if (player.energy < card.cost) fail('Energia insuficiente.');
-  player.energy -= card.cost;
+  const cost = effectiveCardCost(card.id, player.seat, state.units);
+  if (player.energy < cost) fail('Energia insuficiente.');
+  player.energy -= cost;
   player.hand.splice(index, 1);
   player.discard.push(instance.cardId);
   if (card.id === 'road') {
     state.roads.push({ id: randomUUID(), ownerSeat: player.seat, x, z, underConstruction: true, buildReadyRound: state.round + card.buildRounds });
     return;
   }
+  const hp = card.id === 'goblin' ? goblinSpawnHp(player.seat, x, z, state.units) : card.hp;
   state.units.push({
-    id: randomUUID(), ownerSeat: player.seat, cardId: card.id, x, z, hp: card.hp, shield: 0,
+    id: randomUUID(), ownerSeat: player.seat, cardId: card.id, x, z, hp, maxHp: hp, shield: 0,
     actionUsed: true, abilityUsed: false, abilityReadyTurn: 0, instantUsedRound: 0, instantReadyTurn: 0, empowered: false, mountedOnTowerId: tower?.id ?? null,
     underConstruction: Boolean(card.buildRounds), buildReadyRound: card.buildRounds ? state.round + card.buildRounds : null
   });

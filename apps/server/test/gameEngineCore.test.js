@@ -62,6 +62,8 @@ test('cartas usam os atributos definidos', () => {
       cannon: { hp: 1, damage: 3, move: 1, movementType: 'forward', cost: 8 },
       wooden_house: { hp: 1, damage: 0, move: 0, movementType: 'none', cost: 3 },
       road: { hp: null, damage: 0, move: 0, movementType: 'none', cost: 1 },
+      goblin: { hp: 1, damage: 1, move: 1, movementType: 'any', cost: 2 },
+      goblin_tower: { hp: 5, damage: 0, move: 0, movementType: 'none', cost: 10 },
       mage: { hp: 2, damage: 2, move: 1, movementType: 'any', cost: 6 }
     }
   );
@@ -70,7 +72,7 @@ test('cartas usam os atributos definidos', () => {
     { minAttackRange: 1, attackRange: 2 }
   );
   Object.values(CARD_BY_ID).forEach(card => {
-    assert.equal(card.ability.enabled, card.id === 'tower');
+    assert.equal(card.ability.enabled, ['tower', 'goblin_tower'].includes(card.id));
     assert.equal(card.instant.enabled, card.id === 'mage');
   });
   assert.deepEqual(
