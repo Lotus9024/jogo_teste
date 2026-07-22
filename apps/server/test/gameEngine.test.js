@@ -92,7 +92,7 @@ test('cartas usam os atributos definidos', () => {
   assert.equal(CARD_BY_ID.tower.buildRounds, 2);
   assert.deepEqual(
     { minAttackRange: CARD_BY_ID.cannon.minAttackRange, attackRange: CARD_BY_ID.cannon.attackRange, areaRadius: CARD_BY_ID.cannon.areaRadius, buildRounds: CARD_BY_ID.cannon.buildRounds },
-    { minAttackRange: 3, attackRange: 6, areaRadius: 2, buildRounds: 2 }
+    { minAttackRange: 3, attackRange: 6, areaRadius: 1, buildRounds: 2 }
   );
 });
 
@@ -418,15 +418,15 @@ test('canhão dispara somente para frente entre três e seis casas', () => {
   }
 });
 
-test('explosão do canhão causa 4 no impacto e 1 em área inclusive em aliados', () => {
+test('explosão do canhão causa 4 no impacto e 1 nas oito casas ao redor', () => {
   const { rooms, room, first } = match();
   room.state.units.push(
     { id: 'cannon-area', ownerSeat: 1, cardId: 'cannon', x: 7, z: 9, hp: 2, shield: 0, actionUsed: false, underConstruction: false },
     { id: 'operator-area', ownerSeat: 1, cardId: 'operator', x: 7, z: 10, hp: 1, shield: 0, actionUsed: false },
     { id: 'impact', ownerSeat: 2, cardId: 'guard', x: 7, z: 5, hp: 8, shield: 0, actionUsed: false },
     { id: 'enemy-splash', ownerSeat: 2, cardId: 'guard', x: 8, z: 5, hp: 8, shield: 0, actionUsed: false },
-    { id: 'ally-splash', ownerSeat: 1, cardId: 'guard', x: 9, z: 5, hp: 8, shield: 0, actionUsed: false },
-    { id: 'safe', ownerSeat: 1, cardId: 'guard', x: 10, z: 5, hp: 8, shield: 0, actionUsed: false }
+    { id: 'ally-splash', ownerSeat: 1, cardId: 'guard', x: 8, z: 6, hp: 8, shield: 0, actionUsed: false },
+    { id: 'safe', ownerSeat: 1, cardId: 'guard', x: 9, z: 5, hp: 8, shield: 0, actionUsed: false }
   );
   rooms.action(room.code, first.id, { type: 'attack', unitId: 'cannon-area', targetUnitId: 'impact' }, room.state.version);
   assert.equal(room.state.units.find(unit => unit.id === 'impact').hp, 4);

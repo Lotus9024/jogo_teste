@@ -72,9 +72,10 @@ function damageUnit(state, target, damage) {
 }
 
 function fireCannonAt(state, cannon, targetCell, card) {
+  const areaDistance = unit => Math.max(Math.abs(unit.x - targetCell.x), Math.abs(unit.z - targetCell.z));
   state.units
-    .filter(unit => distance(unit, targetCell) <= card.areaRadius)
-    .forEach(unit => damageUnit(state, unit, distance(unit, targetCell) === 0 ? card.damage : card.areaDamage));
+    .filter(unit => areaDistance(unit) <= card.areaRadius)
+    .forEach(unit => damageUnit(state, unit, areaDistance(unit) === 0 ? card.damage : card.areaDamage));
 }
 
 function applyFireEntryDamage(state, unit) {
