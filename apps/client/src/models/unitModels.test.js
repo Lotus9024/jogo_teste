@@ -5,12 +5,23 @@ import { isMountedArcher } from '../gameplay/unitState.js';
 import { makeAcidCircle } from '../assets/models/acidEffectModel.js';
 import { cards } from '../ui/cardView.js';
 import { UNIT_MODEL_SCALE } from './createCardUnit.js';
-import { makeArcher, makeGuard, makeMage, makeTower, makeWarrior, makeWoodenHouse, setArcherMountedState } from './unitModels.js';
+import {
+  makeArcher,
+  makeGuard,
+  makeMage,
+  makeTower,
+  makeWarrior,
+  makeWoodBarrier,
+  makeWoodenHouse,
+  setArcherMountedState,
+  setTowerConstructionState,
+  setWoodBarrierConstructionState,
+} from './unitModels.js';
 
 const TILE_SIZE = 1.08;
 
 test('tropas mantêm rig, plataforma e silhueta dentro da casa', () => {
-  for (const factory of [makeWarrior, makeGuard, makeArcher, makeMage, makeTower, makeWoodenHouse]) {
+  for (const factory of [makeWarrior, makeGuard, makeArcher, makeMage, makeTower, makeWoodBarrier, makeWoodenHouse]) {
     const unit = factory();
     const size = new THREE.Box3().setFromObject(unit).getSize(new THREE.Vector3());
     assert.ok(unit.getObjectByName('rig'));
@@ -71,6 +82,44 @@ test('arqueiro segura arco e flecha com as duas maos e perde a base ao montar', 
 test('torre oferece um encaixe dedicado para o arqueiro', () => {
   const tower = makeTower();
   assert.ok(tower.getObjectByName('archerMount'));
+});
+
+test('torre alterna entre a obra real e o modelo pronto sem transparência', () => {
+  const tower = makeTower();
+  const built = tower.getObjectByName('towerBuiltParts');
+  const construction = tower.getObjectByName('towerConstructionParts');
+  assert.ok(built);
+  assert.ok(construction);
+  assert.equal(built.visible, true);
+  assert.equal(construction.visible, false);
+
+  setTowerConstructionState(tower, true);
+  assert.equal(built.visible, false);
+  assert.equal(construction.visible, true);
+  tower.traverse(object => {
+    if (object.isMesh) assert.equal(object.material.opacity, 1);
+  });
+
+  setTowerConstructionState(tower, false);
+  assert.equal(built.visible, true);
+  assert.equal(construction.visible, false);
+});
+
+test('barreira alterna entre paliçada parcial e paliçada pronta', () => {
+  const barrier = makeWoodBarrier();
+  const built = barrier.getObjectByName('barrierBuiltParts');
+  const construction = barrier.getObjectByName('barrierConstructionParts');
+  assert.ok(built);
+  assert.ok(construction);
+  assert.equal(built.visible, true);
+  assert.equal(construction.visible, false);
+
+  setWoodBarrierConstructionState(barrier, true);
+  assert.equal(built.visible, false);
+  assert.equal(construction.visible, true);
+  setWoodBarrierConstructionState(barrier, false);
+  assert.equal(built.visible, true);
+  assert.equal(construction.visible, false);
 });
 
 test('guerreiro usa espada sem escudo', () => {
