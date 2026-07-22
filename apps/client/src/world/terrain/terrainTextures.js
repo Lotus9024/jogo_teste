@@ -24,9 +24,9 @@ export function createGroundTexture(renderer, size = 1024) {
       const large = Math.sin(x * 0.025) * 5 + Math.cos(y * 0.021) * 4;
       const mottled = Math.sin((x + y) * 0.071) * 3 + Math.cos((x - y) * 0.054) * 3;
       const grain = (random() - 0.5) * 12;
-      image.data[index] = 47 + large + mottled + grain;
-      image.data[index + 1] = 62 + large * 1.12 + mottled + grain;
-      image.data[index + 2] = 50 + large * 0.62 + grain * 0.5;
+      image.data[index] = 51 + large + mottled + grain;
+      image.data[index + 1] = 45 + large * 0.82 + mottled + grain;
+      image.data[index + 2] = 59 + large * 1.05 + grain * 0.5;
       image.data[index + 3] = 255;
     }
   }
@@ -37,7 +37,7 @@ export function createGroundTexture(renderer, size = 1024) {
     const x = random() * size;
     const y = random() * size;
     const radius = 2 + random() * 11;
-    context.fillStyle = random() > 0.45 ? '#69745c' : '#202a25';
+    context.fillStyle = random() > 0.45 ? '#65596d' : '#211b29';
     context.beginPath();
     context.ellipse(x, y, radius, radius * (0.35 + random() * 0.55), random() * Math.PI, 0, Math.PI * 2);
     context.fill();
@@ -78,9 +78,9 @@ export function createCliffTexture(renderer, size = 512) {
       const strata = Math.sin(y * 0.14 + Math.sin(x * 0.021) * 3.2) * 8;
       const fractured = Math.sin((x + y) * 0.082) * 4 + Math.cos((x - y) * 0.047) * 5;
       const grain = (random() - 0.5) * 18;
-      image.data[index] = 152 + broad + strata + fractured + grain;
-      image.data[index + 1] = 139 + broad * 0.82 + strata + fractured + grain;
-      image.data[index + 2] = 124 + broad * 0.58 + strata * 0.72 + fractured + grain;
+      image.data[index] = 119 + broad + strata + fractured + grain;
+      image.data[index + 1] = 108 + broad * 0.82 + strata + fractured + grain;
+      image.data[index + 2] = 128 + broad * 0.74 + strata * 0.72 + fractured + grain;
       image.data[index + 3] = 255;
     }
   }
@@ -90,7 +90,7 @@ export function createCliffTexture(renderer, size = 512) {
   for (let index = 0; index < 170; index += 1) {
     const x = random() * size;
     const y = random() * size;
-    context.strokeStyle = random() > 0.5 ? '#4a4038' : '#b09a7d';
+    context.strokeStyle = random() > 0.5 ? '#3d3445' : '#796a83';
     context.lineWidth = 1 + random() * 2.5;
     context.beginPath();
     context.moveTo(x, y);

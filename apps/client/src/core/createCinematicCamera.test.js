@@ -23,18 +23,18 @@ function createApp() {
 function createControls() {
   return {
     enabled: true,
-    target: new THREE.Vector3(0, 0.18, 0),
+    target: new THREE.Vector3(0, 0.32, 0),
     update() {},
   };
 }
 
-test('does not restart the camera animation when it is already above the board', () => {
+test('does not restart the camera animation in the natural three-quarter frame', () => {
   globalThis.matchMedia = () => ({ matches: false });
   const camera = new THREE.OrthographicCamera();
   const controls = createControls();
   const app = createApp();
-  camera.position.set(0, 17.2, 5.4);
-  camera.zoom = 1.05;
+  camera.position.set(2.65, 14.6, 10.4);
+  camera.zoom = 1.03;
 
   const transition = createCinematicCamera({ camera, controls, app });
   transition.focusBoard({ side: 1 });
@@ -50,8 +50,8 @@ test('keeps small camera adjustments inside the focus range without animation', 
   const camera = new THREE.OrthographicCamera();
   const controls = createControls();
   const app = createApp();
-  camera.position.set(0.5, 17.1, 5.5);
-  camera.zoom = 1.03;
+  camera.position.set(3, 14.5, 10.5);
+  camera.zoom = 1.01;
   const expectedPosition = camera.position.clone();
 
   const transition = createCinematicCamera({ camera, controls, app });
@@ -59,7 +59,7 @@ test('keeps small camera adjustments inside the focus range without animation', 
 
   assert.equal(transition.active, false);
   assert.deepEqual(camera.position.toArray(), expectedPosition.toArray());
-  assert.equal(camera.zoom, 1.03);
+  assert.equal(camera.zoom, 1.01);
   assert.equal(app.classList.contains('camera-transitioning'), false);
 });
 

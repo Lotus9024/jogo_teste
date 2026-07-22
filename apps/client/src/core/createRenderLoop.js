@@ -83,7 +83,7 @@ export function createRenderLoop({
       }));
       wisps.forEach((wisp, index) => {
         wisp.position.x = wisp.userData.baseX + Math.sin(time * 0.12 + index) * 0.55;
-        wisp.material.opacity = 0.012 + index * 0.003 + Math.sin(time * 0.35 + index) * 0.004;
+        wisp.material.opacity = 0.018 + index * 0.003 + Math.sin(time * 0.35 + index) * 0.004;
       });
       fireLights.forEach((light, index) => {
         const pulse = 0.91

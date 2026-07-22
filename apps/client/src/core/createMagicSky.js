@@ -4,7 +4,7 @@ import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
 const SKY_TEXTURE = '/assets/sky/qwantani_moonrise_puresky_4k.hdr';
 
 export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) {
-  scene.background = new THREE.Color(0x070b11);
+  scene.background = new THREE.Color(0x08060f);
   scene.environmentRotation.set(0, -Math.PI * 0.38, 0);
 
   // A floating-board camera looks toward the lower half of an equirectangular
@@ -20,7 +20,7 @@ export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) 
     uvs.needsUpdate = true;
   });
   const skyMaterial = new THREE.MeshBasicMaterial({
-    color: 0x7f8c97,
+    color: 0x75677f,
     side: THREE.BackSide,
     depthWrite: false,
     depthTest: false,
@@ -43,7 +43,7 @@ export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) 
     skyMaterial.map = hdriTexture;
     skyMaterial.needsUpdate = true;
     scene.environment = environmentTexture;
-    scene.environmentIntensity = 0.34;
+    scene.environmentIntensity = 0.38;
     app.dataset.skybox = 'qwantani-moonrise-pure-sky-hdri-4k';
   }
 

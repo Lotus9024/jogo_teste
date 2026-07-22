@@ -25,32 +25,34 @@ function createTerrainMaterials(renderer, quality) {
   const texture = createGroundTexture(renderer, quality === 'low' ? 384 : 1024);
   const cliffTexture = createCliffTexture(renderer, quality === 'low' ? 256 : 512);
   const terrainMaterial = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
+    color: 0xaaa0b0,
     map: texture,
     bumpMap: texture,
     bumpScale: 0.035,
+    emissive: 0x100a16,
+    emissiveIntensity: 0.16,
     roughness: 0.96,
     metalness: 0
   });
   const cliffMaterial = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
+    color: 0x97899b,
     map: cliffTexture,
     bumpMap: cliffTexture,
     bumpScale: 0.11,
-    emissive: 0x120d0b,
-    emissiveIntensity: 0.24,
+    emissive: 0x160b1c,
+    emissiveIntensity: 0.3,
     roughness: 0.98,
     metalness: 0.01,
     flatShading: true,
     side: THREE.FrontSide
   });
   const earthCoreMaterial = new THREE.MeshStandardMaterial({
-    color: 0xffffff,
+    color: 0x8d8093,
     map: cliffTexture,
     bumpMap: cliffTexture,
     bumpScale: 0.14,
-    emissive: 0x120a05,
-    emissiveIntensity: 0.18,
+    emissive: 0x14091b,
+    emissiveIntensity: 0.24,
     roughness: 1,
     metalness: 0,
     side: THREE.DoubleSide

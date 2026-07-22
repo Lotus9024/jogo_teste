@@ -42,9 +42,9 @@ function addMist(environment) {
   const wisps = [];
   for (let index = 0; index < 6; index += 1) {
     const material = new THREE.MeshBasicMaterial({
-      color: 0x718379,
+      color: 0x705484,
       transparent: true,
-      opacity: 0.012 + index * 0.003,
+      opacity: 0.018 + index * 0.003,
       depthWrite: false,
       side: THREE.DoubleSide
     });
@@ -74,7 +74,7 @@ export function createWorldEnvironment(scene, renderer, { quality, fireLights, f
   const islandTrees = createIslandTrees({ autoLoad: quality === 'high' });
   environment.add(terrain, islandRocks, magicDust, islandTrees);
 
-  const ashStone = new THREE.MeshStandardMaterial({ color: 0x353c36, roughness: 0.98 });
+  const ashStone = new THREE.MeshStandardMaterial({ color: 0x443b4d, emissive: 0x0d0812, emissiveIntensity: 0.18, roughness: 0.98 });
   [
     [-9.25, -3.4, 1.5, 0.08],
     [-9.6, 2.8, 0.9, -0.13],

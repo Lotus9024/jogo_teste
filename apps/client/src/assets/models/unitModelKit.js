@@ -1,14 +1,18 @@
 import * as THREE from 'three';
 import { M, add } from '../../core/scenePrimitives.js';
+import { createGrainMaps, texturedStandardMaterial } from '../../core/darkFantasySurfaces.js';
+
+const fabricGrain = createGrainMaps({ color: [168, 162, 176], repeat: [5, 5], seed: 131 });
+const plateGrain = createGrainMaps({ color: [186, 188, 196], repeat: [3, 3], seed: 149, streak: 0.06 });
 
 export const U = Object.freeze({
-  plate: new THREE.MeshStandardMaterial({ color: 0x9aa19f, roughness: 0.28, metalness: 0.82, flatShading: true }),
-  plateDark: new THREE.MeshStandardMaterial({ color: 0x4d5656, roughness: 0.38, metalness: 0.74, flatShading: true }),
+  plate: texturedStandardMaterial(plateGrain, { color: 0xb8bac2, roughness: 0.34, metalness: 0.82, flatShading: true, bumpScale: 0.018 }),
+  plateDark: texturedStandardMaterial(plateGrain, { color: 0x686372, roughness: 0.46, metalness: 0.7, flatShading: true, bumpScale: 0.022 }),
   chain: new THREE.MeshStandardMaterial({ color: 0x626b69, roughness: 0.52, metalness: 0.68, flatShading: true }),
-  redCloth: new THREE.MeshStandardMaterial({ color: 0x7d2c25, roughness: 0.82, flatShading: true }),
-  blueCloth: new THREE.MeshStandardMaterial({ color: 0x294a61, roughness: 0.84, flatShading: true }),
-  greenCloth: new THREE.MeshStandardMaterial({ color: 0x344f3b, roughness: 0.88, flatShading: true }),
-  tanCloth: new THREE.MeshStandardMaterial({ color: 0x8a7654, roughness: 0.9, flatShading: true }),
+  redCloth: texturedStandardMaterial(fabricGrain, { color: 0x8f3040, roughness: 0.9, flatShading: true, bumpScale: 0.018 }),
+  blueCloth: texturedStandardMaterial(fabricGrain, { color: 0x3b3b70, roughness: 0.91, flatShading: true, bumpScale: 0.018 }),
+  greenCloth: texturedStandardMaterial(fabricGrain, { color: 0x405448, roughness: 0.92, flatShading: true, bumpScale: 0.018 }),
+  tanCloth: texturedStandardMaterial(fabricGrain, { color: 0x8b715d, roughness: 0.93, flatShading: true, bumpScale: 0.018 }),
   bronze: new THREE.MeshStandardMaterial({ color: 0x9b7338, roughness: 0.4, metalness: 0.68, flatShading: true }),
   feather: new THREE.MeshStandardMaterial({ color: 0xb9aa81, roughness: 0.95, side: THREE.DoubleSide, flatShading: true }),
   black: new THREE.MeshStandardMaterial({ color: 0x111514, roughness: 0.8, flatShading: true })
@@ -24,6 +28,19 @@ export function unitBase(parent, color = 0xb08a43) {
   const platformMaterial = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.5, metalness: 0.32, roughness: 0.48 });
   const platform = add(new THREE.CylinderGeometry(0.49, 0.53, 0.04, 32), platformMaterial, parent, [0, 0.16, 0]);
   platform.name = 'teamPlatform';
+  const runeMaterial = new THREE.MeshBasicMaterial({ color, toneMapped: false });
+  for (let index = 0; index < 8; index += 1) {
+    const angle = index * Math.PI / 4;
+    const rune = add(
+      new THREE.BoxGeometry(0.11, 0.012, 0.028),
+      runeMaterial,
+      platform,
+      [Math.cos(angle) * 0.34, 0.028, Math.sin(angle) * 0.34],
+      [0, -angle, 0]
+    );
+    rune.name = `pedestalRune${index + 1}`;
+    rune.castShadow = false;
+  }
   const ringMaterial = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.75, metalness: 0.52, roughness: 0.28 });
   const ring = add(new THREE.TorusGeometry(0.51, 0.045, 10, 32), ringMaterial, parent, [0, 0.19, 0], [-Math.PI / 2, 0, 0]);
   ring.name = 'selectionRing';
@@ -60,7 +77,11 @@ export function addArmoredLegs(rig, clothMaterial, wide = 0.18) {
 }
 
 export function addHelmetedHead(rig, accent, openFace = true) {
-  if (openFace) add(new THREE.SphereGeometry(0.255, 16, 10), M.skin, rig, [0, 2.02, 0.02]);
+  if (openFace) {
+    add(new THREE.SphereGeometry(0.255, 16, 10), M.skin, rig, [0, 2.02, 0.02]);
+    const eyeMaterial = new THREE.MeshBasicMaterial({ color: 0x17111f, toneMapped: false });
+    for (const side of [-1, 1]) add(new THREE.SphereGeometry(0.026, 8, 6), eyeMaterial, rig, [side * 0.085, 2.04, 0.248]);
+  }
   add(new THREE.SphereGeometry(0.31, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.68), U.plate, rig, [0, 2.12, 0]);
   add(new THREE.BoxGeometry(0.47, 0.09, 0.09, 3, 1, 1), U.plateDark, rig, [0, 2.08, 0.27]);
   add(new THREE.BoxGeometry(0.32, 0.035, 0.035), U.black, rig, [0, 2.09, 0.32]);
