@@ -8,6 +8,30 @@ const CARDS_BY_RARITY = Object.freeze({
   rare: Object.freeze(CARD_DEFINITIONS.filter(card => card.rarityClass === 'rare'))
 });
 
+const BASE_CARD_WEIGHT = 100;
+
+function cardWeight(card, player, round) {
+  if (card.id === 'operator') {
+    const operatorsInHand = player.hand.filter(instance => instance.cardId === 'operator').length;
+    if (operatorsInHand >= 2) return 70;
+    if (operatorsInHand === 1) return 90;
+  }
+  if (card.id === 'wooden_house' && round >= 5 && !player.hasDrawnHouse) return 125;
+  return BASE_CARD_WEIGHT;
+}
+
+export function weightedCardForRarity(rarity, player, round = 1, random = randomInt) {
+  const pool = CARDS_BY_RARITY[rarity].length ? CARDS_BY_RARITY[rarity] : CARDS_BY_RARITY.uncommon;
+  const weighted = pool.map(card => ({ card, weight: cardWeight(card, player, round) }));
+  const total = weighted.reduce((sum, item) => sum + item.weight, 0);
+  let roll = random(total);
+  for (const item of weighted) {
+    if (roll < item.weight) return item.card.id;
+    roll -= item.weight;
+  }
+  return weighted.at(-1).card.id;
+}
+
 export function rarityForRoll(level, roll) {
   if (level >= 2) return roll < 6 ? 'common' : roll < 9 ? 'uncommon' : 'rare';
   return roll < 2 ? 'common' : 'uncommon';
@@ -22,10 +46,16 @@ export function createDeck(random = randomInt, level = 1, size = GAME_CONFIG.dec
   });
 }
 
-export function drawCard(player) {
+export function drawCard(player, { round = 1, random = randomInt } = {}) {
   if (player.hand.length >= GAME_CONFIG.maxHandSize) return false;
-  if (!player.deck.length) player.deck = createDeck(undefined, player.baseLevel ?? 1);
-  player.hand.push({ instanceId: randomUUID(), cardId: player.deck.shift() });
+  if (!player.deck.length) player.deck = createDeck(random, player.baseLevel ?? 1);
+  player.deck.shift();
+  const level = player.baseLevel ?? 1;
+  const sides = level >= 2 ? 10 : 3;
+  const rarity = rarityForRoll(level, random(sides));
+  const cardId = weightedCardForRarity(rarity, player, round, random);
+  player.hand.push({ instanceId: randomUUID(), cardId });
+  if (cardId === 'wooden_house') player.hasDrawnHouse = true;
   return true;
 }
 
@@ -34,11 +64,11 @@ export function createInitialState(players) {
   const statePlayers = players.map(player => ({
     id: player.id, name: player.name, seat: player.seat, connected: true,
     baseHp: GAME_CONFIG.startingBaseHp, energy: GAME_CONFIG.startingEnergy, maxEnergy: GAME_CONFIG.maxEnergy,
-    citizens: 0, baseLevel: 1,
+    citizens: 0, baseLevel: 1, hasDrawnHouse: false,
     hand: [], deck: createDeck(), discard: []
   }));
   if (ready) statePlayers.forEach(player => {
-    for (let index = 0; index < GAME_CONFIG.startingHandSize; index += 1) drawCard(player);
+    for (let index = 0; index < GAME_CONFIG.startingHandSize; index += 1) drawCard(player, { round: 1 });
   });
   return {
     version: 1, phase: ready ? 'playing' : 'waiting', round: 1, activeSeat: 1,

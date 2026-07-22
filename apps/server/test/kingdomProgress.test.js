@@ -1,14 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { RoomManager } from '../src/game/roomManager.js';
-
-function match() {
-  const rooms = new RoomManager();
-  const first = rooms.create('Rei Azul', {});
-  const second = rooms.join(first.room.code, 'Rei Vermelho', {});
-  return { rooms, room: second.room, first: first.player, second: second.player };
-}
+import { match } from '../test-support/match.js';
 
 function give(player, ...cardIds) {
   player.hand = cardIds.map(cardId => ({ instanceId: randomUUID(), cardId }));
@@ -51,25 +44,21 @@ test('construções ficam ao lado da Rua e não cobrem o terreno', () => {
   assert.throws(() => rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: house.instanceId, x: 7, z: 11 }, room.state.version), /casa livre/);
 });
 
-test('nível dois exige nove cidadãos e duas Ruas concluídas', () => {
+test('nível dois exige oito cidadãos e uma Rua concluída', () => {
   const { rooms, room, first, second } = match();
   const blue = room.state.players[0];
-  const [firstRoad, secondRoad, ...houses] = give(blue, 'road', 'road', 'wooden_house', 'wooden_house', 'wooden_house');
-  rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: firstRoad.instanceId, x: 7, z: 11 }, room.state.version);
+  const [road, ...houses] = give(blue, 'road', 'wooden_house', 'wooden_house');
+  rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: road.instanceId, x: 7, z: 11 }, room.state.version);
   rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
   rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
-  [[6, 11], [8, 11], [6, 10]].forEach(([x, z], index) => {
+  [[6, 11], [8, 11]].forEach(([x, z], index) => {
     rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: houses[index].instanceId, x, z }, room.state.version);
   });
   assert.equal(blue.citizens, 0);
   rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
-  rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
-  assert.ok(blue.citizens >= 9);
-  assert.equal(blue.baseLevel, 1);
-  rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: secondRoad.instanceId, x: 7, z: 10 }, room.state.version);
-  rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
   blue.energy = 3;
   rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
+  assert.equal(blue.citizens, 8);
   assert.equal(blue.baseLevel, 2);
   assert.equal(blue.maxEnergy, 12);
   assert.equal(blue.energy, 9);

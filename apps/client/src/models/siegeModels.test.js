@@ -27,10 +27,25 @@ test('operador possui ferramenta e identidade próprias', () => {
 
 test('Casa de madeira alterna entre obra e construção concluída', () => {
   const house = makeWoodenHouse();
-  assert.ok(house.getObjectByName('houseBuiltParts'));
+  const built = house.getObjectByName('houseBuiltParts');
+  const construction = house.getObjectByName('houseConstructionParts');
+  assert.ok(built);
+  assert.ok(construction);
+  assert.ok(house.getObjectByName('houseBuiltRoofLeft'));
+  assert.ok(house.getObjectByName('houseConstructionRidge'));
+
+  for (const state of [built, construction]) {
+    const size = new THREE.Box3().setFromObject(state).getSize(new THREE.Vector3());
+    assert.ok(size.x * UNIT_MODEL_SCALE <= 1.08);
+    assert.ok(size.z * UNIT_MODEL_SCALE <= 1.08);
+  }
+
   setWoodenHouseConstructionState(house, true);
-  assert.equal(house.getObjectByName('houseBuiltParts').visible, false);
-  assert.equal(house.getObjectByName('houseConstructionParts').visible, true);
+  assert.equal(built.visible, false);
+  assert.equal(construction.visible, true);
+  setWoodenHouseConstructionState(house, false);
+  assert.equal(built.visible, true);
+  assert.equal(construction.visible, false);
 });
 
 test('Rua desenha apenas o centro e as direções conectadas', () => {

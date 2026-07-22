@@ -2,27 +2,62 @@
 
 Jogo de tabuleiro dark fantasy 3D para navegador. O repositório usa um monorepo com frontend Three.js, servidor WebSocket autoritativo e PostgreSQL.
 
-## Estrutura
+## Organização do código
 
 ```text
 apps/
-  client/                 # Vite, Three.js e HUD 2D
-    src/core/             # Cena, câmera, renderer e controles
-    src/models/           # Miniaturas e materiais 3D
-    src/network/          # Cliente WebSocket
-    src/styles/           # CSS separado por responsabilidade
-    src/ui/               # Estrutura do HUD e componentes de cartas
-    src/world/            # Tabuleiro, castelos, cenário e baralho 3D
-    src/main.js           # Orquestra interação, partida e renderização
-  server/                 # HTTP, WebSocket e regras autoritativas
-    src/database/         # Pool PostgreSQL e migrations
-    src/game/             # Estado e regras das partidas
-    src/realtime/         # Protocolo e conexões WebSocket
+  client/
+    src/main.js                   # Ponto de composição; conecta os módulos
+    src/core/                     # Runtime, cena, câmera e loop de renderização
+    src/gameplay/                 # Interação, ações, habilidades e modo DEV
+    src/network/                  # Socket e reconciliação da partida online
+    src/ui/                       # Mão, baralho, configurações e templates DOM
+      badges/                     # Badges 3D de vida e habilidades
+      shell/                      # Templates do lobby, HUD, galeria e modal
+    src/world/                    # Tabuleiro, castelos, ilha e ambiente
+      terrain/                    # Geometria, materiais e detalhes do terreno
+    src/assets/models/            # Uma fábrica por miniatura 3D
+    src/styles/                   # Folhas por superfície; agregadores preservam a cascata
+      cards/                      # Preview, base da mão e refinamentos
+      game-ui/                    # HUD, comandos, painéis e interações
+  server/
+    src/game/gameEngine.js        # Fachada pública do motor autoritativo
+    src/game/actions/             # Um handler por intenção do jogador
+    src/game/                     # Combate, consultas, reino e ciclo de turno
+    src/realtime/                 # Transporte e conexões WebSocket
+    src/database/                 # Pool, migrations e segurança PostgreSQL
+    test/                         # Suítes separadas por domínio da partida
+    test-support/                 # Montagem compartilhada dos cenários de teste
 packages/
-  shared/                 # Eventos e configurações usados pelos dois lados
+  shared/src/cardCatalog.js       # Dados imutáveis das cartas
+  shared/src/boardRules.js        # Regras puras de alcance e tabuleiro
+  shared/src/kingdomEconomy.js    # Ruas, cidadãos e bônus do reino
+  shared/src/cards.js             # Fachada compatível de exports públicos
+  shared/src/gameConfig.js        # Configuração única da partida
+  shared/src/protocol.js          # Contratos das mensagens online
 ```
 
-O cliente nunca deve decidir sozinho o resultado de movimentos, ataques, compras ou gastos de energia. Ele envia uma intenção; o servidor valida, altera o estado e transmite o novo estado aos jogadores.
+`main.js`, `createWorld.js`, `createMagicTerrain.js`, `gameShell.js`, `unitHealthBadge.js`, `gameEngine.js` e `cards.js` são fachadas ou pontos de composição. Eles devem continuar pequenos: a implementação pertence ao módulo do domínio correspondente.
+
+### Limites entre as camadas
+
+- `packages/shared` não conhece DOM, Three.js, WebSocket nem banco. Ele concentra catálogo, configuração, protocolo e funções puras usadas pelos dois lados.
+- `apps/server` é a autoridade da partida. Cada mensagem vira uma intenção em `game/actions`; consultas, combate, progressão e turnos permanecem separados.
+- `apps/client/src/core` cria a infraestrutura visual. `gameplay` coordena as regras de interação; `ui` cuida do DOM; `world` monta a cena; `network` sincroniza o estado remoto.
+- Controladores recebem dependências explicitamente. Ao adicionar um comportamento, prefira criar ou ampliar um controlador coeso em vez de voltar a concentrá-lo em `main.js`.
+- `styles/cards.css` e `styles/game-ui.css` são apenas agregadores. A ordem dos `@import` faz parte da cascata e deve ser preservada.
+- As ferramentas auxiliares em `local-tools` são independentes do runtime do jogo e não fazem parte desta organização.
+
+O cliente nunca decide sozinho o resultado de movimentos, ataques, compras ou gastos de energia. Ele envia uma intenção; o servidor valida, altera o estado e transmite o novo estado aos jogadores.
+
+### Onde implementar cada mudança
+
+- Carta, custo ou atributo: `packages/shared/src/cardCatalog.js`.
+- Alcance, coordenadas ou movimento: `packages/shared/src/boardRules.js` e validação autoritativa em `apps/server/src/game/actions`.
+- Nova ação online: handler em `apps/server/src/game/actions`, contrato em `packages/shared/src/protocol.js` quando necessário e controlador em `apps/client/src/gameplay`.
+- Miniatura: `apps/client/src/assets/models`; instanciação comum em `apps/client/src/models`.
+- Elemento do HUD: template em `apps/client/src/ui/shell`, controlador em `apps/client/src/ui` e estilo na subpasta correspondente.
+- Elemento permanente da cena: `apps/client/src/world`; detalhe específico da ilha em `world/terrain`.
 
 ## Desenvolvimento local
 
@@ -70,6 +105,8 @@ O Docker Compose permanece disponível como alternativa. Consulte `SECURITY.md` 
 - `npm run dev:client`: somente o frontend.
 - `npm run dev:server`: somente o backend.
 - `npm run build`: valida todos os workspaces e gera o cliente.
-- `npm test`: testes do protocolo e das salas.
+- `npm test`: testes do cliente, regras compartilhadas, motor e salas.
 - `npm run db:migrate`: aplica migrations pendentes.
 - `npm run db:verify`: testa as restrições do papel usado pela aplicação.
+
+Antes de considerar uma reorganização concluída, rode `npm test` e `npm run build`. Como o jogo usa WebGL, valide também lobby, DEV MODE, arraste de cartas, movimento, habilidades, configurações e redimensionamento diretamente no navegador.

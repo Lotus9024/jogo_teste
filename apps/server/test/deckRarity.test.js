@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CARD_BY_ID } from '@tronos/shared/cards';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
-import { createDeck, drawCard, rarityForRoll } from '../src/game/createInitialState.js';
+import { createDeck, drawCard, rarityForRoll, weightedCardForRarity } from '../src/game/createInitialState.js';
 
 test('sorteia cartas comuns e incomuns na proporção de dois para um', () => {
   const rarityRolls = Array.from({ length: GAME_CONFIG.deckSize }, (_, index) => index % 3);
@@ -43,4 +43,31 @@ test('renova o baralho quando ele acaba e continua comprando cartas', () => {
   assert.equal(player.hand.length, 1);
   assert.equal(player.deck.length, GAME_CONFIG.deckSize - 1);
   assert.ok(CARD_BY_ID[player.hand[0].cardId]);
+});
+
+test('reduz o peso de Operador conforme a quantidade presente na mão', () => {
+  const totals = [];
+  const random = max => { totals.push(max); return 0; };
+  weightedCardForRarity('common', { hand: [{ cardId: 'operator' }] }, 4, random);
+  weightedCardForRarity('common', { hand: [{ cardId: 'operator' }, { cardId: 'operator' }] }, 4, random);
+  assert.deepEqual(totals, [590, 570]);
+});
+
+test('aumenta o peso da Casa em 25% a partir da rodada cinco até ela ser comprada', () => {
+  const totals = [];
+  const player = { hand: [], hasDrawnHouse: false };
+  const random = max => { totals.push(max); return 0; };
+  weightedCardForRarity('common', player, 4, random);
+  weightedCardForRarity('common', player, 5, random);
+  player.hasDrawnHouse = true;
+  weightedCardForRarity('common', player, 6, random);
+  assert.deepEqual(totals, [600, 625, 600]);
+});
+
+test('comprar Casa encerra o bônus de proteção contra azar', () => {
+  const rolls = [0, 400];
+  const player = { baseLevel: 1, hand: [], deck: ['slot'], hasDrawnHouse: false };
+  assert.equal(drawCard(player, { round: 5, random: () => rolls.shift() }), true);
+  assert.equal(player.hand[0].cardId, 'wooden_house');
+  assert.equal(player.hasDrawnHouse, true);
 });
