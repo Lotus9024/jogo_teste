@@ -41,6 +41,14 @@ export function createMovementOverlay({
     return gridCellsBetween(from, to).some(cell => unitAtCell(cell.x, cell.z, excludedUnit));
   }
 
+  function attackLineBlocked(unit, from, to) {
+    if (unit.userData.cardId === 'cannon' || isMountedArcher(unit)) return false;
+    return gridCellsBetween(from, to).some(cell => {
+      const blocker = unitAtCell(cell.x, cell.z, unit);
+      return blocker && (unit.userData.cardId !== 'archer' || blocker.userData.cardId !== 'wooden_barrier');
+    });
+  }
+
   function show(unit) {
     clear();
     const { onlineState, selfSeat, devMode } = getMatchContext();
@@ -81,7 +89,7 @@ export function createMovementOverlay({
       const targetCell = { x: Math.round((target.position.x + half) / tile), z: Math.round((target.position.z + half) / tile) };
       const distance = Math.abs(targetCell.x - originX) + Math.abs(targetCell.z - originZ);
       const cannonCanTarget = unit.userData.cardId === 'cannon' && isCannonTargetValid({ x: originX, z: originZ, ownerSeat: unit.userData.ownerSeat }, targetCell);
-      return target !== unit && (cannonCanTarget || target.userData.ownerSeat !== unit.userData.ownerSeat) && (cannonCanTarget || isAttackDistanceValid(unit.userData, distance)) && (cannonCanTarget || isMountedArcher(unit) || !lineBlocked({ x: originX, z: originZ }, targetCell, unit));
+      return target !== unit && (cannonCanTarget || target.userData.ownerSeat !== unit.userData.ownerSeat) && (cannonCanTarget || isAttackDistanceValid(unit.userData, distance)) && !attackLineBlocked(unit, { x: originX, z: originZ }, targetCell);
     });
     const cannonAttackCells = [];
     if (unit.userData.cardId === 'cannon' && !unit.userData.underConstruction && unit.userData.damage > 0) {
@@ -102,7 +110,7 @@ export function createMovementOverlay({
     const reachableBaseCells = opponentBaseCells.filter(cell => (unit.userData.cardId === 'cannon'
       ? isCannonTargetValid({ x: originX, z: originZ, ownerSeat: unit.userData.ownerSeat }, cell)
       : isAttackDistanceValid(unit.userData, Math.abs(cell.x - originX) + Math.abs(cell.z - originZ)))
-      && (unit.userData.cardId === 'cannon' || isMountedArcher(unit) || !lineBlocked({ x: originX, z: originZ }, cell, unit)));
+      && !attackLineBlocked(unit, { x: originX, z: originZ }, cell));
     const baseInRange = reachableBaseCells.length > 0;
     reachableBaseCells.forEach(cell => {
       if (unit.userData.cardId !== 'cannon' || !cannonAttackCells.some(item => item.x === cell.x && item.z === cell.z)) addMarker(cell.x, cell.z, attackMaterial);

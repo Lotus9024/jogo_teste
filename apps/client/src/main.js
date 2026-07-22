@@ -146,9 +146,10 @@ function moveOrAttackUnit(unit,destination,explicitTarget=null,originPosition=un
   const cannonTarget=unit.userData.cardId==='cannon'&&isCannonTargetValid({...origin,ownerSeat:unit.userData.ownerSeat},destination);
   const cannonMove=unit.userData.cardId==='cannon'&&destination.x===origin.x+forward.x&&destination.z===origin.z+forward.z;
   if(isMountedArcher(unit)&&!hostileTarget&&!baseTarget){unit.position.copy(originPosition);showGameError('O arqueiro na torre não pode se mover.');return}
-  const blockedByUnit=gridCellsBetween(origin,destination).some(cell=>unitAtCell(cell.x,cell.z,unit));
+  const lineBlockers=gridCellsBetween(origin,destination).map(cell=>unitAtCell(cell.x,cell.z,unit)).filter(Boolean),blockedByUnit=lineBlockers.length>0;
   const mountedShot=isMountedArcher(unit)&&(hostileTarget||baseTarget);
-  if(blockedByUnit&&!mountedShot&&!cannonTarget){unit.position.copy(originPosition);return}
+  const archerShotOverBarriers=unit.userData.cardId==='archer'&&(hostileTarget||baseTarget)&&lineBlockers.every(blocker=>blocker.userData.cardId==='wooden_barrier');
+  if(blockedByUnit&&!mountedShot&&!cannonTarget&&!archerShotOverBarriers){unit.position.copy(originPosition);return}
   if(onlineState){
     unit.position.copy(originPosition);
     if(mountable)return sendOnlineAction({type:'move',unitId:unit.userData.serverUnitId,...destination});

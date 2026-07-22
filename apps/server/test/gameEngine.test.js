@@ -256,6 +256,28 @@ test('arqueiro ataca somente a três ou quatro blocos e não ocupa a casa da ví
   );
 });
 
+test('arqueiro ataca por cima de barreiras, mas não de tropas', () => {
+  const barrierLine = match();
+  barrierLine.room.state.units.push(
+    { id: 'archer-over-barrier', ownerSeat: 1, cardId: 'archer', x: 4, z: 9, hp: 2, shield: 0, actionUsed: false },
+    { id: 'barrier-between', ownerSeat: 2, cardId: 'wooden_barrier', x: 4, z: 10, hp: 3, shield: 0, actionUsed: false, underConstruction: false },
+    { id: 'target-over-barrier', ownerSeat: 2, cardId: 'guard', x: 4, z: 12, hp: 4, shield: 0, actionUsed: false }
+  );
+  barrierLine.rooms.action(barrierLine.room.code, barrierLine.first.id, { type: 'attack', unitId: 'archer-over-barrier', targetUnitId: 'target-over-barrier' }, barrierLine.room.state.version);
+  assert.equal(barrierLine.room.state.units.find(unit => unit.id === 'target-over-barrier').hp, 2);
+
+  const troopLine = match();
+  troopLine.room.state.units.push(
+    { id: 'archer-behind-troop', ownerSeat: 1, cardId: 'archer', x: 4, z: 9, hp: 2, shield: 0, actionUsed: false },
+    { id: 'troop-between', ownerSeat: 1, cardId: 'guard', x: 4, z: 10, hp: 4, shield: 0, actionUsed: false },
+    { id: 'target-behind-troop', ownerSeat: 2, cardId: 'guard', x: 4, z: 12, hp: 4, shield: 0, actionUsed: false }
+  );
+  assert.throws(
+    () => troopLine.rooms.action(troopLine.room.code, troopLine.first.id, { type: 'attack', unitId: 'archer-behind-troop', targetUnitId: 'target-behind-troop' }, troopLine.room.state.version),
+    /linha de ataque.*bloqueada/i
+  );
+});
+
 test('arqueiro ataca o castelo inimigo quando está no alcance', () => {
   const { rooms, room, first } = match();
   room.state.units.push({ id: 'archer-base', ownerSeat: 1, cardId: 'archer', x: 7, z: 5, hp: 2, shield: 0, actionUsed: false, abilityUsed: false });

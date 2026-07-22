@@ -8,6 +8,10 @@ test('calcula as casas intermediarias de uma linha no tabuleiro', () => {
   assert.deepEqual(gridCellsBetween({ x: 2, z: 2 }, { x: 3, z: 2 }), []);
 });
 
+test('descrição do arqueiro explica o bloqueio de linha', () => {
+  assert.match(CARD_BY_ID.archer.description, /por cima de barreiras, mas não de tropas/i);
+});
+
 test('zona de lançamento ocupa somente as duas casas ao redor do reino', () => {
   assert.equal(isDeploymentCell(1, 6, 11), true);
   assert.equal(isDeploymentCell(1, 6, 10), true);
