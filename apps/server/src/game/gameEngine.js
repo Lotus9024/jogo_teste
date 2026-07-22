@@ -5,6 +5,7 @@ import { createDeck, drawCard } from './createInitialState.js';
 
 const fail = message => { throw new Error(message); };
 const distance = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.z - b.z);
+const turnIndex = state => (state.round - 1) * 2 + (state.activeSeat === 2 ? 1 : 0);
 const integer = value => Number.isInteger(value) ? value : fail('Coordenada inválida.');
 
 function playerById(state, playerId) {
@@ -172,7 +173,7 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     if (card.id === 'road') state.roads.push({ id: randomUUID(), ownerSeat: player.seat, x, z, underConstruction: true, buildReadyRound: state.round + card.buildRounds });
     else state.units.push({
         id: randomUUID(), ownerSeat: player.seat, cardId: card.id, x, z, hp: card.hp, shield: 0,
-        actionUsed: true, abilityUsed: false, instantUsedRound: 0, empowered: false, mountedOnTowerId: tower?.id ?? null,
+        actionUsed: true, abilityUsed: false, abilityReadyTurn: 0, instantUsedRound: 0, instantReadyTurn: 0, empowered: false, mountedOnTowerId: tower?.id ?? null,
         underConstruction: Boolean(card.buildRounds), buildReadyRound: card.buildRounds ? state.round + card.buildRounds : null
       });
   } else if (action.type === 'move') {
@@ -261,35 +262,28 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     requireTurn(state, player);
     const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
     const card = CARD_BY_ID[unit.cardId];
-    if (!card.ability?.enabled || unit.abilityUsed || player.energy < card.ability.cost) fail('Habilidade indisponível.');
+    const tower = mountedTower(state, unit);
+    const ability = card.id === 'archer' && tower ? CARD_BY_ID.tower.ability : card.ability;
+    if (!ability?.enabled || (unit.abilityReadyTurn ?? 0) > turnIndex(state) || player.energy < ability.cost) fail('Habilidade indisponível.');
     if (unit.actionUsed || unit.underConstruction) fail('Esta unidade já agiu neste turno.');
-    let archerTargets = null;
-    if (card.id === 'archer') {
-      const target = state.units.find(item => item.id === action.targetUnitId && item.ownerSeat !== player.seat) ?? fail('Alvo inválido.');
-      if (distance(unit, target) > card.attackRange) fail('Alvo fora de alcance.');
-      archerTargets = state.units.filter(item => item.ownerSeat !== player.seat && distance(item, target) <= 1);
-    }
-    player.energy -= card.ability.cost; unit.abilityUsed = true;
-    if (card.id === 'warrior') unit.empowered = true;
-    if (card.id === 'guard') unit.shield = 12;
-    if (card.id === 'mage') {
-      [...state.units].filter(item => item.id !== unit.id && Math.max(Math.abs(item.x - unit.x), Math.abs(item.z - unit.z)) <= card.ability.radius)
-        .forEach(item => damageUnit(state, item, card.ability.damage));
-      unit.actionUsed = true;
-    }
-    if (archerTargets) {
-      archerTargets.forEach(item => { item.hp -= 8; });
-      state.units = state.units.filter(item => item.hp > 0);
-    }
+    if (card.id === 'archer' && tower) fireTowerVolley(state, player, unit, ability);
+    player.energy -= ability.cost;
+    unit.abilityUsed = true;
+    unit.abilityReadyTurn = turnIndex(state) + (ability.cooldownTurns ?? 2);
+    unit.actionUsed = true;
   } else if (action.type === 'use_instant') {
     if (state.phase !== 'playing') fail('A partida ainda não começou.');
     const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
     const card = CARD_BY_ID[unit.cardId];
-    const tower = mountedTower(state, unit);
-    const instant = card.id === 'archer' && tower ? CARD_BY_ID.tower.instant : card.instant;
-    if (!instant?.enabled || unit.instantUsedRound === state.round || player.energy < instant.cost) fail('Habilidade instantânea indisponível.');
-    if (card.id === 'archer' && tower) fireTowerVolley(state, player, unit, instant);
-    player.energy -= instant.cost;unit.instantUsedRound = state.round;
+    const instant = card.instant;
+    if (!instant?.enabled || (unit.instantReadyTurn ?? 0) > turnIndex(state) || player.energy < instant.cost) fail('Habilidade instantânea indisponível.');
+    if (card.id === 'mage') {
+      [...state.units].filter(item => item.id !== unit.id && Math.max(Math.abs(item.x - unit.x), Math.abs(item.z - unit.z)) <= instant.radius)
+        .forEach(item => damageUnit(state, item, instant.damage));
+    }
+    player.energy -= instant.cost;
+    unit.instantUsedRound = state.round;
+    unit.instantReadyTurn = turnIndex(state) + (instant.cooldownTurns ?? 2);
   } else fail('Ação não reconhecida.');
 
   refreshKingdomProgress(state);

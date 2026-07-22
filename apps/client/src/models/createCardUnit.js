@@ -60,6 +60,8 @@ export function createCardUnit(card, cardIndex) {
     cost: card.cost,
     ability: card.ability,
     abilityUsed: false,
+    abilityReadyTurn: 0,
+    instantReadyTurn: 0,
     description: card.abilityText
   };
   unit.scale.setScalar(UNIT_MODEL_SCALE);

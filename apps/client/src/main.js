@@ -19,7 +19,7 @@ import { GameSocketClient, SERVER_EVENTS } from './network/gameSocket.js';
 import { mountGameShell } from './ui/gameShell.js';
 import { cardMarkup, cards, hideDeckPreview as hideCardPreview, showDeckPreview } from './ui/cardView.js';
 import { setResource } from './ui/resourceView.js';
-import { setMageFireBadgeActive, updateHealthBadge } from './ui/unitHealthBadge.js';
+import { animateAbilityBadges, setAbilityBadgeState, setMageFireBadgeActive, updateHealthBadge } from './ui/unitHealthBadge.js';
 import { createWorld } from './world/createWorld.js';
 import './style.css';
 
@@ -80,14 +80,34 @@ function applyConstructionState(unit,underConstruction){applyUnitConstructionSta
 const devUnitTools=document.querySelector('#dev-unit-tools');
 const towerId=unit=>unit.userData.serverUnitId??unit.uuid;
 function towerForArcher(unit){return unit?.userData.cardId==='archer'&&unit.userData.mountedOnTowerId?units.find(candidate=>towerId(candidate)===unit.userData.mountedOnTowerId&&candidate.userData.cardId==='tower'&&!candidate.userData.underConstruction):null}
+function archerForTower(tower){return tower?.userData.cardId==='tower'?units.find(candidate=>candidate.userData.cardId==='archer'&&candidate.userData.mountedOnTowerId===towerId(tower)):null}
 function currentRound(){return onlineState?.state.round??round}
+function currentTurnIndex(){const stateRound=currentRound(),seat=onlineState?.state.activeSeat??activePlayer;return(stateRound-1)*2+(seat===2?1:0)}
 function syncInstantCommand(){
   app.dataset.instantAvailable=String(Boolean(towerForArcher(selected)));
+}
+function syncAbilityBadges(){
+  const turn=currentTurnIndex(),me=onlineState?.state.players.find(player=>player.seat===selfSeat);
+  units.forEach(unit=>{
+    if(unit.userData.cardId==='mage'){
+      const remaining=Math.max(0,(unit.userData.instantReadyTurn??0)-turn),owned=onlineState?unit.userData.ownerSeat===selfSeat:unit.userData.ownerSeat===activePlayer;
+      setAbilityBadgeState(unit,{remaining,enabled:owned&&!remaining&&!unit.userData.underConstruction&&Boolean(!me||me.energy>=CARD_BY_ID.mage.instant.cost)});
+    }
+    if(unit.userData.cardId==='tower'){
+      const archer=archerForTower(unit),remaining=Math.max(0,(archer?.userData.abilityReadyTurn??0)-turn),owned=onlineState?unit.userData.ownerSeat===selfSeat:unit.userData.ownerSeat===activePlayer,ownTurn=(onlineState?.state.activeSeat??activePlayer)===unit.userData.ownerSeat;
+      setAbilityBadgeState(unit,{remaining,enabled:Boolean(archer&&owned&&ownTurn&&!remaining&&!archer.userData.actionUsed&&!unit.userData.underConstruction&&(!me||me.energy>=CARD_BY_ID.tower.ability.cost))});
+    }
+  });
 }
 function mageFireTriggerAtPointer(e){
   const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;ray.setFromCamera(pointer,camera);
   const hit=ray.intersectObjects(units,true).find(item=>item.object.userData.mageFireTrigger);if(!hit)return null;
   let unit=hit.object;while(unit.parent&&!unit.userData.selectable)unit=unit.parent;return unit.userData.selectable?unit:null;
+}
+function abilityTriggerAtPointer(e){
+  const rect=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-rect.left)/rect.width)*2-1;pointer.y=-((e.clientY-rect.top)/rect.height)*2+1;ray.setFromCamera(pointer,camera);
+  const hit=ray.intersectObjects(units,true).find(item=>item.object.userData.abilityTrigger);if(!hit)return null;
+  let unit=hit.object;const abilityTrigger=unit.userData.abilityTrigger;while(unit.parent&&!unit.userData.selectable)unit=unit.parent;return unit.userData.selectable?{unit,abilityTrigger}:null;
 }
 function clearMageTargets(){mageTargetMarkers.splice(0).forEach(marker=>scene.remove(marker));if(selected?.userData.cardId==='mage')setMageFireBadgeActive(selected,false);mageAiming=false;mageFireCells=[]}
 function showMageTargets(){
@@ -118,6 +138,7 @@ function baseSeatAtPointer(e){
 function removeLocalUnit(unit){
   const removedTowerId=towerId(unit);units.splice(units.indexOf(unit),1);hoverables.splice(hoverables.indexOf(unit),1);scene.remove(unit);
   units.filter(candidate=>candidate.userData.mountedOnTowerId===removedTowerId).forEach(candidate=>{candidate.userData.mountedOnTowerId=null;candidate.userData.attackRange=CARD_BY_ID[candidate.userData.cardId].attackRange;candidate.position.y=.06;setArcherMountedState(candidate,false)});
+  syncAbilityBadges();
 }
 function damageLocalUnit(unit,amount){if(!unit||!units.includes(unit))return;damageEffects.show(unit.position,amount);unit.userData.hp-=amount;updateHealthBadge(unit);if(unit.userData.hp<=0)removeLocalUnit(unit)}
 function applyLocalFireEntry(unit){
@@ -134,7 +155,7 @@ function placeArcherOnTower(unit,tower){
   if(mount)unit.position.copy(mount.getWorldPosition(archerMountPoint));else unit.position.set(tower.position.x,.94,tower.position.z);
   setArcherMountedState(unit,true);
 }
-function mountArcherLocally(unit,tower){placeArcherOnTower(unit,tower);unit.userData.mountedOnTowerId=towerId(tower);unit.userData.attackRange=CARD_BY_ID.archer.attackRange+1;selectUnit(unit,{cinematic:false})}
+function mountArcherLocally(unit,tower){placeArcherOnTower(unit,tower);unit.userData.mountedOnTowerId=towerId(tower);unit.userData.attackRange=CARD_BY_ID.archer.attackRange+1;selectUnit(unit,{cinematic:false});syncAbilityBadges()}
 function moveOrAttackUnit(unit,destination,explicitTarget=null,originPosition=unit.position.clone()){
   const origin={x:Math.round((originPosition.x+half)/tile),z:Math.round((originPosition.z+half)/tile)};
   const occupants=unitsAtCell(destination.x,destination.z,unit),target=explicitTarget??occupants.find(item=>item!==unit)??null;
@@ -197,6 +218,11 @@ function toggleMageFireCell(destination){
 }
 function pick(e){
   if(justDragged){justDragged=false;return}
+  const abilityHit=abilityTriggerAtPointer(e);if(abilityHit){
+    if(abilityHit.abilityTrigger==='acid'){if(selected!==abilityHit.unit)selectUnit(abilityHit.unit,{cinematic:false});activateMageAcid()}
+    else{const archer=archerForTower(abilityHit.unit);if(archer){if(selected!==archer)selectUnit(archer,{cinematic:false});activateTowerAbility()}}
+    return
+  }
   const fireMage=mageFireTriggerAtPointer(e);if(fireMage){if(selected!==fireMage)selectUnit(fireMage,{cinematic:false});activateMageFire();return}
   if(selectedCardElement())return playSelectedCardAtPointer(e);
   const clickedBaseSeat=selected&&canCommandUnit(selected)?baseSeatAtPointer(e):null,enemySeat=selected?.userData.ownerSeat===1?2:1;
@@ -207,7 +233,7 @@ function pick(e){
   if(u)selectUnit(u);
 }
 function startDrag(e){
-  if(e.button!==0)return;if(mageFireTriggerAtPointer(e)){e.preventDefault();e.stopPropagation();return}const u=unitAtPointer(e);if(!u)return;
+  if(e.button!==0)return;if(abilityTriggerAtPointer(e)||mageFireTriggerAtPointer(e)){e.preventDefault();e.stopPropagation();return}const u=unitAtPointer(e);if(!u)return;
   if(selectedCardElement()||(selected&&selected!==u&&canCommandUnit(selected)))return;
   if(devMode&&u.userData.ownerSeat!==activePlayer){selectUnit(u,{cinematic:false});return showGameError('Passe o turno para controlar este reino.');}
   if(u.userData.cardType==='construction'||u.userData.underConstruction)return showGameError(u.userData.underConstruction?'A construção ainda não foi concluída.':'Esta construção não pode se mover.');
@@ -278,9 +304,9 @@ function setKingdomProgressHud(citizens,level,enemyLevel=1){document.querySelect
 function syncTurnRoundStatus(turn,roundNumber){document.querySelector('#turn-round-card').hidden=false;document.querySelector('#current-turn-number').textContent=String(turn);document.querySelector('#current-round-number').textContent=String(roundNumber)}
 function syncLocalKingdomHud(){const localUnits=units.map(unit=>({ownerSeat:unit.userData.ownerSeat??1,cardId:unit.userData.cardId,x:Math.round((unit.position.x+half)/tile),z:Math.round((unit.position.z+half)/tile),underConstruction:Boolean(unit.userData.underConstruction)})),citizens=citizensForSeat(1,localUnits,roads,GAME_CONFIG.boardSize),level=citizens>=GAME_CONFIG.level2CitizenRequirement&&completedRoadCount(1,roads)>=GAME_CONFIG.level2RoadRequirement?2:1;setKingdomProgressHud(citizens,level)}
 function finishLocalRoadsForSeat(seat){let roadsChanged=false;roads.forEach(road=>{if(road.underConstruction&&road.ownerSeat===seat&&road.buildReadyRound<=round){road.underConstruction=false;roadsChanged=true}});if(roadsChanged)reconcileRoads([...roads])}
-function endTurn(){if(onlineState)return sendOnlineAction({type:'end_turn'});resolveLocalFires(activePlayer);activePlayer=activePlayer===1?2:1;if(activePlayer===1)round++;units.filter(unit=>unit.userData.underConstruction&&unit.userData.ownerSeat===activePlayer&&unit.userData.buildReadyRound<=round).forEach(unit=>applyConstructionState(unit,false));finishLocalRoadsForSeat(activePlayer);units.filter(unit=>unit.userData.ownerSeat===activePlayer).forEach(unit=>{unit.userData.actionUsed=false;unit.userData.abilityUsed=false});syncTurnRoundStatus(activePlayer,round);syncLocalKingdomHud();showDeploymentArea(false);clearMageTargets();syncInstantCommand();syncMageCommands()}
+function endTurn(){if(onlineState)return sendOnlineAction({type:'end_turn'});resolveLocalFires(activePlayer);activePlayer=activePlayer===1?2:1;if(activePlayer===1)round++;units.filter(unit=>unit.userData.underConstruction&&unit.userData.ownerSeat===activePlayer&&unit.userData.buildReadyRound<=round).forEach(unit=>applyConstructionState(unit,false));finishLocalRoadsForSeat(activePlayer);units.filter(unit=>unit.userData.ownerSeat===activePlayer).forEach(unit=>{unit.userData.actionUsed=false;unit.userData.abilityUsed=false});syncTurnRoundStatus(activePlayer,round);syncLocalKingdomHud();showDeploymentArea(false);clearMageTargets();syncInstantCommand();syncMageCommands();syncAbilityBadges()}
 function syncDevKingdomHud(){const localUnits=units.map(unit=>({ownerSeat:unit.userData.ownerSeat??1,cardId:unit.userData.cardId,x:Math.round((unit.position.x+half)/tile),z:Math.round((unit.position.z+half)/tile),underConstruction:Boolean(unit.userData.underConstruction)})),citizens=citizensForSeat(activePlayer,localUnits,roads,GAME_CONFIG.boardSize),enemySeat=activePlayer===1?2:1;setKingdomProgressHud(citizens,devKingdoms[activePlayer].baseLevel,devKingdoms[enemySeat].baseLevel);document.querySelector('#level-requirement').textContent=`Nível selecionado manualmente para o Reino ${activePlayer}.`;setResource('#self-health',devKingdoms[activePlayer].hp,GAME_CONFIG.startingBaseHp);document.querySelector('.enemy-base-tag i').style.width=`${devKingdoms[enemySeat].hp/GAME_CONFIG.startingBaseHp*100}%`;document.querySelector('#turn-label').textContent=`REINO ${activePlayer} · TURNO ${round}`;syncDevSettings()}
-function endDevTurn(){resolveLocalFires(activePlayer);clearUnitSelection();activePlayer=activePlayer===1?2:1;if(activePlayer===1)round++;selfSeat=activePlayer;units.filter(unit=>unit.userData.underConstruction&&unit.userData.ownerSeat===activePlayer&&(devInstantBuild||unit.userData.buildReadyRound<=round)).forEach(unit=>applyConstructionState(unit,false));finishLocalRoadsForSeat(activePlayer);units.filter(unit=>unit.userData.ownerSeat===activePlayer).forEach(unit=>{unit.userData.actionUsed=false;unit.userData.abilityUsed=false});syncTurnRoundStatus(activePlayer,round);syncDevKingdomHud();showDeploymentArea(false);syncInstantCommand();syncMageCommands();cameraTransition.focusBoard({side:activePlayer===2?-1:1})}
+function endDevTurn(){resolveLocalFires(activePlayer);clearUnitSelection();activePlayer=activePlayer===1?2:1;if(activePlayer===1)round++;selfSeat=activePlayer;units.filter(unit=>unit.userData.underConstruction&&unit.userData.ownerSeat===activePlayer&&(devInstantBuild||unit.userData.buildReadyRound<=round)).forEach(unit=>applyConstructionState(unit,false));finishLocalRoadsForSeat(activePlayer);units.filter(unit=>unit.userData.ownerSeat===activePlayer).forEach(unit=>{unit.userData.actionUsed=false;unit.userData.abilityUsed=false});syncTurnRoundStatus(activePlayer,round);syncDevKingdomHud();showDeploymentArea(false);syncInstantCommand();syncMageCommands();syncAbilityBadges();cameraTransition.focusBoard({side:activePlayer===2?-1:1})}
 document.querySelector('#end-turn').addEventListener('click',()=>devMode?endDevTurn():endTurn());addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.target.closest?.('input,select,button'))(devMode?endDevTurn():endTurn())});
 
 const deckPreview=document.querySelector('#deck-preview');
@@ -316,7 +342,7 @@ function cardTileAtPointer(e,cardIndex=Number(selectedCardElement()?.dataset.car
 function makeSummonedUnit(cardIndex){
   return createCardUnit(cards[cardIndex],cardIndex);
 }
-function summonCard(cardIndex,x,z,mountableTower=null,level=devCardLevel){const card=cards[cardIndex];if(card.id==='road'){reconcileRoads([...roads,{id:`local-road-${roads.length+1}`,ownerSeat:activePlayer,x:Math.round((x+half)/tile),z:Math.round((z+half)/tile),underConstruction:!devInstantBuild,buildReadyRound:round+card.buildRounds}]);syncDevKingdomHud();return}const unit=makeSummonedUnit(cardIndex);unit.position.set(x,.06,z);unit.userData.ownerSeat=activePlayer;unit.userData.devLevel=level;unit.rotation.y=card.id==='cannon'&&activePlayer===2?Math.PI:0;setUnitTeamColor(unit,activePlayer===1?0x168cff:0xff352f);units.push(unit);hoverables.push(unit);scene.add(unit);if(card.buildRounds&&!devInstantBuild){unit.userData.buildReadyRound=round+card.buildRounds;applyConstructionState(unit,true)}if(card.id==='archer'&&mountableTower)mountArcherLocally(unit,mountableTower);else selectUnit(unit,{cinematic:false});syncDevKingdomHud()}
+function summonCard(cardIndex,x,z,mountableTower=null,level=devCardLevel){const card=cards[cardIndex];if(card.id==='road'){reconcileRoads([...roads,{id:`local-road-${roads.length+1}`,ownerSeat:activePlayer,x:Math.round((x+half)/tile),z:Math.round((z+half)/tile),underConstruction:!devInstantBuild,buildReadyRound:round+card.buildRounds}]);syncDevKingdomHud();return}const unit=makeSummonedUnit(cardIndex);unit.position.set(x,.06,z);unit.userData.ownerSeat=activePlayer;unit.userData.devLevel=level;unit.rotation.y=card.id==='cannon'&&activePlayer===2?Math.PI:0;setUnitTeamColor(unit,activePlayer===1?0x168cff:0xff352f);units.push(unit);hoverables.push(unit);scene.add(unit);if(card.buildRounds&&!devInstantBuild){unit.userData.buildReadyRound=round+card.buildRounds;applyConstructionState(unit,true)}if(card.id==='archer'&&mountableTower)mountArcherLocally(unit,mountableTower);else selectUnit(unit,{cinematic:false});syncDevKingdomHud();syncAbilityBadges()}
 const summonFlightPoint=new THREE.Vector3();
 function animateCardSummon(cardNode,tileInfo,onCommit){
   if(cardCasting)return false;cardCasting=true;
@@ -388,16 +414,17 @@ function moveTray(direction){const dock=document.querySelector('.card-dock'),max
 document.querySelector('.card-dock').addEventListener('wheel',event=>{if(Math.abs(event.deltaY)<Math.abs(event.deltaX))return;event.preventDefault();moveTray(event.deltaY>0?-1:1)},{passive:false});
 
 function sendOnlineAction(action){if(onlineState&&onlineSocket)onlineSocket.sendAction(action,onlineState.state.version)}
-function activateSelectedInstant(){
-  const tower=towerForArcher(selected),owned=devMode?selected?.userData.ownerSeat===activePlayer:selected?.userData.ownerSeat===selfSeat,me=onlineState?.state.players.find(player=>player.seat===selfSeat);
-  if(!tower||!owned||selected.userData.instantUsedRound===currentRound()||Boolean(me&&me.energy<CARD_BY_ID.tower.instant.cost))return;
-  if(onlineState){sendOnlineAction({type:'use_instant',unitId:selected.userData.serverUnitId});return}
+function activateTowerAbility(){
+  const tower=towerForArcher(selected),owned=devMode?selected?.userData.ownerSeat===activePlayer:selected?.userData.ownerSeat===selfSeat,me=onlineState?.state.players.find(player=>player.seat===selfSeat),ownTurn=(onlineState?.state.activeSeat??activePlayer)===selected?.userData.ownerSeat;
+  const ability=CARD_BY_ID.tower.ability,ready=(selected?.userData.abilityReadyTurn??0)<=currentTurnIndex();
+  if(!tower||!owned||!ownTurn||selected.userData.actionUsed||!ready||Boolean(me&&me.energy<ability.cost))return;
+  if(onlineState){sendOnlineAction({type:'use_ability',unitId:selected.userData.serverUnitId});return}
   const directions=[[1,0],[-1,0],[0,1],[0,-1]],origin={x:Math.round((selected.position.x+half)/tile),z:Math.round((selected.position.z+half)/tile)};
   for(const [dx,dz] of directions){
-    const target=units.filter(unit=>unit!==selected).map(unit=>{const x=Math.round((unit.position.x+half)/tile),z=Math.round((unit.position.z+half)/tile),step=dx?(x-origin.x)/dx:(z-origin.z)/dz;return{unit,x,z,step}}).filter(item=>item.step>=1&&item.step<=3&&item.x===origin.x+dx*item.step&&item.z===origin.z+dz*item.step).sort((a,b)=>a.step-b.step)[0]?.unit;
-    if(target&&target.userData.ownerSeat!==selected.userData.ownerSeat){target.userData.hp-=2;updateHealthBadge(target);if(target.userData.hp<=0){units.splice(units.indexOf(target),1);hoverables.splice(hoverables.indexOf(target),1);scene.remove(target)}}
+    const target=units.filter(unit=>unit!==selected).map(unit=>{const x=Math.round((unit.position.x+half)/tile),z=Math.round((unit.position.z+half)/tile),step=dx?(x-origin.x)/dx:(z-origin.z)/dz;return{unit,x,z,step}}).filter(item=>item.step>=1&&item.step<=ability.range&&item.x===origin.x+dx*item.step&&item.z===origin.z+dz*item.step).sort((a,b)=>a.step-b.step)[0]?.unit;
+    if(target&&target.userData.ownerSeat!==selected.userData.ownerSeat)damageLocalUnit(target,ability.damage);
   }
-  selected.userData.instantUsedRound=round;syncInstantCommand();
+  selected.userData.actionUsed=true;selected.userData.abilityUsed=true;selected.userData.abilityReadyTurn=currentTurnIndex()+(ability.cooldownTurns??2);syncInstantCommand();syncAbilityBadges();
 }
 function castMageFireLocally(cells){
   const additions=cells.map((cell,index)=>({id:`local-fire-${round}-${Date.now()}-${index}`,ownerSeat:selected.userData.ownerSeat??activePlayer,casterUnitId:selected.uuid,...cell,damagedUnitIds:[]}));
@@ -416,15 +443,16 @@ function activateMageFire(){
 }
 function activateMageAcid(){
   const owned=devMode?selected?.userData.ownerSeat===activePlayer:selected?.userData.ownerSeat===selfSeat,me=onlineState?.state.players.find(player=>player.seat===selfSeat);
-  const unavailable=selected?.userData.cardId!=='mage'||!owned||selected.userData.actionUsed||selected.userData.abilityUsed||Boolean(onlineState&&(onlineState.state.activeSeat!==selfSeat||me.energy<CARD_BY_ID.mage.ability.cost));
+  const instant=CARD_BY_ID.mage.instant,ready=(selected?.userData.instantReadyTurn??0)<=currentTurnIndex();
+  const unavailable=selected?.userData.cardId!=='mage'||!owned||!ready||selected.userData.underConstruction||Boolean(me&&me.energy<instant.cost);
   if(unavailable)return;
   mageEffects.castAcid(selected);
-  if(onlineState){sendOnlineAction({type:'use_ability',unitId:selected.userData.serverUnitId});return}
+  if(onlineState){sendOnlineAction({type:'use_instant',unitId:selected.userData.serverUnitId});return}
   const origin={x:Math.round((selected.position.x+half)/tile),z:Math.round((selected.position.z+half)/tile)};
-  [...units].filter(unit=>unit!==selected&&Math.max(Math.abs(Math.round((unit.position.x+half)/tile)-origin.x),Math.abs(Math.round((unit.position.z+half)/tile)-origin.z))<=1).forEach(unit=>damageLocalUnit(unit,CARD_BY_ID.mage.ability.damage));
-  selected.userData.actionUsed=true;selected.userData.abilityUsed=true;syncMageCommands();
+  [...units].filter(unit=>unit!==selected&&Math.max(Math.abs(Math.round((unit.position.x+half)/tile)-origin.x),Math.abs(Math.round((unit.position.z+half)/tile)-origin.z))<=instant.radius).forEach(unit=>damageLocalUnit(unit,instant.damage));
+  selected.userData.instantUsedRound=currentRound();selected.userData.instantReadyTurn=currentTurnIndex()+(instant.cooldownTurns??2);syncMageCommands();syncAbilityBadges();
 }
-addEventListener('keydown',event=>{if(event.key.toLowerCase()!=='f'||event.repeat||event.target.closest?.('input,textarea'))return;event.preventDefault();if(selected?.userData.cardId==='mage')activateMageAcid();else activateSelectedInstant()});
+addEventListener('keydown',event=>{if(event.key.toLowerCase()!=='f'||event.repeat||event.target.closest?.('input,textarea'))return;event.preventDefault();if(selected?.userData.cardId==='mage')activateMageAcid();else activateTowerAbility()});
 function renderOnlineHand(instances){
   hand.replaceChildren();
   for(const instance of instances){const c=CARD_BY_ID[instance.cardId],index=cards.findIndex(card=>card.id===instance.cardId);if(!c||index<0||!/^[-0-9a-f]{36}$/i.test(instance.instanceId))continue;const holder=document.createElement('div');holder.innerHTML=cardMarkup(cards[index],index);const node=holder.firstElementChild;node.dataset.instance=instance.instanceId;hand.appendChild(node)}
@@ -433,7 +461,7 @@ function renderOnlineHand(instances){
 }
 function onlineUnit(data){
   const index=cards.findIndex(card=>card.id===data.cardId),unit=makeSummonedUnit(index),card=cards[index];
-  unit.userData={...unit.userData,serverUnitId:data.id,ownerSeat:data.ownerSeat,cardId:data.cardId,cardIndex:index,hp:data.hp,maxHp:card.hp,actionUsed:data.actionUsed,abilityUsed:data.abilityUsed,instantUsedRound:data.instantUsedRound,mountedOnTowerId:data.mountedOnTowerId,buildReadyRound:data.buildReadyRound,attackRange:card.attackRange+(data.cardId==='archer'&&data.mountedOnTowerId?1:0)};
+  unit.userData={...unit.userData,serverUnitId:data.id,ownerSeat:data.ownerSeat,cardId:data.cardId,cardIndex:index,hp:data.hp,maxHp:card.hp,actionUsed:data.actionUsed,abilityUsed:data.abilityUsed,abilityReadyTurn:data.abilityReadyTurn??0,instantUsedRound:data.instantUsedRound,instantReadyTurn:data.instantReadyTurn??0,mountedOnTowerId:data.mountedOnTowerId,buildReadyRound:data.buildReadyRound,attackRange:card.attackRange+(data.cardId==='archer'&&data.mountedOnTowerId?1:0)};
   updateHealthBadge(unit);
   const color=data.ownerSeat===1?0x168cff:0xff352f;setUnitTeamColor(unit,color);
   applyConstructionState(unit,Boolean(data.underConstruction));unit.position.set(data.x*tile-half,.06,data.z*tile-half);unit.rotation.y=data.cardId==='cannon'&&data.ownerSeat===2?Math.PI:0;setArcherMountedState(unit,false);return unit;
@@ -444,6 +472,7 @@ function reconcileOnlineUnits(serverUnits){
   clearMovementGrid();clearMageTargets();units.splice(0).forEach(unit=>scene.remove(unit));hoverables.splice(0);selected=null;syncInstantCommand();syncMageCommands();
   serverUnits.forEach(data=>{const unit=onlineUnit(data);units.push(unit);hoverables.push(unit);scene.add(unit)});
   units.filter(isMountedArcher).forEach(unit=>{const tower=towerForArcher(unit);if(tower)placeArcherOnTower(unit,tower)});
+  syncAbilityBadges();
   app.dataset.onlineUnits=String(serverUnits.length);
 }
 function setOnlinePerspective(){cameraTransition.cancel();camera.position.set(0,16,selfSeat===1?5.2:-5.2);camera.lookAt(0,0,0);controls.target.set(0,.2,0);controls.update();app.dataset.seat=String(selfSeat);app.dataset.perspectiveResets=String(Number(app.dataset.perspectiveResets??0)+1)}
@@ -461,6 +490,7 @@ function applyOnlineState(payload){
   document.querySelector('.enemy-base-tag').setAttribute('aria-label',`Castelo inimigo nível ${enemy.baseLevel??1}, vida ${enemy.baseHp} de ${GAME_CONFIG.startingBaseHp}`);
   const mine=payload.state.activeSeat===selfSeat,finished=payload.state.phase==='finished';document.querySelector('#turn-label').textContent=finished?(payload.state.winnerSeat===selfSeat?'VITÓRIA':'DERROTA'):(mine?'SEU TURNO':'TURNO RIVAL');document.querySelector('#end-turn').disabled=!mine||finished;
   syncTurnRoundStatus(payload.state.activeSeat,payload.state.round);
+  syncAbilityBadges();
 }
 const lobbyError=document.querySelector('#lobby-error'),gameError=document.querySelector('#game-error'),connectionState=document.querySelector('#connection-state');let gameErrorTimer;function showGameError(message){gameError.textContent=message;clearTimeout(gameErrorTimer);gameErrorTimer=setTimeout(()=>gameError.textContent='',2800)}onlineSocket=new GameSocketClient();
 onlineSocket.addEventListener('connected',()=>{connectionState.textContent='SERVIDOR CONECTADO';lobbyError.textContent='';document.querySelectorAll('#create-room,#join-room').forEach(button=>button.disabled=false)});
@@ -471,7 +501,7 @@ document.querySelectorAll('#create-room,#join-room').forEach(button=>button.disa
 document.querySelector('#room-code').addEventListener('input',event=>{event.target.value=event.target.value.toUpperCase().replace(/[^A-Z2-9]/g,'').slice(0,6)});
 document.querySelector('#create-room').addEventListener('click',()=>onlineSocket.createRoom(document.querySelector('#player-name').value));
 document.querySelector('#join-room').addEventListener('click',()=>onlineSocket.joinRoom(document.querySelector('#room-code').value,document.querySelector('#player-name').value));
-function initializeDevMode(){devMode=true;onlineState=null;activePlayer=1;round=1;selfSeat=1;app.dataset.mode='dev';document.querySelector('#online-lobby').classList.add('closed');document.querySelector('#match-state').hidden=false;document.querySelector('#turn-clock').textContent='∞';document.querySelector('#end-turn').disabled=false;setResource('#self-energy','∞','');hand.replaceChildren();document.querySelector('#hand-count').textContent='0 CARTAS';deckRemaining=Number.POSITIVE_INFINITY;document.querySelector('#deck-count').textContent='∞';document.querySelector('[data-dev-settings]').hidden=false;devUnitTools.hidden=true;units.splice(0).forEach(unit=>scene.remove(unit));hoverables.splice(0);reconcileRoads([]);reconcileFires([]);keepForSeat(1).scale.setScalar(1);keepForSeat(2).scale.setScalar(1);setOnlinePerspective();syncTurnRoundStatus(activePlayer,round);syncDevKingdomHud();syncDevSettings();showDeploymentArea(false)}
+function initializeDevMode(){devMode=true;onlineState=null;activePlayer=1;round=1;selfSeat=1;app.dataset.mode='dev';document.querySelector('#online-lobby').classList.add('closed');document.querySelector('#match-state').hidden=false;document.querySelector('#turn-clock').textContent='∞';document.querySelector('#end-turn').disabled=false;setResource('#self-energy','∞','');hand.replaceChildren();document.querySelector('#hand-count').textContent='0 CARTAS';deckRemaining=Number.POSITIVE_INFINITY;document.querySelector('#deck-count').textContent='∞';document.querySelector('[data-dev-settings]').hidden=false;devUnitTools.hidden=true;units.splice(0).forEach(unit=>scene.remove(unit));hoverables.splice(0);reconcileRoads([]);reconcileFires([]);keepForSeat(1).scale.setScalar(1);keepForSeat(2).scale.setScalar(1);setOnlinePerspective();syncTurnRoundStatus(activePlayer,round);syncDevKingdomHud();syncDevSettings();showDeploymentArea(false);syncAbilityBadges()}
 document.querySelector('#dev-mode').addEventListener('click',initializeDevMode);
 addEventListener('keydown',event=>{if(event.key!=='Escape'||gallery.hidden)return;if(!galleryDetail.hidden){galleryDetail.hidden=true;return}closeDevGallery()});
 onlineSocket.connect();
@@ -482,5 +512,5 @@ const enemyBaseTag=document.querySelector('.enemy-base-tag');
 const baseTagPoint=new THREE.Vector3();
 function positionEnemyStatus(){const target=selfSeat===2?alliedKeep:enemyKeep;target.getWorldPosition(baseTagPoint);baseTagPoint.y+=4.9;baseTagPoint.project(camera);enemyBaseTag.style.left=`${(baseTagPoint.x*.5+.5)*innerWidth}px`;enemyBaseTag.style.top=`${(-baseTagPoint.y*.5+.5)*innerHeight}px`;enemyBaseTag.style.visibility=baseTagPoint.z<1?'visible':'hidden';}
 let lastStatusUpdate=0;
-function animate(){requestAnimationFrame(animate);const delta=clock.getDelta(),t=clock.elapsedTime;controls.update();cameraTransition.update();damageEffects.update(delta);mageEffects.update(delta);if(t-lastStatusUpdate>(graphicsQuality==='low'?.1:.033)){positionEnemyStatus();lastStatusUpdate=t}topDeckCard.position.y=THREE.MathUtils.lerp(topDeckCard.position.y,deckHover ? .98 : .766,.14);topDeckCard.rotation.z=THREE.MathUtils.lerp(topDeckCard.rotation.z,deckHover ? -.08 : 0,.12);if(graphicsQuality==='high'){updateDynamicLighting(t);updateTerrain(t);units.forEach((u,i)=>{const rig=u.getObjectByName('rig');rig.position.y=.18+Math.sin(t*1.35+i*1.7)*.012;rig.rotation.z=Math.sin(t*.8+i)*.006;u.traverse(o=>{if(o.userData.magic){o.rotation.y=t*1.5;}})});fireMeshes.forEach(group=>group.traverse(o=>{if(o.userData.flame){o.scale.y=.86+Math.sin(t*8+o.userData.phase)*.16;o.rotation.y=t*1.7+o.userData.phase}}));wisps.forEach((w,i)=>{w.position.x=w.userData.baseX+Math.sin(t*.12+i)*.55;w.material.opacity=.012+i*.003+Math.sin(t*.35+i)*.004;});fireLights.forEach((light,i)=>{const pulse=.91+Math.sin(t*7.4+light.userData.phase)*.065+Math.sin(t*13.1+i)*.025;light.intensity=light.userData.baseIntensity*pulse;})}renderer.render(scene,camera)}
+function animate(){requestAnimationFrame(animate);const delta=clock.getDelta(),t=clock.elapsedTime;controls.update();cameraTransition.update();damageEffects.update(delta);mageEffects.update(delta);animateAbilityBadges(units,t);if(t-lastStatusUpdate>(graphicsQuality==='low'?.1:.033)){positionEnemyStatus();lastStatusUpdate=t}topDeckCard.position.y=THREE.MathUtils.lerp(topDeckCard.position.y,deckHover ? .98 : .766,.14);topDeckCard.rotation.z=THREE.MathUtils.lerp(topDeckCard.rotation.z,deckHover ? -.08 : 0,.12);if(graphicsQuality==='high'){updateDynamicLighting(t);updateTerrain(t);units.forEach((u,i)=>{const rig=u.getObjectByName('rig');rig.position.y=.18+Math.sin(t*1.35+i*1.7)*.012;rig.rotation.z=Math.sin(t*.8+i)*.006;u.traverse(o=>{if(o.userData.magic){o.rotation.y=t*1.5;}})});fireMeshes.forEach(group=>group.traverse(o=>{if(o.userData.flame){o.scale.y=.86+Math.sin(t*8+o.userData.phase)*.16;o.rotation.y=t*1.7+o.userData.phase}}));wisps.forEach((w,i)=>{w.position.x=w.userData.baseX+Math.sin(t*.12+i)*.55;w.material.opacity=.012+i*.003+Math.sin(t*.35+i)*.004;});fireLights.forEach((light,i)=>{const pulse=.91+Math.sin(t*7.4+light.userData.phase)*.065+Math.sin(t*13.1+i)*.025;light.intensity=light.userData.baseIntensity*pulse;})}renderer.render(scene,camera)}
 function resize(){const aspect=innerWidth/innerHeight,view=innerWidth<700?12.6:11.45;camera.left=-view*aspect;camera.right=view*aspect;camera.top=view;camera.bottom=-view;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,graphicsQuality==='low'?.9:1.7))}addEventListener('resize',resize);resize();animate();setTimeout(()=>document.querySelector('.loading').classList.add('done'),500);

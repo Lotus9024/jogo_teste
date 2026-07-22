@@ -77,8 +77,8 @@ test('cartas usam os atributos definidos', () => {
     { minAttackRange: 1, attackRange: 2 }
   );
   Object.values(CARD_BY_ID).forEach(card => {
-    assert.equal(card.ability.enabled, card.id === 'mage');
-    assert.equal(card.instant.enabled, card.id === 'tower');
+    assert.equal(card.ability.enabled, card.id === 'tower');
+    assert.equal(card.instant.enabled, card.id === 'mage');
   });
   assert.deepEqual(
     { minAttackRange: CARD_BY_ID.archer.minAttackRange, attackRange: CARD_BY_ID.archer.attackRange, ability: CARD_BY_ID.archer.ability.name },
@@ -130,20 +130,28 @@ test('tropa que entra no fogo sofre um dano apenas uma vez', () => {
   assert.equal(room.state.fires.length, 0);
 });
 
-test('círculo ácido do Mago atinge inimigos e aliados ao redor', () => {
-  const { rooms, room, first } = match();
+test('círculo ácido do Mago é instantâneo e recarrega após dois turnos', () => {
+  const { rooms, room, first, second } = match();
   room.state.units.push(
-    { id: 'mage-acid', ownerSeat: 1, cardId: 'mage', x: 7, z: 8, hp: 2, shield: 0, actionUsed: false, abilityUsed: false },
+    { id: 'mage-acid', ownerSeat: 1, cardId: 'mage', x: 7, z: 8, hp: 2, shield: 0, actionUsed: true, instantReadyTurn: 0 },
     { id: 'acid-ally', ownerSeat: 1, cardId: 'guard', x: 6, z: 8, hp: 4, shield: 0, actionUsed: false },
     { id: 'acid-enemy', ownerSeat: 2, cardId: 'guard', x: 8, z: 9, hp: 4, shield: 0, actionUsed: false },
     { id: 'acid-safe', ownerSeat: 2, cardId: 'guard', x: 9, z: 8, hp: 4, shield: 0, actionUsed: false }
   );
-  rooms.action(room.code, first.id, { type: 'use_ability', unitId: 'mage-acid' }, room.state.version);
+  rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
+  rooms.action(room.code, first.id, { type: 'use_instant', unitId: 'mage-acid' }, room.state.version);
   assert.equal(room.state.units.find(unit => unit.id === 'acid-ally').hp, 1);
   assert.equal(room.state.units.find(unit => unit.id === 'acid-enemy').hp, 1);
   assert.equal(room.state.units.find(unit => unit.id === 'acid-safe').hp, 4);
   assert.equal(room.state.units.find(unit => unit.id === 'mage-acid').hp, 2);
   assert.equal(room.state.players[0].energy, 6);
+  assert.equal(room.state.units.find(unit => unit.id === 'mage-acid').instantReadyTurn, 3);
+  assert.throws(() => rooms.action(room.code, first.id, { type: 'use_instant', unitId: 'mage-acid' }, room.state.version), /indisponível/);
+  rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
+  assert.throws(() => rooms.action(room.code, first.id, { type: 'use_instant', unitId: 'mage-acid' }, room.state.version), /indisponível/);
+  rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
+  rooms.action(room.code, first.id, { type: 'use_instant', unitId: 'mage-acid' }, room.state.version);
+  assert.equal(room.state.units.some(unit => ['acid-ally', 'acid-enemy'].includes(unit.id)), false);
 });
 
 test('Mago rejeita fogo duplicado, distante ou com mais de duas casas', () => {
@@ -387,23 +395,27 @@ test('arqueiro pode subir na torre e recebe mais um de alcance', () => {
   assert.equal(room.state.units.find(unit => unit.id === 'range-five').hp, 2);
 });
 
-test('rajada da torre funciona em qualquer turno e recarrega após uma rodada', () => {
+test('rajada da torre funciona no próprio turno e recarrega após uma rodada', () => {
   const { rooms, room, first, second } = match();
   room.state.units.push(
     { id: 'tower-seat-2', ownerSeat: 2, cardId: 'tower', x: 7, z: 4, hp: 5, shield: 0, actionUsed: false, underConstruction: false },
-    { id: 'archer-seat-2', ownerSeat: 2, cardId: 'archer', x: 7, z: 4, hp: 2, shield: 0, actionUsed: false, instantUsedRound: 0, mountedOnTowerId: 'tower-seat-2' },
+    { id: 'archer-seat-2', ownerSeat: 2, cardId: 'archer', x: 7, z: 4, hp: 2, shield: 0, actionUsed: false, abilityReadyTurn: 0, mountedOnTowerId: 'tower-seat-2' },
     { id: 'east', ownerSeat: 1, cardId: 'guard', x: 9, z: 4, hp: 4, shield: 0 },
     { id: 'west', ownerSeat: 1, cardId: 'guard', x: 5, z: 4, hp: 4, shield: 0 },
     { id: 'south', ownerSeat: 1, cardId: 'guard', x: 7, z: 6, hp: 4, shield: 0 },
     { id: 'north', ownerSeat: 1, cardId: 'guard', x: 7, z: 2, hp: 4, shield: 0 }
   );
-  rooms.action(room.code, second.id, { type: 'use_instant', unitId: 'archer-seat-2' }, room.state.version);
+  assert.throws(() => rooms.action(room.code, second.id, { type: 'use_ability', unitId: 'archer-seat-2' }, room.state.version), /turno/);
+  rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
+  rooms.action(room.code, second.id, { type: 'use_ability', unitId: 'archer-seat-2' }, room.state.version);
   for (const id of ['east', 'west', 'south', 'north']) assert.equal(room.state.units.find(unit => unit.id === id).hp, 2);
   assert.equal(room.state.players[1].energy, 8);
-  assert.throws(() => rooms.action(room.code, second.id, { type: 'use_instant', unitId: 'archer-seat-2' }, room.state.version), /indisponível/);
-  rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
+  assert.equal(room.state.units.find(unit => unit.id === 'archer-seat-2').abilityReadyTurn, 3);
+  assert.throws(() => rooms.action(room.code, second.id, { type: 'use_ability', unitId: 'archer-seat-2' }, room.state.version), /indisponível/);
   rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
-  rooms.action(room.code, second.id, { type: 'use_instant', unitId: 'archer-seat-2' }, room.state.version);
+  assert.throws(() => rooms.action(room.code, second.id, { type: 'use_ability', unitId: 'archer-seat-2' }, room.state.version), /turno/);
+  rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
+  rooms.action(room.code, second.id, { type: 'use_ability', unitId: 'archer-seat-2' }, room.state.version);
   assert.equal(room.state.units.some(unit => ['east', 'west', 'south', 'north'].includes(unit.id)), false);
 });
 

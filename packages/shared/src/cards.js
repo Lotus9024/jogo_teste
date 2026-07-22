@@ -26,8 +26,8 @@ export const CARD_DEFINITIONS = Object.freeze([
   Object.freeze({
     id: 'tower', name: 'Torre', description: 'Uma torre que precisa de um arqueiro em seu topo. O arqueiro montado recebe +1 de alcance e pode atacar mesmo com unidades à frente.',
     hp: 5, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 7, buildRounds: 2, type: 'construction', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'CONSTRUÇÃO · TORRE', glyph: '♜',
-    ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'A torre precisa de um arqueiro para funcionar.', enabled: false }),
-    instant: Object.freeze({ name: 'Rajada cardinal', cost: 2, cooldownRounds: 1, range: 3, damage: 2, description: 'Dispara uma flecha em cada direção reta, alcançando até 3 casas e causando 2 de dano.', enabled: true })
+    ability: Object.freeze({ name: 'Rajada cardinal', cost: 2, cooldownTurns: 2, range: 3, damage: 2, description: 'Durante seu turno, dispara uma flecha em cada direção reta, alcançando até 3 casas e causando 2 de dano. Recarrega após 1 rodada.', enabled: true }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
     id: 'operator', name: 'Operador', description: 'Esse operador pode operar tudo, ou quase tudo. Posicione-o atrás de uma máquina para fazê-la funcionar.',
@@ -57,8 +57,8 @@ export const CARD_DEFINITIONS = Object.freeze([
   Object.freeze({
     id: 'mage', name: 'Mago', description: 'Conjura fogo em uma ou duas casas a até 4 quadrados, mesmo com unidades à frente. O impacto causa 2 de dano e as chamas causam mais 1 se uma tropa permanecer ou entrar nelas antes de desaparecerem.',
     hp: 2, damage: 2, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 4, maxFireCells: 2, cost: 6, rarity: 'RARA', rarityClass: 'rare', info: 'ARCANO · CONJURADOR', glyph: '✦',
-    ability: Object.freeze({ name: 'Círculo ácido', cost: 4, damage: 3, radius: 1, description: 'Espalha ácido nas casas ao redor do Mago. Todas as tropas atingidas sofrem 3 de dano, inclusive as aliadas.', enabled: true }),
-    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
+    ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'O fogo é conjurado pelo ícone acima do Mago.', enabled: false }),
+    instant: Object.freeze({ name: 'Círculo ácido', cost: 4, cooldownTurns: 2, damage: 3, radius: 1, description: 'Em qualquer turno, espalha ácido nas casas ao redor do Mago. Todas as tropas atingidas sofrem 3 de dano, inclusive as aliadas. Recarrega após 1 rodada.', enabled: true })
   })
 ]);
 

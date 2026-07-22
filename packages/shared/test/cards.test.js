@@ -27,9 +27,10 @@ test('torre expõe construção e rajada cardinal', () => {
   assert.equal(CARD_BY_ID.tower.cost, 7);
   assert.equal(CARD_BY_ID.tower.buildRounds, 2);
   assert.deepEqual(
-    { cost: CARD_BY_ID.tower.instant.cost, range: CARD_BY_ID.tower.instant.range, damage: CARD_BY_ID.tower.instant.damage },
-    { cost: 2, range: 3, damage: 2 }
+    { cost: CARD_BY_ID.tower.ability.cost, range: CARD_BY_ID.tower.ability.range, damage: CARD_BY_ID.tower.ability.damage, cooldown: CARD_BY_ID.tower.ability.cooldownTurns },
+    { cost: 2, range: 3, damage: 2, cooldown: 2 }
   );
+  assert.equal(CARD_BY_ID.tower.instant.enabled, false);
 });
 
 test('canhão usa frente relativa ao dono e alcance de três a seis casas', () => {
@@ -82,7 +83,8 @@ test('Mago é raro e expõe fogo e ácido com os atributos definidos', () => {
   );
   assert.match(CARD_BY_ID.mage.description, /mesmo com unidades à frente/i);
   assert.deepEqual(
-    { cost: CARD_BY_ID.mage.ability.cost, damage: CARD_BY_ID.mage.ability.damage, radius: CARD_BY_ID.mage.ability.radius },
-    { cost: 4, damage: 3, radius: 1 }
+    { cost: CARD_BY_ID.mage.instant.cost, damage: CARD_BY_ID.mage.instant.damage, radius: CARD_BY_ID.mage.instant.radius, cooldown: CARD_BY_ID.mage.instant.cooldownTurns },
+    { cost: 4, damage: 3, radius: 1, cooldown: 2 }
   );
+  assert.equal(CARD_BY_ID.mage.ability.enabled, false);
 });
