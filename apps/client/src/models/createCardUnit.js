@@ -4,6 +4,7 @@ import { ensureHealthBadge } from '../ui/unitHealthBadge.js';
 import { makeCannon } from '../assets/models/cannonModel.js';
 import { makeOperator } from '../assets/models/operatorModel.js';
 import { makeArcher, makeGoblin, makeGoblinTower, makeGuard, makeMage, makeTower, makeWarrior, makeWoodBarrier, makeWoodenHouse, unitBase } from './unitModels.js';
+import { prepareConstructionUnit } from './prepareConstructionUnit.js';
 
 const UNIT_FACTORIES = Object.freeze({
   warrior: makeWarrior,
@@ -39,6 +40,7 @@ function createFallbackUnit(card) {
 
 export function createCardUnit(card, cardIndex) {
   const unit = UNIT_FACTORIES[card.id]?.() ?? createFallbackUnit(card);
+  if (card.type === 'construction') prepareConstructionUnit(unit);
   unit.name = card.name;
   unit.userData = {
     ...unit.userData,
