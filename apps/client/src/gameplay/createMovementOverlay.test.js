@@ -91,7 +91,7 @@ test('canhão marca o primeiro alvo, mas não casas depois dele', () => {
   const scene = new THREE.Scene();
   const app = { dataset: {} };
   const source = unit('cannon', 1, 5, 8);
-  Object.assign(source.userData, { cardId: 'cannon', move: 1, movementType: 'forward', minAttackRange: 3, attackRange: 6, damage: 4, areaRadius: 1 });
+  Object.assign(source.userData, { cardId: 'cannon', move: 1, movementType: 'forward', minAttackRange: 3, attackRange: 6, damage: 3, areaRadius: 1 });
   const operator = unit('operator', 1, 5, 9);
   operator.userData.cardId = 'operator';
   const blocker = unit('blocker', 1, 5, 4);

@@ -66,7 +66,7 @@ test('cartas usam os atributos definidos', () => {
       wooden_barrier: { hp: 3, damage: 0, move: 0, movementType: 'none', cost: 2 },
       tower: { hp: 5, damage: 0, move: 0, movementType: 'none', cost: 7 },
       operator: { hp: 1, damage: 0, move: 1, movementType: 'any', cost: 3 },
-      cannon: { hp: 1, damage: 4, move: 1, movementType: 'forward', cost: 7 },
+      cannon: { hp: 1, damage: 3, move: 1, movementType: 'forward', cost: 8 },
       wooden_house: { hp: 1, damage: 0, move: 0, movementType: 'none', cost: 3 },
       road: { hp: null, damage: 0, move: 0, movementType: 'none', cost: 1 },
       mage: { hp: 2, damage: 2, move: 1, movementType: 'any', cost: 6 }
@@ -419,7 +419,7 @@ test('canhão exige operador exatamente atrás para disparar', () => {
   );
   room.state.units.push({ id: 'operator-1', ownerSeat: 1, cardId: 'operator', x: 7, z: 9, hp: 1, shield: 0, actionUsed: false });
   rooms.action(room.code, first.id, { type: 'attack', unitId: 'cannon-1', targetUnitId: 'target-1' }, room.state.version);
-  assert.equal(room.state.units.find(unit => unit.id === 'target-1').hp, 4);
+  assert.equal(room.state.units.find(unit => unit.id === 'target-1').hp, 5);
   assert.equal(room.state.units.find(unit => unit.id === 'operator-1').actionUsed, true);
 });
 
@@ -438,7 +438,7 @@ test('canhão dispara somente para frente entre três e seis casas', () => {
   }
 });
 
-test('explosão do canhão causa 4 no impacto e 1 nas oito casas ao redor', () => {
+test('explosão do canhão causa 3 no impacto e 1 nas oito casas ao redor', () => {
   const { rooms, room, first } = match();
   room.state.units.push(
     { id: 'cannon-area', ownerSeat: 1, cardId: 'cannon', x: 7, z: 9, hp: 2, shield: 0, actionUsed: false, underConstruction: false },
@@ -449,7 +449,7 @@ test('explosão do canhão causa 4 no impacto e 1 nas oito casas ao redor', () =
     { id: 'safe', ownerSeat: 1, cardId: 'guard', x: 9, z: 5, hp: 8, shield: 0, actionUsed: false }
   );
   rooms.action(room.code, first.id, { type: 'attack', unitId: 'cannon-area', targetUnitId: 'impact' }, room.state.version);
-  assert.equal(room.state.units.find(unit => unit.id === 'impact').hp, 4);
+  assert.equal(room.state.units.find(unit => unit.id === 'impact').hp, 5);
   for (const id of ['enemy-splash', 'ally-splash']) assert.equal(room.state.units.find(unit => unit.id === id).hp, 7);
   assert.equal(room.state.units.find(unit => unit.id === 'safe').hp, 8);
 });
