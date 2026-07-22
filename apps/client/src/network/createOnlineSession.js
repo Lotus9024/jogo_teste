@@ -1,7 +1,7 @@
 import { CARD_BY_ID } from '@tronos/shared/cards';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { setArcherMountedState } from '../models/unitModels.js';
-import { isMountedArcher, setUnitTeamColor } from '../gameplay/unitState.js';
+import { isMountedArcher, setUnitOwnerFacing, setUnitTeamColor } from '../gameplay/unitState.js';
 import { cards } from '../ui/cardView.js';
 import { setResource } from '../ui/resourceView.js';
 import { updateHealthBadge } from '../ui/unitHealthBadge.js';
@@ -63,7 +63,7 @@ export function createOnlineSession({
     setUnitTeamColor(unit, data.ownerSeat === 1 ? 0x168cff : 0xff352f);
     handController.applyConstructionState(unit, Boolean(data.underConstruction));
     unit.position.set(data.x * tile - half, 0.06, data.z * tile - half);
-    unit.rotation.y = data.cardId === 'cannon' && data.ownerSeat === 2 ? Math.PI : 0;
+    setUnitOwnerFacing(unit, data.cardId, data.ownerSeat);
     setArcherMountedState(unit, false);
     return unit;
   }

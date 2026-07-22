@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { isDeploymentCell, isRoadPlacementCell } from '@tronos/shared/cards';
 import { createCardUnit } from '../models/createCardUnit.js';
-import { applyConstructionState as applyUnitConstructionState, setUnitTeamColor } from '../gameplay/unitState.js';
+import { applyConstructionState as applyUnitConstructionState, setUnitOwnerFacing, setUnitTeamColor } from '../gameplay/unitState.js';
 import { cards } from './cardView.js';
 
 export function createCardSummoningController({
@@ -55,7 +55,7 @@ export function createCardSummoningController({
     unit.position.set(x, 0.06, z);
     unit.userData.ownerSeat = state.activePlayer;
     unit.userData.devLevel = level;
-    unit.rotation.y = card.id === 'cannon' && state.activePlayer === 2 ? Math.PI : 0;
+    setUnitOwnerFacing(unit, card.id, state.activePlayer);
     setUnitTeamColor(unit, state.activePlayer === 1 ? 0x168cff : 0xff352f);
     units.push(unit);
     hoverables.push(unit);

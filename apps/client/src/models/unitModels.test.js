@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
-import { isMountedArcher } from '../gameplay/unitState.js';
+import { isMountedArcher, setUnitOwnerFacing } from '../gameplay/unitState.js';
 import { makeAcidCircle } from '../assets/models/acidEffectModel.js';
 import { cards } from '../ui/cardView.js';
 import { UNIT_MODEL_SCALE } from './createCardUnit.js';
@@ -20,6 +20,26 @@ import {
 } from './unitModels.js';
 
 const TILE_SIZE = 1.08;
+
+test('construcoes apontam para o reino rival conforme o dono', () => {
+  for (const [cardId, factory] of [['tower', makeTower], ['wooden_barrier', makeWoodBarrier]]) {
+    const unit = factory();
+    setUnitOwnerFacing(unit, cardId, 1);
+    assert.equal(unit.rotation.y, Math.PI);
+    setUnitOwnerFacing(unit, cardId, 2);
+    assert.equal(unit.rotation.y, 0);
+  }
+
+  const cannon = new THREE.Group();
+  setUnitOwnerFacing(cannon, 'cannon', 1);
+  assert.equal(cannon.rotation.y, 0);
+  setUnitOwnerFacing(cannon, 'cannon', 2);
+  assert.equal(cannon.rotation.y, Math.PI);
+
+  const house = makeWoodenHouse();
+  setUnitOwnerFacing(house, 'wooden_house', 1);
+  assert.equal(house.rotation.y, 0);
+});
 
 test('tropas mantêm rig, plataforma e silhueta dentro da casa', () => {
   for (const factory of [makeWarrior, makeGuard, makeHenry, makeArcher, makeMage, makeTower, makeWoodBarrier, makeWoodenHouse]) {
