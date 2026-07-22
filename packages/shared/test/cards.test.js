@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CARD_BY_ID, citizensForSeat, completedRoadCount, connectedRoadKeys, deploymentDistance, effectiveCardCost, forwardDeltaForSeat, goblinSpawnHp, gridCellsBetween, isCannonTargetValid, isDeploymentCell, isRoadPlacementCell, roadMovementBonus } from '../src/cards.js';
+import { CARD_BY_ID, baseCellsForSeat, citizensForSeat, completedRoadCount, connectedRoadKeys, deploymentDistance, effectiveCardCost, forwardDeltaForSeat, goblinSpawnHp, gridCellsBetween, isCannonTargetValid, isDeploymentCell, isRoadPlacementCell, roadMovementBonus, validateDeckCardIds } from '../src/cards.js';
 
 test('calcula as casas intermediarias de uma linha no tabuleiro', () => {
   assert.deepEqual(gridCellsBetween({ x: 2, z: 2 }, { x: 5, z: 2 }), [{ x: 3, z: 2 }, { x: 4, z: 2 }]);
@@ -114,4 +114,24 @@ test('Torre Goblin reduz o custo e fortalece Goblins adjacentes', () => {
     { hp: CARD_BY_ID.goblin_tower.hp, cost: CARD_BY_ID.goblin_tower.cost, buildRounds: CARD_BY_ID.goblin_tower.buildRounds, rarity: CARD_BY_ID.goblin_tower.rarityClass },
     { hp: 5, cost: 10, buildRounds: 1, rarity: 'rare' },
   );
+});
+
+test('Henry participa das sinergias Goblin e também nasce fortalecido pela Torre', () => {
+  const units = [
+    { ownerSeat: 1, cardId: 'henry', x: 4, z: 4 },
+    { ownerSeat: 1, cardId: 'goblin_tower', x: 7, z: 7, underConstruction: false },
+  ];
+  assert.equal(effectiveCardCost('goblin_tower', 1, units), 9);
+  assert.equal(goblinSpawnHp(1, 7, 6, units, 'henry'), 2);
+});
+
+test('castelo nível dois expande uma casa para cada lateral', () => {
+  assert.equal(baseCellsForSeat(1, 15, 1).length, 9);
+  assert.equal(baseCellsForSeat(1, 15, 2).length, 15);
+  assert.equal(baseCellsForSeat(1, 15, 2).some(cell => cell.x === 5 && cell.z === 13), true);
+});
+
+test('Deck aceita menos que os limites, mas exige as três raridades disponíveis', () => {
+  assert.deepEqual(validateDeckCardIds(['warrior', 'archer', 'mage']), ['warrior', 'archer', 'mage']);
+  assert.throws(() => validateDeckCardIds(['warrior', 'archer']), /carta comum, uma incomum e uma rara/);
 });

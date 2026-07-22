@@ -13,7 +13,7 @@ export function gameHudTemplate() {
       <output id="game-error" class="game-error" aria-live="polite"></output>
       <div class="base-health enemy-base-tag" role="img" aria-label="Vida do castelo inimigo: ${GAME_CONFIG.startingBaseHp} de ${GAME_CONFIG.startingBaseHp}"><b id="enemy-base-level">LV 1</b><i style="width:100%"></i></div>
       <section class="card-dock" aria-label="Mão de cartas">
-        <b id="hand-count" class="sr-only">6 CARTAS</b>
+        <b id="hand-count" class="sr-only">7 CARTAS</b>
         <div id="card-hand" class="card-hand"></div>
       </section>
       <section id="dev-unit-tools" class="dev-unit-tools" aria-label="Ferramentas da unidade selecionada" hidden>

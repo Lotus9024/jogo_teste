@@ -28,12 +28,16 @@ function combatStats(card) {
   const lastLabel = needsConstruction ? 'Construção' : 'Movimento';
   const lastIcon = needsConstruction ? hourglassIcon : bootIcon;
   const lastValue = needsConstruction ? `${card.buildRounds}R` : card.move;
-  return `<span aria-label="Vida"><small aria-hidden="true">♥</small><b data-stat="hp">${card.hp}</b></span><span aria-label="Dano"><small aria-hidden="true">⚔</small><b>${damage}</b></span><span aria-label="${lastLabel}"><small aria-hidden="true">${lastIcon}</small><b>${lastValue}</b></span>`;
+  const resistanceLabel = card.type === 'construction' ? 'Resistência' : 'Vida';
+  return `<span aria-label="${resistanceLabel}"><small aria-hidden="true">♥</small><b data-stat="hp">${card.hp}</b></span><span aria-label="Dano"><small aria-hidden="true">⚔</small><b>${damage}</b></span><span aria-label="${lastLabel}"><small aria-hidden="true">${lastIcon}</small><b>${lastValue}</b></span>`;
 }
 
 export function cardMarkup(card, index, { level = null } = {}) {
   const levelAttribute = Number.isInteger(level) ? ` data-card-level="${level}"` : '';
-  return `<button class="game-card rarity-${card.rarityClass}" data-card="${index}"${levelAttribute} aria-label="Carta ${card.name}, ${card.rarity}${level ? `, nível ${level}` : ''}">
+  const copyClass = card.description.length > 180 || card.abilityText.length > 220 ? ' copy-very-long' : card.description.length > 115 || card.abilityText.length > 150 ? ' copy-long' : '';
+  const descSize = Math.max(5, Math.min(9, 1100 / card.description.length));
+  const abilitySize = Math.max(5, Math.min(8, 1050 / card.abilityText.length));
+  return `<button class="game-card rarity-${card.rarityClass}${copyClass}" style="--desc-size:${descSize}px;--ability-size:${abilitySize}px" data-card="${index}"${levelAttribute} aria-label="Carta ${card.name}, ${card.rarity}${level ? `, nível ${level}` : ''}">
     <span class="card-top"><strong class="card-name">${card.name}</strong><span class="card-top-cost"><b>${card.cost}</b></span></span>
     <span class="card-art"><span>${card.glyph}</span></span>
     <span class="card-description">${card.description}</span>

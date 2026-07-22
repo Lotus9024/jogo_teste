@@ -9,7 +9,7 @@
     "./cards": "./src/cards.js"
   },
   "scripts": {
-    "build": "node --check src/protocol.js && node --check src/gameConfig.js && node --check src/cardCatalog.js && node --check src/boardRules.js && node --check src/kingdomEconomy.js && node --check src/cards.js",
+    "build": "node --check src/protocol.js && node --check src/gameConfig.js && node --check src/cardCatalog.js && node --check src/cardCosts.js && node --check src/boardRules.js && node --check src/kingdomEconomy.js && node --check src/deckRules.js && node --check src/cards.js",
     "test": "node --test"
   }
 }

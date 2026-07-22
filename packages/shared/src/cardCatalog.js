@@ -1,25 +1,25 @@
 export const CARD_DEFINITIONS = Object.freeze([
   Object.freeze({
     id: 'warrior', name: 'Guerreiro', description: 'Um guerreiro comum que luta pelo seu reino com unhas e dentes sem recuar.',
-    hp: 3, damage: 2, move: 2, movementType: 'straight', minAttackRange: 1, attackRange: 2, cost: 4, rarity: 'COMUM', rarityClass: 'common', info: 'HUMANO · COMBATENTE', glyph: '⚔',
+    hp: 2, damage: 2, move: 2, movementType: 'straight', attackType: 'straight', minAttackRange: 1, attackRange: 2, cost: 5, rarity: 'COMUM', rarityClass: 'common', info: 'HUMANO · COMBATENTE', glyph: '⚔',
     ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
     id: 'guard', name: 'Guarda', description: 'Um defensor simples recém treinado, defende o seu reino com corpo e alma.',
-    hp: 4, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 4, rarity: 'COMUM', rarityClass: 'common', info: 'HUMANO · GUARDIÃO', glyph: '♜',
+    hp: 3, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 5, rarity: 'COMUM', rarityClass: 'common', info: 'HUMANO · GUARDIÃO', glyph: '♜',
     ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
     id: 'henry', name: 'Henry', description: 'Henry tem pernas curtas, mas é ágil. Pode se movimentar e atacar no mesmo turno, em qualquer ordem, e entra em campo pronto para agir.',
-    hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 4, rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'HUMANO · ÁGIL', glyph: '⚡',
+    hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 4, rarity: 'INCOMUM', rarityClass: 'uncommon', family: 'goblin', info: 'GOBLIN · ÁGIL', glyph: '⚡',
     ability: Object.freeze({ name: 'Agilidade', cost: '—', description: 'Pode realizar um movimento e um ataque no mesmo turno, em qualquer ordem. Entra em campo pronto para agir.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
     id: 'archer', name: 'Arqueiro', description: 'Um arqueiro silencioso que ataca apenas de longe, a 3 ou 4 blocos de distância. Pode atacar por cima de barreiras, mas não de tropas. Ao matar uma criatura, não ocupa a posição dela.',
-    hp: 2, damage: 2, move: 1, movementType: 'any', minAttackRange: 3, attackRange: 4, cost: 6, rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'HUMANO · ATIRADOR', glyph: '➶',
+    hp: 2, damage: 1, move: 1, movementType: 'any', minAttackRange: 3, attackRange: 4, cost: 6, rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'HUMANO · ATIRADOR', glyph: '➶',
     ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
@@ -62,21 +62,39 @@ export const CARD_DEFINITIONS = Object.freeze([
   }),
   Object.freeze({
     id: 'goblin', name: 'Goblin', description: 'Um goblin frágil, mas que tem coragem de roubar ouro.',
-    hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 2, rarity: 'COMUM', rarityClass: 'common', info: 'GOBLIN · SAQUEADOR', glyph: '♟',
+    hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 2, rarity: 'COMUM', rarityClass: 'common', family: 'goblin', info: 'GOBLIN · SAQUEADOR', glyph: '♟',
     ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
     id: 'goblin_tower', name: 'Torre Goblin', description: 'Goblin invocado ao lado da torre nasce com +1 de vida. Cada Goblin aliado na arena reduz em 1 o custo desta torre.',
-    hp: 5, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 10, minimumCost: 1, goblinDiscount: 1, buildRounds: 1, type: 'construction', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · GOBLIN', glyph: '♜',
+    hp: 5, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 10, minimumCost: 1, goblinDiscount: 1, buildRounds: 1, type: 'construction', family: 'goblin', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · GOBLIN', glyph: '♜',
     ability: Object.freeze({ name: 'Reforço Goblin', cost: 3, description: 'Consome um Goblin do seu baralho e o invoca em qualquer casa livre da arena. Ele nasce sem poder agir neste turno.', enabled: true }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
     id: 'mage', name: 'Mago', description: 'Conjura fogo em uma ou duas casas a até 4 quadrados, mesmo com unidades à frente. O impacto causa 2 de dano e as chamas causam mais 1 se uma tropa permanecer ou entrar nelas antes de desaparecerem.',
-    hp: 2, damage: 2, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 4, maxFireCells: 2, cost: 6, rarity: 'RARA', rarityClass: 'rare', info: 'ARCANO · CONJURADOR', glyph: '✦',
+    hp: 2, damage: 2, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 4, maxFireCells: 2, cost: 6, family: 'mage', rarity: 'RARA', rarityClass: 'rare', info: 'MAGO · CONJURADOR', glyph: '✦',
     ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'O fogo é conjurado pelo ícone acima do Mago.', enabled: false }),
     instant: Object.freeze({ name: 'Ácido (Instantâneo)', cost: 4, cooldownTurns: 2, damage: 3, radius: 1, description: 'Em qualquer turno, espalha ácido nas casas ao redor do Mago. Todas as tropas atingidas sofrem 3 de dano, inclusive as aliadas. Recarrega após 1 rodada.', enabled: true })
+  }),
+  Object.freeze({
+    id: 'goblin_altar', name: 'Altar Goblin', description: 'Reduz em 1 o custo de todas as cartas Goblin, até o mínimo de 1. Para ser erguido, exige duas tropas Goblin na área da sua base.',
+    hp: 1, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 7, buildRounds: 1, type: 'construction', family: 'goblin', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · GOBLIN', glyph: '♨',
+    ability: Object.freeze({ name: 'Marcha Goblin', cost: 5, range: 6, cooldownTurns: 2, description: 'Goblins no raio de 6 casas podem se mover uma vez adicional neste turno.', enabled: true }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
+  }),
+  Object.freeze({
+    id: 'mage_altar', name: 'Altar Mago', description: 'Reduz em 1 o custo de todas as cartas de Mago, até o mínimo de 1.',
+    hp: 1, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 9, buildRounds: 1, type: 'construction', family: 'mage', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · MAGO', glyph: '✧',
+    ability: Object.freeze({ name: 'Selo enfraquecedor', cost: 7, cooldownTurns: 2, durationTurns: 2, description: 'Todos os Goblins da arena recebem -1 de ataque por 2 turnos.', enabled: true }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
+  }),
+  Object.freeze({
+    id: 'builder_area', name: 'Área de construtor', description: 'Fica inativa enquanto houver qualquer carta Goblin ou Mago na área da sua base. Ativa, concede +1 de energia por turno (máximo 1) e +1 de resistência cumulativa às suas construções.',
+    hp: 1, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 7, buildRounds: 1, type: 'construction', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'CONSTRUÇÃO · SUPORTE', glyph: '⌂',
+    ability: Object.freeze({ name: 'Oficina do reino', cost: '—', description: 'O bônus de energia não acumula; a resistência acumula para cada Área de construtor ativa.', enabled: false }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   })
 ]);
 

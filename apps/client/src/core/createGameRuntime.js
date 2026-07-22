@@ -44,7 +44,12 @@ export function createGameRuntime() {
   const mageEffects = createMageEffects(scene, tile);
   const units = [];
   const hoverables = [];
-  const boardCoordinates = createBoardCoordinates({ getUnits: () => units, tile, half });
+  const boardCoordinates = createBoardCoordinates({
+    getUnits: () => units,
+    getBaseLevel: seat => state.onlineState?.state.players.find(player => player.seat === seat)?.baseLevel ?? 1,
+    tile,
+    half,
+  });
   const boardPresentation = createBoardPresentation({
     scene, app, tile, half, baseCellsForSeat: boardCoordinates.baseCellsForSeat, getUnits: () => units,
   });

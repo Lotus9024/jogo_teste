@@ -14,6 +14,8 @@ export function createOnlineSession({
   camera,
   controls,
   cameraTransition,
+  alliedKeep,
+  enemyKeep,
   tile,
   half,
   units,
@@ -25,6 +27,7 @@ export function createOnlineSession({
   abilities,
   handController,
   devController,
+  deckBuilder,
   callbacks,
 }) {
   const socket = new GameSocketClient();
@@ -51,6 +54,8 @@ export function createOnlineSession({
       actionUsed: data.actionUsed,
       movedThisTurn: Boolean(data.movedThisTurn),
       attackedThisTurn: Boolean(data.attackedThisTurn),
+      bonusMoves: data.bonusMoves ?? 0,
+      attackPenalty: data.attackPenalty ?? 0,
       abilityUsed: data.abilityUsed,
       abilityReadyTurn: data.abilityReadyTurn ?? 0,
       instantUsedRound: data.instantUsedRound,
@@ -132,6 +137,10 @@ export function createOnlineSession({
     const me = payload.state.players.find(player => player.seat === state.selfSeat);
     const enemy = payload.state.players.find(player => player.seat !== state.selfSeat);
     if (!me || !enemy) return;
+    const seatOne = payload.state.players.find(player => player.seat === 1);
+    const seatTwo = payload.state.players.find(player => player.seat === 2);
+    alliedKeep.scale.set(seatOne?.baseLevel >= 2 ? 1.45 : 1, 1, 1);
+    enemyKeep.scale.set(seatTwo?.baseLevel >= 2 ? 1.45 : 1, 1, 1);
     setResource('#self-energy', me.energy, me.maxEnergy ?? GAME_CONFIG.maxEnergy);
     setResource('#self-health', me.baseHp, GAME_CONFIG.startingBaseHp);
     devController.setKingdomProgressHud(me.citizens ?? 0, me.baseLevel ?? 1, enemy.baseLevel ?? 1);
@@ -178,13 +187,17 @@ export function createOnlineSession({
       event.target.value = event.target.value.toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 6);
     });
     document.querySelector('#create-room').addEventListener('click', () => {
-      socket.createRoom(document.querySelector('#player-name').value);
+      try { socket.createRoom(document.querySelector('#player-name').value, deckBuilder.getDeckCardIds()); }
+      catch (error) { lobbyError.textContent = error.message; deckBuilder.open(); }
     });
     document.querySelector('#join-room').addEventListener('click', () => {
-      socket.joinRoom(
-        document.querySelector('#room-code').value,
-        document.querySelector('#player-name').value,
-      );
+      try {
+        socket.joinRoom(
+          document.querySelector('#room-code').value,
+          document.querySelector('#player-name').value,
+          deckBuilder.getDeckCardIds(),
+        );
+      } catch (error) { lobbyError.textContent = error.message; deckBuilder.open(); }
     });
     socket.connect();
     setInterval(() => {

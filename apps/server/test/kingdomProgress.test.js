@@ -61,9 +61,9 @@ test('nível dois exige oito cidadãos e uma Rua concluída', () => {
   assert.equal(blue.citizens, 8);
   assert.equal(blue.baseLevel, 2);
   assert.equal(blue.maxEnergy, 12);
-  assert.equal(blue.energy, 9);
+  assert.equal(blue.energy, 8);
   rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
-  assert.equal(blue.energy, 9);
+  assert.equal(blue.energy, 8);
 });
 
 test('base nível dois recupera uma vida das construções a cada duas rodadas', () => {
@@ -73,8 +73,13 @@ test('base nível dois recupera uma vida das construções a cada duas rodadas',
   blue.maxEnergy = 12;
   room.state.activeSeat = 2;
   room.state.round = 3;
+  room.state.roads.push({ id: 'level-road', ownerSeat: 1, x: 7, z: 11, underConstruction: false });
+  room.state.units.push(
+    { id: 'level-house-a', ownerSeat: 1, cardId: 'wooden_house', x: 6, z: 11, hp: 1, maxHp: 1, underConstruction: false },
+    { id: 'level-house-b', ownerSeat: 1, cardId: 'wooden_house', x: 8, z: 11, hp: 1, maxHp: 1, underConstruction: false },
+  );
   room.state.units.push({ id: 'damaged-tower', ownerSeat: 1, cardId: 'tower', x: 7, z: 10, hp: 4, shield: 0, actionUsed: false, abilityUsed: false, instantUsedRound: 0, empowered: false, underConstruction: false });
   rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
   assert.equal(room.state.round, 4);
-  assert.equal(room.state.units[0].hp, 5);
+  assert.equal(room.state.units.find(unit => unit.id === 'damaged-tower').hp, 5);
 });

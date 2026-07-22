@@ -4,10 +4,10 @@ import { CARD_BY_ID } from '@tronos/shared/cards';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { match } from '../test-support/match.js';
 
-test('inicia com cinco cartas privadas e dez de energia', () => {
+test('inicia com sete cartas privadas e dez de energia', () => {
   const { room } = match();
-  assert.equal(room.state.players[0].hand.length, 5);
-  assert.equal(room.state.players[1].hand.length, 5);
+  assert.equal(room.state.players[0].hand.length, 7);
+  assert.equal(room.state.players[1].hand.length, 7);
   assert.equal(room.state.players[0].energy, 10);
   assert.equal(room.state.players[0].maxEnergy, 10);
   assert.equal(room.state.players[0].baseHp, 10);
@@ -20,7 +20,7 @@ test('invocação válida consome a carta e energia no servidor', () => {
   player.hand[0].cardId = 'warrior';
   const instance = player.hand[0], cost = CARD_BY_ID[instance.cardId].cost;
   rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: instance.instanceId, x: 6, z: 10 }, room.state.version);
-  assert.equal(player.hand.length, 4);
+  assert.equal(player.hand.length, 6);
   assert.equal(player.energy, 10 - cost);
   assert.equal(room.state.units[0].ownerSeat, 1);
 });
@@ -43,7 +43,7 @@ test('passar turno compra carta, entrega energia e reinicia o relógio', () => {
   rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
   assert.equal(room.state.activeSeat, 2);
   assert.equal(room.state.players[1].energy, 10);
-  assert.equal(room.state.players[1].hand.length, 6);
+  assert.equal(room.state.players[1].hand.length, 7);
   assert.ok(room.state.turnEndsAt >= previousDeadline);
 });
 
@@ -53,10 +53,10 @@ test('cartas usam os atributos definidos', () => {
       hp: card.hp, damage: card.damage, move: card.move, movementType: card.movementType, cost: card.cost
     }])),
     {
-      warrior: { hp: 3, damage: 2, move: 2, movementType: 'straight', cost: 4 },
-      guard: { hp: 4, damage: 1, move: 1, movementType: 'any', cost: 4 },
+      warrior: { hp: 2, damage: 2, move: 2, movementType: 'straight', cost: 5 },
+      guard: { hp: 3, damage: 1, move: 1, movementType: 'any', cost: 5 },
       henry: { hp: 1, damage: 1, move: 1, movementType: 'any', cost: 4 },
-      archer: { hp: 2, damage: 2, move: 1, movementType: 'any', cost: 6 },
+      archer: { hp: 2, damage: 1, move: 1, movementType: 'any', cost: 6 },
       wooden_barrier: { hp: 3, damage: 0, move: 0, movementType: 'none', cost: 2 },
       tower: { hp: 5, damage: 0, move: 0, movementType: 'none', cost: 7 },
       operator: { hp: 1, damage: 0, move: 1, movementType: 'any', cost: 3 },
@@ -65,7 +65,10 @@ test('cartas usam os atributos definidos', () => {
       road: { hp: null, damage: 0, move: 0, movementType: 'none', cost: 1 },
       goblin: { hp: 1, damage: 1, move: 1, movementType: 'any', cost: 2 },
       goblin_tower: { hp: 5, damage: 0, move: 0, movementType: 'none', cost: 10 },
-      mage: { hp: 2, damage: 2, move: 1, movementType: 'any', cost: 6 }
+      mage: { hp: 2, damage: 2, move: 1, movementType: 'any', cost: 6 },
+      goblin_altar: { hp: 1, damage: 0, move: 0, movementType: 'none', cost: 7 },
+      mage_altar: { hp: 1, damage: 0, move: 0, movementType: 'none', cost: 9 },
+      builder_area: { hp: 1, damage: 0, move: 0, movementType: 'none', cost: 7 }
     }
   );
   assert.deepEqual(
@@ -73,7 +76,7 @@ test('cartas usam os atributos definidos', () => {
     { minAttackRange: 1, attackRange: 2 }
   );
   Object.values(CARD_BY_ID).forEach(card => {
-    assert.equal(card.ability.enabled, ['tower', 'goblin_tower'].includes(card.id));
+    assert.equal(card.ability.enabled, ['tower', 'goblin_tower', 'goblin_altar', 'mage_altar'].includes(card.id));
     assert.equal(card.instant.enabled, card.id === 'mage');
   });
   assert.deepEqual(

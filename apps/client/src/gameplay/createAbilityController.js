@@ -94,13 +94,25 @@ export function createAbilityController(options) {
     syncAbilityBadges();
   }
 
+  function activateSelectedAbility() {
+    const selected = state.selected;
+    const card = CARD_BY_ID[selected?.userData.cardId];
+    if (!selected || !['goblin_altar', 'mage_altar'].includes(card?.id)) return false;
+    const me = state.onlineState?.state.players.find(player => player.seat === state.selfSeat);
+    const ownTurn = (state.onlineState?.state.activeSeat ?? state.activePlayer) === selected.userData.ownerSeat;
+    if (selected.userData.underConstruction || selected.userData.actionUsed || !ownTurn || (me && me.energy < card.ability.cost)) return true;
+    if (state.onlineState) callbacks.sendOnlineAction?.({ type: 'use_ability', unitId: selected.userData.serverUnitId });
+    else selected.userData.actionUsed = true;
+    return true;
+  }
+
   function mount() {
     addEventListener('keydown', event => {
       if (event.key.toLowerCase() !== 'f' || event.repeat || event.target.closest?.('input,textarea')) return;
       event.preventDefault();
       if (state.selected?.userData.cardId === 'mage') mage.activateAcid();
       else if (state.selected?.userData.cardId === 'goblin_tower') goblinTower.activate();
-      else activateTowerAbility();
+      else if (!activateSelectedAbility()) activateTowerAbility();
     });
   }
 

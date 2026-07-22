@@ -1,4 +1,4 @@
-import { setGoblinTowerConstructionState, setTowerConstructionState, setWoodBarrierConstructionState, setWoodenHouseConstructionState } from '../models/unitModels.js';
+import { setGoblinTowerConstructionState, setSupportConstructionState, setTowerConstructionState, setWoodBarrierConstructionState, setWoodenHouseConstructionState } from '../models/unitModels.js';
 import { setCannonConstructionState } from '../assets/models/cannonModel.js';
 
 const POSITIVE_Z_FRONT_CARDS = new Set(['tower', 'wooden_barrier']);
@@ -50,5 +50,6 @@ export function applyConstructionState(unit, underConstruction, units, app) {
   if (unit.userData.cardId === 'cannon') setCannonConstructionState(unit, underConstruction);
   if (unit.userData.cardId === 'wooden_house') setWoodenHouseConstructionState(unit, underConstruction);
   if (unit.userData.cardId === 'goblin_tower') setGoblinTowerConstructionState(unit, underConstruction);
+  if (['goblin_altar', 'mage_altar', 'builder_area'].includes(unit.userData.cardId)) setSupportConstructionState(unit, underConstruction);
   app.dataset.constructions = String(units.filter(item => item.userData.underConstruction).length);
 }

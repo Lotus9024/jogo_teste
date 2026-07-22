@@ -8,4 +8,5 @@ export { makeMage } from '../assets/models/mageModel.js';
 export { makeGoblin } from '../assets/models/goblinModel.js';
 export { makeGoblinTower, setGoblinTowerConstructionState } from '../assets/models/goblinTowerModel.js';
 export { makeHenry } from '../assets/models/henryModel.js';
+export { makeBuilderArea, makeGoblinAltar, makeMageAltar, setSupportConstructionState } from '../assets/models/supportBuildingModels.js';
 export { unitBase } from '../assets/models/unitModelKit.js';

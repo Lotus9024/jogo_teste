@@ -40,23 +40,30 @@ export function isAttackDistanceValid(card, value) {
   return value >= minimum && value <= card.attackRange;
 }
 
-export function baseCellsForSeat(seat, boardSize = 15) {
+export function isAttackTargetValid(card, from, to) {
+  const dx = Math.abs(from.x - to.x), dz = Math.abs(from.z - to.z);
+  if (card.attackType === 'straight' && dx !== 0 && dz !== 0) return false;
+  return isAttackDistanceValid(card, dx + dz);
+}
+
+export function baseCellsForSeat(seat, boardSize = 15, baseLevel = 1) {
   const centerX = Math.floor(boardSize / 2);
   const centerZ = seat === 1 ? boardSize - 2 : 1;
   const cells = [];
-  for (let x = centerX - 1; x <= centerX + 1; x += 1) {
+  const lateralRadius = baseLevel >= 2 ? 2 : 1;
+  for (let x = centerX - lateralRadius; x <= centerX + lateralRadius; x += 1) {
     for (let z = centerZ - 1; z <= centerZ + 1; z += 1) cells.push({ x, z });
   }
   return cells;
 }
 
-export function deploymentDistance(seat, cell, boardSize = 15) {
-  return Math.min(...baseCellsForSeat(seat, boardSize).map(base => Math.abs(base.x - cell.x) + Math.abs(base.z - cell.z)));
+export function deploymentDistance(seat, cell, boardSize = 15, baseLevel = 1) {
+  return Math.min(...baseCellsForSeat(seat, boardSize, baseLevel).map(base => Math.abs(base.x - cell.x) + Math.abs(base.z - cell.z)));
 }
 
-export function isDeploymentCell(seat, x, z, boardSize = 15) {
+export function isDeploymentCell(seat, x, z, boardSize = 15, baseLevel = 1) {
   if (![1, 2].includes(seat) || x < 0 || x >= boardSize || z < 0 || z >= boardSize) return false;
-  const value = deploymentDistance(seat, { x, z }, boardSize);
+  const value = deploymentDistance(seat, { x, z }, boardSize, baseLevel);
   return value >= 1 && value <= 2;
 }
 

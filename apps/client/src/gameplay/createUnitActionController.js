@@ -2,7 +2,7 @@ import {
   CARD_BY_ID,
   forwardDeltaForSeat,
   gridCellsBetween,
-  isAttackDistanceValid,
+  isAttackTargetValid,
   isCannonTargetValid,
   movementDistance,
 } from '@tronos/shared/cards';
@@ -29,7 +29,7 @@ export function createUnitActionController(options) {
       : state.onlineState
         && unit.userData.ownerSeat === state.selfSeat
         && state.onlineState.state.activeSeat === state.selfSeat
-        && !unit.userData.actionUsed));
+        && (!unit.userData.actionUsed || unit.userData.bonusMoves > 0)));
   }
 
   function mountArcherLocally(unit, tower) {
@@ -47,10 +47,9 @@ export function createUnitActionController(options) {
       return;
     }
     if (target && (target.userData.ownerSeat !== state.selfSeat || context.cannonTarget)) {
-      const targetDistance = Math.abs(destination.x - origin.x) + Math.abs(destination.z - origin.z);
       const valid = unit.userData.cardId === 'cannon'
         ? context.cannonTarget
-        : isAttackDistanceValid(unit.userData, targetDistance);
+        : isAttackTargetValid(unit.userData, origin, destination);
       if (valid) callbacks.sendOnlineAction?.({ type: 'attack', unitId: unit.userData.serverUnitId, targetUnitId: target.userData.serverUnitId });
       else callbacks.showGameError?.('Alvo fora de alcance.');
     } else if (target) callbacks.showGameError?.('Esta casa já está ocupada.');
@@ -115,8 +114,7 @@ export function createUnitActionController(options) {
     } else if (cannonMove) local.moveCannon(unit, destination, target, origin, originPosition, forward);
     else if (unit.userData.cardId === 'cannon' && cannonTarget) local.fireCannon(unit, destination, origin, originPosition, forward);
     else if (target) {
-      const targetDistance = Math.abs(destination.x - origin.x) + Math.abs(destination.z - origin.z);
-      if (local.attackTarget(unit, target, destination, origin, originPosition, cannonTarget || isAttackDistanceValid(unit.userData, targetDistance))) {
+      if (local.attackTarget(unit, target, destination, origin, originPosition, cannonTarget || isAttackTargetValid(unit.userData, origin, destination))) {
         markHenryAction(unit, 'attack');
       }
     } else if (moveDistance > unit.userData.move) {

@@ -27,13 +27,12 @@ test('pode sortear qualquer carta dentro da raridade escolhida', () => {
   assert.deepEqual(deck.slice(0, 3), ['henry', 'archer', 'tower']);
 });
 
-test('nível dois usa chances 60% comum, 30% incomum e 10% rara', () => {
-  assert.deepEqual(Array.from({ length: 10 }, (_, roll) => rarityForRoll(2, roll)), [
-    'common', 'common', 'common', 'common', 'common', 'common',
-    'uncommon', 'uncommon', 'uncommon', 'rare'
+test('nível dois usa chances 55% comum, 30% incomum e 15% rara', () => {
+  assert.deepEqual(Array.from({ length: 20 }, (_, roll) => rarityForRoll(2, roll)), [
+    ...Array(11).fill('common'), ...Array(6).fill('uncommon'), ...Array(3).fill('rare')
   ]);
   let call = 0;
-  const deck = createDeck(max => (call++ % 2 === 0 ? 9 : 1) % max, 2, 1);
+  const deck = createDeck(max => (call++ % 2 === 0 ? 19 : 1) % max, 2, 1);
   assert.deepEqual(deck, ['mage']);
 });
 

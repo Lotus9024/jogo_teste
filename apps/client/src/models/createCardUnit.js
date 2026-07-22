@@ -3,7 +3,7 @@ import { M, add } from '../core/scenePrimitives.js';
 import { ensureHealthBadge } from '../ui/unitHealthBadge.js';
 import { makeCannon } from '../assets/models/cannonModel.js';
 import { makeOperator } from '../assets/models/operatorModel.js';
-import { makeArcher, makeGoblin, makeGoblinTower, makeGuard, makeHenry, makeMage, makeTower, makeWarrior, makeWoodBarrier, makeWoodenHouse, unitBase } from './unitModels.js';
+import { makeArcher, makeBuilderArea, makeGoblin, makeGoblinAltar, makeGoblinTower, makeGuard, makeHenry, makeMage, makeMageAltar, makeTower, makeWarrior, makeWoodBarrier, makeWoodenHouse, unitBase } from './unitModels.js';
 import { prepareConstructionUnit } from './prepareConstructionUnit.js';
 
 const UNIT_FACTORIES = Object.freeze({
@@ -18,7 +18,10 @@ const UNIT_FACTORIES = Object.freeze({
   wooden_house: makeWoodenHouse,
   mage: makeMage,
   goblin: makeGoblin,
-  goblin_tower: makeGoblinTower
+  goblin_tower: makeGoblinTower,
+  goblin_altar: makeGoblinAltar,
+  mage_altar: makeMageAltar,
+  builder_area: makeBuilderArea
 });
 
 export const UNIT_MODEL_SCALE = 0.55;
@@ -56,6 +59,7 @@ export function createCardUnit(card, cardIndex) {
     damage: card.damage,
     move: card.move,
     movementType: card.movementType,
+    attackType: card.attackType,
     minAttackRange: card.minAttackRange,
     attackRange: card.attackRange,
     areaRadius: card.areaRadius,

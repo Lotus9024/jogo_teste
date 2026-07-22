@@ -4,6 +4,8 @@
 @import './styles/game-ui/card-discard.css';
 @import './styles/cards.css';
 @import './styles/lobby.css';
+@import './styles/deck-builder.css';
+@import './styles/deck-builder-layer.css';
 @import './styles/kingdom-hud.css';
 @import './styles/settings.css';
 @import './styles/dev-mode.css';

@@ -26,12 +26,12 @@ export function createSocketServer(server, rooms) {
       try {
         if (message.type === CLIENT_EVENTS.ROOM_CREATE) {
           if (session.playerId) throw new Error('Você já está em uma sala.');
-          const { room, player } = rooms.create(message.payload.playerName, socket);
+          const { room, player } = rooms.create(message.payload.playerName, socket, message.payload.deckCardIds);
           Object.assign(session, { playerId: player.id, roomCode: room.code }); return broadcastRoom(room);
         }
         if (message.type === CLIENT_EVENTS.ROOM_JOIN) {
           if (session.playerId) throw new Error('Você já está em uma sala.');
-          const { room, player } = rooms.join(message.payload.roomCode, message.payload.playerName, socket);
+          const { room, player } = rooms.join(message.payload.roomCode, message.payload.playerName, socket, message.payload.deckCardIds);
           Object.assign(session, { playerId: player.id, roomCode: room.code }); return broadcastRoom(room);
         }
         if (message.type === CLIENT_EVENTS.GAME_ACTION) {

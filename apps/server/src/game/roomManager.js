@@ -1,5 +1,6 @@
 import { randomInt, randomUUID } from 'node:crypto';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
+import { validateDeckCardIds } from '@tronos/shared/cards';
 import { createInitialState } from './createInitialState.js';
 import { applyGameAction, applyTurnTimeout } from './gameEngine.js';
 
@@ -8,19 +9,19 @@ function roomCode() { return Array.from({ length: 6 }, () => ALPHABET[randomInt(
 
 export class RoomManager {
   constructor() { this.rooms = new Map(); }
-  create(playerName, socket) {
+  create(playerName, socket, deckCardIds) {
     let code; do code = roomCode(); while (this.rooms.has(code));
-    const player = { id: randomUUID(), name: normalizeName(playerName), seat: 1, socket };
+    const player = { id: randomUUID(), name: normalizeName(playerName), seat: 1, socket, deckCardIds: validateDeckCardIds(deckCardIds, { allowDefault: deckCardIds === undefined }) };
     const room = { code, players: [player], state: createInitialState([player]), updatedAt: Date.now() };
     this.rooms.set(code, room); return { room, player };
   }
-  join(code, playerName, socket) {
+  join(code, playerName, socket, deckCardIds) {
     const normalizedCode = String(code ?? '').trim().toUpperCase();
     if (!/^[A-Z2-9]{6}$/.test(normalizedCode)) throw new Error('Código de sala inválido.');
     const room = this.rooms.get(normalizedCode);
     if (!room) throw new Error('Sala não encontrada.');
     if (room.players.length >= GAME_CONFIG.maxPlayers) throw new Error('Sala cheia.');
-    const player = { id: randomUUID(), name: normalizeName(playerName), seat: 2, socket };
+    const player = { id: randomUUID(), name: normalizeName(playerName), seat: 2, socket, deckCardIds: validateDeckCardIds(deckCardIds, { allowDefault: deckCardIds === undefined }) };
     room.players.push(player); room.state = createInitialState(room.players); room.updatedAt = Date.now();
     return { room, player };
   }

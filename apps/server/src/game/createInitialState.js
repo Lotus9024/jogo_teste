@@ -1,5 +1,5 @@
 import { randomInt, randomUUID } from 'node:crypto';
-import { CARD_DEFINITIONS } from '@tronos/shared/cards';
+import { CARD_DEFINITIONS, DEFAULT_DECK_CARD_IDS } from '@tronos/shared/cards';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 
 const CARDS_BY_RARITY = Object.freeze({
@@ -21,7 +21,10 @@ function cardWeight(card, player, round) {
 }
 
 export function weightedCardForRarity(rarity, player, round = 1, random = randomInt) {
-  const pool = CARDS_BY_RARITY[rarity].length ? CARDS_BY_RARITY[rarity] : CARDS_BY_RARITY.uncommon;
+  const allowed = new Set(player.deckCardIds?.length ? player.deckCardIds : DEFAULT_DECK_CARD_IDS);
+  const rarityPool = CARDS_BY_RARITY[rarity].filter(card => allowed.has(card.id));
+  const fallbackPool = CARD_DEFINITIONS.filter(card => allowed.has(card.id));
+  const pool = rarityPool.length ? rarityPool : fallbackPool;
   const weighted = pool.map(card => ({ card, weight: cardWeight(card, player, round) }));
   const total = weighted.reduce((sum, item) => sum + item.weight, 0);
   let roll = random(total);
@@ -33,25 +36,28 @@ export function weightedCardForRarity(rarity, player, round = 1, random = random
 }
 
 export function rarityForRoll(level, roll) {
-  if (level >= 2) return roll < 6 ? 'common' : roll < 9 ? 'uncommon' : 'rare';
+  if (level >= 2) return roll < 11 ? 'common' : roll < 17 ? 'uncommon' : 'rare';
   return roll < 2 ? 'common' : 'uncommon';
 }
 
-export function createDeck(random = randomInt, level = 1, size = GAME_CONFIG.deckSize) {
-  const sides = level >= 2 ? 10 : 3;
+export function createDeck(random = randomInt, level = 1, size = GAME_CONFIG.deckSize, deckCardIds = DEFAULT_DECK_CARD_IDS) {
+  const allowed = new Set(deckCardIds);
+  const sides = level >= 2 ? 20 : 3;
   return Array.from({ length: size }, () => {
     const rarity = rarityForRoll(level, random(sides));
-    const pool = CARDS_BY_RARITY[rarity].length ? CARDS_BY_RARITY[rarity] : CARDS_BY_RARITY.uncommon;
+    const rarityPool = CARDS_BY_RARITY[rarity].filter(card => allowed.has(card.id));
+    const fallbackPool = CARD_DEFINITIONS.filter(card => allowed.has(card.id));
+    const pool = rarityPool.length ? rarityPool : fallbackPool;
     return pool[random(pool.length)].id;
   });
 }
 
 export function drawCard(player, { round = 1, random = randomInt } = {}) {
   if (player.hand.length >= GAME_CONFIG.maxHandSize) return false;
-  if (!player.deck.length) player.deck = createDeck(random, player.baseLevel ?? 1);
+  if (!player.deck.length) player.deck = createDeck(random, player.baseLevel ?? 1, GAME_CONFIG.deckSize, player.deckCardIds);
   player.deck.shift();
   const level = player.baseLevel ?? 1;
-  const sides = level >= 2 ? 10 : 3;
+  const sides = level >= 2 ? 20 : 3;
   const rarity = rarityForRoll(level, random(sides));
   const cardId = weightedCardForRarity(rarity, player, round, random);
   player.hand.push({ instanceId: randomUUID(), cardId });
@@ -65,7 +71,8 @@ export function createInitialState(players) {
     id: player.id, name: player.name, seat: player.seat, connected: true,
     baseHp: GAME_CONFIG.startingBaseHp, energy: GAME_CONFIG.startingEnergy, maxEnergy: GAME_CONFIG.maxEnergy,
     citizens: 0, baseLevel: 1, hasDrawnHouse: false,
-    hand: [], deck: createDeck(), discard: []
+    deckCardIds: [...(player.deckCardIds?.length ? player.deckCardIds : DEFAULT_DECK_CARD_IDS)],
+    hand: [], deck: createDeck(randomInt, 1, GAME_CONFIG.deckSize, player.deckCardIds?.length ? player.deckCardIds : DEFAULT_DECK_CARD_IDS), discard: []
   }));
   if (ready) statePlayers.forEach(player => {
     for (let index = 0; index < GAME_CONFIG.startingHandSize; index += 1) drawCard(player, { round: 1 });

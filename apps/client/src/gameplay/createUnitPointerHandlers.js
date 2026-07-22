@@ -100,7 +100,8 @@ export function createUnitPointerHandlers({
       return;
     }
     if (state.onlineState && (unit.userData.ownerSeat !== state.selfSeat
-      || state.onlineState.state.activeSeat !== state.selfSeat || unit.userData.actionUsed)) return;
+      || state.onlineState.state.activeSeat !== state.selfSeat
+      || (unit.userData.actionUsed && !(unit.userData.bonusMoves > 0)))) return;
     event.preventDefault();
     event.stopPropagation();
     cameraTransition.cancel({ restoreControls: false });

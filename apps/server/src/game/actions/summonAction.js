@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import { CARD_BY_ID, effectiveCardCost, goblinSpawnHp, isRoadPlacementCell } from '@tronos/shared/cards';
+import { CARD_BY_ID, effectiveCardCost, goblinSpawnHp, isGoblinTroop, isRoadPlacementCell } from '@tronos/shared/cards';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { mountableTowerAt } from '../combat.js';
 import { deploymentCell, fail, inBase, integer, unitAt, unitsAt, validCell } from '../gameQueries.js';
+import { goblinTroopsInBaseArea } from '../kingdomEffects.js';
 import { requireTurn } from '../turnLifecycle.js';
 
 export function summonAction(state, player, _opponent, action) {
@@ -16,8 +17,9 @@ export function summonAction(state, player, _opponent, action) {
   const roadBlocker = unitsAt(state, x, z).some(unit => ['construction', 'machine'].includes(CARD_BY_ID[unit.cardId]?.type));
   const roadOccupied = state.roads.some(road => road.x === x && road.z === z);
   if (card.id === 'road') {
-    if (!validCell(x, z) || inBase(x, z) || roadBlocker || !isRoadPlacementCell(player.seat, x, z, state.roads, GAME_CONFIG.boardSize)) fail('A Rua precisa estar conectada ao castelo ou a outra Rua do seu reino.');
-  } else if (!validCell(x, z) || !deploymentCell(player.seat, x, z) || inBase(x, z) || (unitAt(state, x, z) && !tower) || (roadOccupied && ['construction', 'machine'].includes(card.type))) fail('Escolha uma casa livre a até 2 casas do seu reino.');
+    if (!validCell(x, z) || inBase(x, z, state) || roadBlocker || !isRoadPlacementCell(player.seat, x, z, state.roads, GAME_CONFIG.boardSize)) fail('A Rua precisa estar conectada ao castelo ou a outra Rua do seu reino.');
+  } else if (!validCell(x, z) || !deploymentCell(player.seat, x, z, state) || inBase(x, z, state) || (unitAt(state, x, z) && !tower) || (roadOccupied && ['construction', 'machine'].includes(card.type))) fail('Escolha uma casa livre a até 2 casas do seu reino.');
+  if (card.id === 'goblin_altar' && goblinTroopsInBaseArea(state, player.seat).length < 2) fail('O Altar Goblin exige duas tropas Goblin na área da sua base.');
   const cost = effectiveCardCost(card.id, player.seat, state.units);
   if (player.energy < cost) fail('Energia insuficiente.');
   player.energy -= cost;
@@ -27,11 +29,12 @@ export function summonAction(state, player, _opponent, action) {
     state.roads.push({ id: randomUUID(), ownerSeat: player.seat, x, z, underConstruction: true, buildReadyRound: state.round + card.buildRounds });
     return;
   }
-  const hp = card.id === 'goblin' ? goblinSpawnHp(player.seat, x, z, state.units) : card.hp;
+  const hp = isGoblinTroop(card.id) ? goblinSpawnHp(player.seat, x, z, state.units, card.id) : card.hp;
   state.units.push({
     id: randomUUID(), ownerSeat: player.seat, cardId: card.id, x, z, hp, maxHp: hp, shield: 0,
     actionUsed: card.id !== 'henry', movedThisTurn: false, attackedThisTurn: false,
     abilityUsed: false, abilityReadyTurn: 0, instantUsedRound: 0, instantReadyTurn: 0, empowered: false, mountedOnTowerId: tower?.id ?? null,
+    bonusMoves: 0, attackPenalty: 0, attackPenaltyUntilTurn: 0,
     underConstruction: Boolean(card.buildRounds), buildReadyRound: card.buildRounds ? state.round + card.buildRounds : null
   });
 }

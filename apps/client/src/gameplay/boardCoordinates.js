@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { baseCellsForSeat as sharedBaseCellsForSeat } from '@tronos/shared/cards';
 
-export function createBoardCoordinates({ getUnits, tile, half }) {
+export function createBoardCoordinates({ getUnits, getBaseLevel = () => 1, tile, half }) {
   function unitAtCell(x, z, exclude = null) {
     return unitsAtCell(x, z, exclude)[0] ?? null;
   }
@@ -15,14 +15,11 @@ export function createBoardCoordinates({ getUnits, tile, half }) {
   }
 
   function baseSeatAtCell(x, z) {
-    if (x < 6 || x > 8) return null;
-    if (z <= 2) return 2;
-    if (z >= 12) return 1;
-    return null;
+    return [1, 2].find(seat => baseCellsForSeat(seat).some(cell => cell.x === x && cell.z === z)) ?? null;
   }
 
   function baseCellsForSeat(seat) {
-    return sharedBaseCellsForSeat(seat, 15);
+    return sharedBaseCellsForSeat(seat, 15, getBaseLevel(seat));
   }
 
   function snapToTile(value) {

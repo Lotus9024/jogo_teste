@@ -48,12 +48,12 @@ export class GameSocketClient extends EventTarget {
     });
   }
 
-  createRoom(playerName) {
-    this.#send(CLIENT_EVENTS.ROOM_CREATE, { playerName });
+  createRoom(playerName, deckCardIds) {
+    this.#send(CLIENT_EVENTS.ROOM_CREATE, { playerName, deckCardIds });
   }
 
-  joinRoom(roomCode, playerName) {
-    this.#send(CLIENT_EVENTS.ROOM_JOIN, { roomCode, playerName });
+  joinRoom(roomCode, playerName, deckCardIds) {
+    this.#send(CLIENT_EVENTS.ROOM_JOIN, { roomCode, playerName, deckCardIds });
   }
 
   sendAction(action, version) {

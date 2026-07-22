@@ -7,6 +7,7 @@ import { createUnitInteractionController } from './gameplay/createUnitInteractio
 import { createOnlineSession } from './network/createOnlineSession.js';
 import { createHandController } from './ui/createHandController.js';
 import { createSettingsController } from './ui/createSettingsController.js';
+import { createDeckBuilderController } from './ui/createDeckBuilderController.js';
 import './style.css';
 
 const {
@@ -20,6 +21,7 @@ const {
 const { roads, fires, fireMeshes } = boardPresentation;
 
 const callbacks = {};
+const deckBuilder = createDeckBuilderController();
 const gameError = document.querySelector('#game-error');
 let gameErrorTimer;
 callbacks.showGameError = message => {
@@ -183,6 +185,8 @@ const onlineSession = createOnlineSession({
   camera,
   controls,
   cameraTransition,
+  alliedKeep,
+  enemyKeep,
   tile,
   half,
   units,
@@ -194,6 +198,7 @@ const onlineSession = createOnlineSession({
   abilities,
   handController,
   devController,
+  deckBuilder,
   callbacks,
 });
 Object.assign(callbacks, {

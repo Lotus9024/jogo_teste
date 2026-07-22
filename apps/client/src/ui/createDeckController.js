@@ -23,7 +23,7 @@ export function createDeckController({
 
   function drawCardPreview() {
     if (state.devMode) return gallery.open();
-    if (state.onlineState) return previewCard(state.deckPreviewIndex);
+    if (state.onlineState) return hidePreview();
     if (drawing || state.deckRemaining <= 0) return;
     drawing = true;
     const deck = screenPosition();
@@ -72,7 +72,7 @@ export function createDeckController({
     if (over === state.deckHover) return;
     state.deckHover = over;
     renderer.domElement.style.cursor = over ? 'pointer' : '';
-    if (over) previewCard(state.deckPreviewIndex);
+    if (over && !state.onlineState) previewCard(state.deckPreviewIndex);
     else hidePreview();
   }
 

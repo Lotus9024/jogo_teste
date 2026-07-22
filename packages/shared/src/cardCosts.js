@@ -3,15 +3,26 @@ import { CARD_BY_ID } from './cardCatalog.js';
 export function effectiveCardCost(cardId, seat, units = []) {
   const card = CARD_BY_ID[cardId];
   if (!card) return Number.POSITIVE_INFINITY;
-  if (card.id !== 'goblin_tower') return card.cost;
-  const goblins = units.filter(unit => unit.ownerSeat === seat && unit.cardId === 'goblin').length;
-  return Math.max(card.minimumCost ?? 1, card.cost - goblins * (card.goblinDiscount ?? 1));
+  const completedAllied = units.filter(unit => unit.ownerSeat === seat && !unit.underConstruction);
+  const goblinTroops = completedAllied.filter(unit => isGoblinTroop(unit.cardId)).length;
+  const goblinAltars = completedAllied.filter(unit => unit.cardId === 'goblin_altar').length;
+  const mageAltars = completedAllied.filter(unit => unit.cardId === 'mage_altar').length;
+  const towerDiscount = card.id === 'goblin_tower' ? goblinTroops * (card.goblinDiscount ?? 1) : 0;
+  const familyDiscount = card.family === 'goblin' ? goblinAltars : card.family === 'mage' ? mageAltars : 0;
+  return Math.max(card.minimumCost ?? 1, card.cost - towerDiscount - familyDiscount);
 }
 
-export function goblinSpawnHp(seat, x, z, units = []) {
+export function isGoblinCard(cardId) { return CARD_BY_ID[cardId]?.family === 'goblin'; }
+export function isMageCard(cardId) { return CARD_BY_ID[cardId]?.family === 'mage'; }
+export function isGoblinTroop(cardId) {
+  const card = CARD_BY_ID[cardId];
+  return card?.family === 'goblin' && !card.type;
+}
+
+export function goblinSpawnHp(seat, x, z, units = [], cardId = 'goblin') {
   const towerNearby = units.some(unit => unit.ownerSeat === seat
     && unit.cardId === 'goblin_tower'
     && !unit.underConstruction
     && Math.abs(unit.x - x) + Math.abs(unit.z - z) === 1);
-  return CARD_BY_ID.goblin.hp + (towerNearby ? 1 : 0);
+  return (CARD_BY_ID[cardId]?.hp ?? 1) + (isGoblinTroop(cardId) && towerNearby ? 1 : 0);
 }

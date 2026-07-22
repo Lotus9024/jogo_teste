@@ -7,6 +7,7 @@ export function lobbyTemplate() {
         <p>Crie uma sala privada ou entre usando o código de outro rei.</p>
         <label class="lobby-field"><span>NOME DO REI</span><input id="player-name" maxlength="24" autocomplete="nickname" value="Rei do Corvo" /></label>
         <div class="lobby-actions">
+          <button id="open-deck-builder" class="deck-menu-button">DECK <small id="deck-status">NÃO MONTADO</small></button>
           <button id="create-room" class="lobby-primary">CRIAR SALA</button>
           <i>OU</i>
           <div class="join-row"><input id="room-code" maxlength="6" autocomplete="off" placeholder="CÓDIGO" aria-label="Código da sala" /><button id="join-room">ENTRAR</button></div>

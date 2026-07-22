@@ -1,7 +1,7 @@
 // Public compatibility facade. Existing consumers continue importing
 // `@tronos/shared/cards` while implementation details stay separated by domain.
 export { CARD_BY_ID, CARD_DEFINITIONS } from './cardCatalog.js';
-export { effectiveCardCost, goblinSpawnHp } from './cardCosts.js';
+export { effectiveCardCost, goblinSpawnHp, isGoblinCard, isGoblinTroop, isMageCard } from './cardCosts.js';
 export {
   ORTHOGONAL_DIRECTIONS,
   baseCellsForSeat,
@@ -10,6 +10,7 @@ export {
   forwardDeltaForSeat,
   gridCellsBetween,
   isAttackDistanceValid,
+  isAttackTargetValid,
   isCannonTargetValid,
   isDeploymentCell,
   movementDistance
@@ -21,3 +22,4 @@ export {
   isRoadPlacementCell,
   roadMovementBonus
 } from './kingdomEconomy.js';
+export { DEFAULT_DECK_CARD_IDS, DECK_LIMITS, DECK_RARITIES, deckCounts, normalizeDeckCardIds, validateDeckCardIds } from './deckRules.js';

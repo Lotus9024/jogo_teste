@@ -16,7 +16,7 @@ test('arqueiro ataca somente a três ou quatro blocos e não ocupa a casa da ví
     { id: 'target-valid', ownerSeat: 2, cardId: 'guard', x: 4, z: 12, hp: 4, shield: 0, actionUsed: false, abilityUsed: false }
   );
   valid.rooms.action(valid.room.code, valid.first.id, { type: 'attack', unitId: 'archer-valid', targetUnitId: 'target-valid' }, valid.room.state.version);
-  assert.equal(valid.room.state.units.find(unit => unit.id === 'target-valid').hp, 2);
+  assert.equal(valid.room.state.units.find(unit => unit.id === 'target-valid').hp, 3);
 
   const edge = match();
   edge.room.state.units.push(
@@ -24,7 +24,7 @@ test('arqueiro ataca somente a três ou quatro blocos e não ocupa a casa da ví
     { id: 'target-edge', ownerSeat: 2, cardId: 'guard', x: 4, z: 13, hp: 4, shield: 0, actionUsed: false, abilityUsed: false }
   );
   edge.rooms.action(edge.room.code, edge.first.id, { type: 'attack', unitId: 'archer-edge', targetUnitId: 'target-edge' }, edge.room.state.version);
-  assert.equal(edge.room.state.units.find(unit => unit.id === 'target-edge').hp, 2);
+  assert.equal(edge.room.state.units.find(unit => unit.id === 'target-edge').hp, 3);
 
   const far = match();
   far.room.state.units.push(
@@ -36,7 +36,7 @@ test('arqueiro ataca somente a três ou quatro blocos e não ocupa a casa da ví
   const kill = match();
   kill.room.state.units.push(
     { id: 'archer-kill', ownerSeat: 1, cardId: 'archer', x: 4, z: 9, hp: 2, shield: 0, actionUsed: false, abilityUsed: false },
-    { id: 'target-kill', ownerSeat: 2, cardId: 'guard', x: 4, z: 12, hp: 2, shield: 0, actionUsed: false, abilityUsed: false }
+    { id: 'target-kill', ownerSeat: 2, cardId: 'guard', x: 4, z: 12, hp: 1, shield: 0, actionUsed: false, abilityUsed: false }
   );
   kill.rooms.action(kill.room.code, kill.first.id, { type: 'attack', unitId: 'archer-kill', targetUnitId: 'target-kill' }, kill.room.state.version);
   assert.equal(kill.room.state.units.some(unit => unit.id === 'target-kill'), false);
@@ -54,7 +54,7 @@ test('arqueiro ataca por cima de barreiras, mas não de tropas', () => {
     { id: 'target-over-barrier', ownerSeat: 2, cardId: 'guard', x: 4, z: 12, hp: 4, shield: 0, actionUsed: false }
   );
   barrierLine.rooms.action(barrierLine.room.code, barrierLine.first.id, { type: 'attack', unitId: 'archer-over-barrier', targetUnitId: 'target-over-barrier' }, barrierLine.room.state.version);
-  assert.equal(barrierLine.room.state.units.find(unit => unit.id === 'target-over-barrier').hp, 2);
+  assert.equal(barrierLine.room.state.units.find(unit => unit.id === 'target-over-barrier').hp, 3);
 
   const troopLine = match();
   troopLine.room.state.units.push(
@@ -72,7 +72,7 @@ test('arqueiro ataca o castelo inimigo quando está no alcance', () => {
   const { rooms, room, first } = match();
   room.state.units.push({ id: 'archer-base', ownerSeat: 1, cardId: 'archer', x: 7, z: 5, hp: 2, shield: 0, actionUsed: false, abilityUsed: false });
   rooms.action(room.code, first.id, { type: 'attack', unitId: 'archer-base', targetBaseSeat: 2 }, room.state.version);
-  assert.equal(room.state.players[1].baseHp, 8);
+  assert.equal(room.state.players[1].baseHp, 9);
 });
 
 test('arqueiro na torre ataca através de unidades à frente', () => {
@@ -83,7 +83,7 @@ test('arqueiro na torre ataca através de unidades à frente', () => {
     { id: 'tower-shot-blocker', ownerSeat: 1, cardId: 'guard', x: 7, z: 4, hp: 4, shield: 0, actionUsed: false }
   );
   rooms.action(room.code, first.id, { type: 'attack', unitId: 'archer-tower-shot', targetBaseSeat: 2 }, room.state.version);
-  assert.equal(room.state.players[1].baseHp, 8);
+  assert.equal(room.state.players[1].baseHp, 9);
 });
 test('arqueiro pode subir na torre e recebe mais um de alcance', () => {
   const { rooms, room, first } = match();
@@ -102,7 +102,7 @@ test('arqueiro pode subir na torre e recebe mais um de alcance', () => {
   );
   assert.deepEqual({ x: archer.x, z: archer.z, tower: archer.mountedOnTowerId }, { x: 6, z: 10, tower: 'tower-built' });
   rooms.action(room.code, first.id, { type: 'attack', unitId: 'archer-mount', targetUnitId: 'range-five' }, room.state.version);
-  assert.equal(room.state.units.find(unit => unit.id === 'range-five').hp, 2);
+  assert.equal(room.state.units.find(unit => unit.id === 'range-five').hp, 3);
 });
 
 test('rajada da torre funciona no próprio turno e recarrega após uma rodada', () => {
