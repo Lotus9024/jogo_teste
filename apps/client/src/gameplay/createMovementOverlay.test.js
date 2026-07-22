@@ -87,16 +87,15 @@ test('arqueiro comum marca alvos atrás de barreiras, mas não atrás de tropas'
   assert.equal(app.dataset.attackTiles, '1');
 });
 
-test('canhão marca disparos mesmo com uma unidade à frente', () => {
+test('canhão marca o primeiro alvo, mas não casas depois dele', () => {
   const scene = new THREE.Scene();
   const app = { dataset: {} };
   const source = unit('cannon', 1, 5, 8);
   Object.assign(source.userData, { cardId: 'cannon', move: 1, movementType: 'forward', minAttackRange: 3, attackRange: 6, damage: 4, areaRadius: 1 });
   const operator = unit('operator', 1, 5, 9);
   operator.userData.cardId = 'operator';
-  const blocker = unit('blocker', 1, 5, 7);
-  const enemy = unit('enemy', 2, 5, 4);
-  const units = [source, operator, blocker, enemy];
+  const blocker = unit('blocker', 1, 5, 4);
+  const units = [source, operator, blocker];
   const overlay = createMovementOverlay({
     scene, app, units, tile: 1, half: 0,
     unitAtCell: (x, z, excluded) => units.find(candidate => candidate !== excluded && candidate.position.x === x && candidate.position.z === z),
@@ -107,8 +106,10 @@ test('canhão marca disparos mesmo com uma unidade à frente', () => {
   });
 
   overlay.show(source);
+  assert.equal(overlay.isInteractiveCell(5, 5), true);
   assert.equal(overlay.isInteractiveCell(5, 4), true);
-  assert.equal(overlay.isInteractiveCell(5, 2), true);
-  assert.equal(app.dataset.movementTiles, '0');
-  assert.equal(app.dataset.attackTiles, '4');
+  assert.equal(overlay.isInteractiveCell(5, 3), false);
+  assert.equal(overlay.isInteractiveCell(5, 2), false);
+  assert.equal(app.dataset.movementTiles, '1');
+  assert.equal(app.dataset.attackTiles, '2');
 });

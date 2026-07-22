@@ -63,7 +63,7 @@ test('cartas usam os atributos definidos', () => {
       warrior: { hp: 3, damage: 2, move: 2, movementType: 'straight', cost: 4 },
       guard: { hp: 4, damage: 1, move: 1, movementType: 'any', cost: 4 },
       archer: { hp: 2, damage: 2, move: 1, movementType: 'any', cost: 6 },
-      wooden_barrier: { hp: 3, damage: 0, move: 0, movementType: 'none', cost: 4 },
+      wooden_barrier: { hp: 3, damage: 0, move: 0, movementType: 'none', cost: 2 },
       tower: { hp: 5, damage: 0, move: 0, movementType: 'none', cost: 7 },
       operator: { hp: 1, damage: 0, move: 1, movementType: 'any', cost: 3 },
       cannon: { hp: 1, damage: 4, move: 1, movementType: 'forward', cost: 7 },
@@ -411,7 +411,6 @@ test('canhão exige operador exatamente atrás para disparar', () => {
   const { rooms, room, first } = match();
   room.state.units.push(
     { id: 'cannon-1', ownerSeat: 1, cardId: 'cannon', x: 7, z: 8, hp: 2, shield: 0, actionUsed: false, underConstruction: false },
-    { id: 'cannon-blocker', ownerSeat: 1, cardId: 'guard', x: 7, z: 7, hp: 4, shield: 0, actionUsed: false },
     { id: 'target-1', ownerSeat: 2, cardId: 'guard', x: 7, z: 4, hp: 8, shield: 0, actionUsed: false }
   );
   assert.throws(
@@ -421,7 +420,6 @@ test('canhão exige operador exatamente atrás para disparar', () => {
   room.state.units.push({ id: 'operator-1', ownerSeat: 1, cardId: 'operator', x: 7, z: 9, hp: 1, shield: 0, actionUsed: false });
   rooms.action(room.code, first.id, { type: 'attack', unitId: 'cannon-1', targetUnitId: 'target-1' }, room.state.version);
   assert.equal(room.state.units.find(unit => unit.id === 'target-1').hp, 4);
-  assert.equal(room.state.units.find(unit => unit.id === 'cannon-blocker').hp, 4);
   assert.equal(room.state.units.find(unit => unit.id === 'operator-1').actionUsed, true);
 });
 
@@ -491,13 +489,38 @@ test('canhão pode disparar em casa vazia e atingir a área ao redor', () => {
   room.state.units.push(
     { id: 'cannon-empty', ownerSeat: 1, cardId: 'cannon', x: 7, z: 9, hp: 2, shield: 0, actionUsed: false, underConstruction: false },
     { id: 'operator-empty', ownerSeat: 1, cardId: 'operator', x: 7, z: 10, hp: 1, shield: 0, actionUsed: false },
-    { id: 'shot-blocker', ownerSeat: 1, cardId: 'guard', x: 7, z: 8, hp: 8, shield: 0, actionUsed: false },
     { id: 'splash-empty', ownerSeat: 2, cardId: 'guard', x: 8, z: 5, hp: 8, shield: 0, actionUsed: false }
   );
   rooms.action(room.code, first.id, { type: 'attack', unitId: 'cannon-empty', x: 7, z: 5 }, room.state.version);
   assert.equal(room.state.units.find(unit => unit.id === 'splash-empty').hp, 7);
-  assert.equal(room.state.units.find(unit => unit.id === 'shot-blocker').hp, 8);
   assert.equal(room.state.units.find(unit => unit.id === 'operator-empty').actionUsed, true);
+});
+
+test('tropas e construções bloqueiam o tiro do canhão', () => {
+  for (const [blockerId, blockerCardId] of [['troop-blocker', 'guard'], ['building-blocker', 'wooden_barrier']]) {
+    const { rooms, room, first } = match();
+    room.state.units.push(
+      { id: `cannon-${blockerId}`, ownerSeat: 1, cardId: 'cannon', x: 7, z: 9, hp: 1, shield: 0, actionUsed: false, underConstruction: false },
+      { id: `operator-${blockerId}`, ownerSeat: 1, cardId: 'operator', x: 7, z: 10, hp: 1, shield: 0, actionUsed: false },
+      { id: blockerId, ownerSeat: 1, cardId: blockerCardId, x: 7, z: 7, hp: 4, shield: 0, actionUsed: false, underConstruction: false },
+      { id: `target-${blockerId}`, ownerSeat: 2, cardId: 'guard', x: 7, z: 5, hp: 8, shield: 0, actionUsed: false }
+    );
+    assert.throws(
+      () => rooms.action(room.code, first.id, { type: 'attack', unitId: `cannon-${blockerId}`, targetUnitId: `target-${blockerId}` }, room.state.version),
+      /linha de ataque.*bloqueada/i
+    );
+  }
+
+  const emptyCell = match();
+  emptyCell.room.state.units.push(
+    { id: 'cannon-blocked-empty', ownerSeat: 1, cardId: 'cannon', x: 7, z: 9, hp: 1, shield: 0, actionUsed: false, underConstruction: false },
+    { id: 'operator-blocked-empty', ownerSeat: 1, cardId: 'operator', x: 7, z: 10, hp: 1, shield: 0, actionUsed: false },
+    { id: 'construction-blocked-empty', ownerSeat: 2, cardId: 'tower', x: 7, z: 7, hp: 5, shield: 0, actionUsed: false, underConstruction: false }
+  );
+  assert.throws(
+    () => emptyCell.rooms.action(emptyCell.room.code, emptyCell.first.id, { type: 'attack', unitId: 'cannon-blocked-empty', x: 7, z: 5 }, emptyCell.room.state.version),
+    /linha de ataque.*bloqueada/i
+  );
 });
 
 test('canhão permanece em construção por duas rodadas', () => {

@@ -42,7 +42,7 @@ export function createMovementOverlay({
   }
 
   function attackLineBlocked(unit, from, to) {
-    if (unit.userData.cardId === 'cannon' || isMountedArcher(unit)) return false;
+    if (isMountedArcher(unit)) return false;
     return gridCellsBetween(from, to).some(cell => {
       const blocker = unitAtCell(cell.x, cell.z, unit);
       return blocker && (unit.userData.cardId !== 'archer' || blocker.userData.cardId !== 'wooden_barrier');
@@ -96,7 +96,7 @@ export function createMovementOverlay({
       const forward = forwardDeltaForSeat(unit.userData.ownerSeat);
       for (let step = unit.userData.minAttackRange; step <= unit.userData.attackRange; step += 1) {
         const cell = { x: originX + forward.x * step, z: originZ + forward.z * step };
-        if (cell.x < 0 || cell.x >= 15 || cell.z < 0 || cell.z >= 15) continue;
+        if (cell.x < 0 || cell.x >= 15 || cell.z < 0 || cell.z >= 15 || attackLineBlocked(unit, { x: originX, z: originZ }, cell)) continue;
         cannonAttackCells.push(cell);
         addMarker(cell.x, cell.z, attackMaterial);
       }

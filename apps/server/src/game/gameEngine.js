@@ -57,7 +57,7 @@ function attackCard(state, unit, card) {
 }
 
 function unitBlocksAttackLine(state, unit, target, card) {
-  if (card.id === 'cannon' || (card.id === 'archer' && mountedTower(state, unit))) return false;
+  if (card.id === 'archer' && mountedTower(state, unit)) return false;
   return gridCellsBetween(unit, target).some(cell => unitsAt(state, cell.x, cell.z, unit.id)
     .some(blocker => card.id !== 'archer' || blocker.cardId !== 'wooden_barrier'));
 }
@@ -233,7 +233,7 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     if (action.targetUnitId) {
       const target = state.units.find(item => item.id === action.targetUnitId && (card.id === 'cannon' || item.ownerSeat !== player.seat) && item.id !== unit.id) ?? fail('Alvo inválido.');
       if (card.id === 'cannon' ? !isCannonTargetValid(unit, target) : !isAttackDistanceValid(card, distance(unit, target))) fail('Alvo fora de alcance.');
-      if (unitBlocksAttackLine(state, unit, target, card)) fail('A linha de ataque está bloqueada por outra tropa.');
+      if (unitBlocksAttackLine(state, unit, target, card)) fail('A linha de ataque está bloqueada.');
       if (card.id === 'cannon') {
         fireCannonAt(state, unit, target, card);
         operator.actionUsed = true;
@@ -245,6 +245,7 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     } else if (card.id === 'cannon' && Number.isInteger(action.x) && Number.isInteger(action.z)) {
       const targetCell = { x: integer(action.x), z: integer(action.z) };
       if (!validCell(targetCell.x, targetCell.z) || !isCannonTargetValid(unit, targetCell)) fail('Alvo fora de alcance.');
+      if (unitBlocksAttackLine(state, unit, targetCell, card)) fail('A linha de ataque está bloqueada por outra unidade.');
       fireCannonAt(state, unit, targetCell, card);
       operator.actionUsed = true;
     } else if (action.targetBaseSeat === opponent.seat) {

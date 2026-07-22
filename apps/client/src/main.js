@@ -149,7 +149,7 @@ function moveOrAttackUnit(unit,destination,explicitTarget=null,originPosition=un
   const lineBlockers=gridCellsBetween(origin,destination).map(cell=>unitAtCell(cell.x,cell.z,unit)).filter(Boolean),blockedByUnit=lineBlockers.length>0;
   const mountedShot=isMountedArcher(unit)&&(hostileTarget||baseTarget);
   const archerShotOverBarriers=unit.userData.cardId==='archer'&&(hostileTarget||baseTarget)&&lineBlockers.every(blocker=>blocker.userData.cardId==='wooden_barrier');
-  if(blockedByUnit&&!mountedShot&&!cannonTarget&&!archerShotOverBarriers){unit.position.copy(originPosition);return}
+  if(blockedByUnit&&!mountedShot&&!archerShotOverBarriers){unit.position.copy(originPosition);return}
   if(onlineState){
     unit.position.copy(originPosition);
     if(mountable)return sendOnlineAction({type:'move',unitId:unit.userData.serverUnitId,...destination});
