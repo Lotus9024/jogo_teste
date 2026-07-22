@@ -66,7 +66,7 @@ test('cartas usam os atributos definidos', () => {
       wooden_barrier: { hp: 2, damage: 0, move: 0, movementType: 'none', cost: 4 },
       tower: { hp: 5, damage: 0, move: 0, movementType: 'none', cost: 7 },
       operator: { hp: 1, damage: 0, move: 1, movementType: 'any', cost: 3 },
-      cannon: { hp: 2, damage: 4, move: 1, movementType: 'forward', cost: 7 },
+      cannon: { hp: 1, damage: 4, move: 1, movementType: 'forward', cost: 7 },
       wooden_house: { hp: 1, damage: 0, move: 0, movementType: 'none', cost: 3 },
       road: { hp: null, damage: 0, move: 0, movementType: 'none', cost: 1 },
       mage: { hp: 2, damage: 2, move: 1, movementType: 'any', cost: 6 }
@@ -92,7 +92,7 @@ test('cartas usam os atributos definidos', () => {
   assert.equal(CARD_BY_ID.tower.buildRounds, 2);
   assert.deepEqual(
     { minAttackRange: CARD_BY_ID.cannon.minAttackRange, attackRange: CARD_BY_ID.cannon.attackRange, areaRadius: CARD_BY_ID.cannon.areaRadius, buildRounds: CARD_BY_ID.cannon.buildRounds },
-    { minAttackRange: 3, attackRange: 7, areaRadius: 2, buildRounds: 2 }
+    { minAttackRange: 3, attackRange: 6, areaRadius: 2, buildRounds: 2 }
   );
 });
 
@@ -100,10 +100,12 @@ test('Mago incendeia uma ou duas casas e o fogo persiste pelo turno rival', () =
   const { rooms, room, first, second } = match();
   room.state.units.push(
     { id: 'mage-fire', ownerSeat: 1, cardId: 'mage', x: 7, z: 8, hp: 2, shield: 0, actionUsed: false, abilityUsed: false },
+    { id: 'fire-blocker', ownerSeat: 1, cardId: 'guard', x: 7, z: 7, hp: 4, shield: 0, actionUsed: false, abilityUsed: false },
     { id: 'fire-target', ownerSeat: 2, cardId: 'guard', x: 7, z: 5, hp: 4, shield: 0, actionUsed: false, abilityUsed: false }
   );
   rooms.action(room.code, first.id, { type: 'mage_fire', unitId: 'mage-fire', cells: [{ x: 7, z: 5 }, { x: 8, z: 5 }] }, room.state.version);
   assert.equal(room.state.units.find(unit => unit.id === 'fire-target').hp, 2);
+  assert.equal(room.state.units.find(unit => unit.id === 'fire-blocker').hp, 4);
   assert.equal(room.state.fires.length, 2);
   assert.equal(room.state.units.find(unit => unit.id === 'mage-fire').actionUsed, true);
   rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
@@ -387,6 +389,7 @@ test('canhão exige operador exatamente atrás para disparar', () => {
   const { rooms, room, first } = match();
   room.state.units.push(
     { id: 'cannon-1', ownerSeat: 1, cardId: 'cannon', x: 7, z: 8, hp: 2, shield: 0, actionUsed: false, underConstruction: false },
+    { id: 'cannon-blocker', ownerSeat: 1, cardId: 'guard', x: 7, z: 7, hp: 4, shield: 0, actionUsed: false },
     { id: 'target-1', ownerSeat: 2, cardId: 'guard', x: 7, z: 4, hp: 8, shield: 0, actionUsed: false }
   );
   assert.throws(
@@ -396,11 +399,12 @@ test('canhão exige operador exatamente atrás para disparar', () => {
   room.state.units.push({ id: 'operator-1', ownerSeat: 1, cardId: 'operator', x: 7, z: 9, hp: 1, shield: 0, actionUsed: false });
   rooms.action(room.code, first.id, { type: 'attack', unitId: 'cannon-1', targetUnitId: 'target-1' }, room.state.version);
   assert.equal(room.state.units.find(unit => unit.id === 'target-1').hp, 4);
+  assert.equal(room.state.units.find(unit => unit.id === 'cannon-blocker').hp, 4);
   assert.equal(room.state.units.find(unit => unit.id === 'operator-1').actionUsed, true);
 });
 
-test('canhão dispara somente para frente entre três e sete casas', () => {
-  for (const [id, x, z] of [['near', 7, 6], ['side', 10, 8], ['far', 7, 0]]) {
+test('canhão dispara somente para frente entre três e seis casas', () => {
+  for (const [id, x, z] of [['near', 7, 6], ['side', 10, 8], ['far', 7, 1]]) {
     const { rooms, room, first } = match();
     room.state.units.push(
       { id: 'cannon-range', ownerSeat: 1, cardId: 'cannon', x: 7, z: 8, hp: 2, shield: 0, actionUsed: false, underConstruction: false },
@@ -465,10 +469,12 @@ test('canhão pode disparar em casa vazia e atingir a área ao redor', () => {
   room.state.units.push(
     { id: 'cannon-empty', ownerSeat: 1, cardId: 'cannon', x: 7, z: 9, hp: 2, shield: 0, actionUsed: false, underConstruction: false },
     { id: 'operator-empty', ownerSeat: 1, cardId: 'operator', x: 7, z: 10, hp: 1, shield: 0, actionUsed: false },
+    { id: 'shot-blocker', ownerSeat: 1, cardId: 'guard', x: 7, z: 8, hp: 8, shield: 0, actionUsed: false },
     { id: 'splash-empty', ownerSeat: 2, cardId: 'guard', x: 8, z: 5, hp: 8, shield: 0, actionUsed: false }
   );
   rooms.action(room.code, first.id, { type: 'attack', unitId: 'cannon-empty', x: 7, z: 5 }, room.state.version);
   assert.equal(room.state.units.find(unit => unit.id === 'splash-empty').hp, 7);
+  assert.equal(room.state.units.find(unit => unit.id === 'shot-blocker').hp, 8);
   assert.equal(room.state.units.find(unit => unit.id === 'operator-empty').actionUsed, true);
 });
 

@@ -28,20 +28,23 @@ test('torre expõe construção e rajada cardinal', () => {
   );
 });
 
-test('canhão usa frente relativa ao dono e alcance de três a sete casas', () => {
+test('canhão usa frente relativa ao dono e alcance de três a seis casas', () => {
   assert.deepEqual(forwardDeltaForSeat(1), { x: 0, z: -1 });
   assert.deepEqual(forwardDeltaForSeat(2), { x: 0, z: 1 });
   const cannon = { x: 7, z: 8, ownerSeat: 1 };
   assert.equal(isCannonTargetValid(cannon, { x: 7, z: 5 }), true);
-  assert.equal(isCannonTargetValid(cannon, { x: 7, z: 1 }), true);
+  assert.equal(isCannonTargetValid(cannon, { x: 7, z: 2 }), true);
+  assert.equal(isCannonTargetValid(cannon, { x: 7, z: 1 }), false);
   assert.equal(isCannonTargetValid(cannon, { x: 7, z: 6 }), false);
   assert.equal(isCannonTargetValid(cannon, { x: 8, z: 5 }), false);
 });
 
 test('canhão separa dano direto do dano em área', () => {
+  assert.equal(CARD_BY_ID.cannon.hp, 1);
   assert.equal(CARD_BY_ID.cannon.damage, 4);
   assert.equal(CARD_BY_ID.cannon.areaDamage, 1);
   assert.equal(CARD_BY_ID.cannon.areaRadius, 2);
+  assert.match(CARD_BY_ID.cannon.description, /mesmo com unidades à frente/i);
 });
 
 test('ruas formam uma rede conectada ao castelo e não possuem vida', () => {
@@ -71,6 +74,7 @@ test('Mago é raro e expõe fogo e ácido com os atributos definidos', () => {
     { hp: CARD_BY_ID.mage.hp, damage: CARD_BY_ID.mage.damage, move: CARD_BY_ID.mage.move, cost: CARD_BY_ID.mage.cost, range: CARD_BY_ID.mage.attackRange, cells: CARD_BY_ID.mage.maxFireCells, rarity: CARD_BY_ID.mage.rarityClass },
     { hp: 2, damage: 2, move: 1, cost: 6, range: 4, cells: 2, rarity: 'rare' }
   );
+  assert.match(CARD_BY_ID.mage.description, /mesmo com unidades à frente/i);
   assert.deepEqual(
     { cost: CARD_BY_ID.mage.ability.cost, damage: CARD_BY_ID.mage.ability.damage, radius: CARD_BY_ID.mage.ability.radius },
     { cost: 4, damage: 3, radius: 1 }

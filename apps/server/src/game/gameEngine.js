@@ -56,7 +56,7 @@ function attackCard(state, unit, card) {
 }
 
 function attackIgnoresUnits(state, unit, card) {
-  return card.id === 'archer' && Boolean(mountedTower(state, unit));
+  return card.id === 'cannon' || (card.id === 'archer' && Boolean(mountedTower(state, unit)));
 }
 
 function damageUnit(state, target, damage) {
@@ -241,7 +241,6 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
     } else if (card.id === 'cannon' && Number.isInteger(action.x) && Number.isInteger(action.z)) {
       const targetCell = { x: integer(action.x), z: integer(action.z) };
       if (!validCell(targetCell.x, targetCell.z) || !isCannonTargetValid(unit, targetCell)) fail('Alvo fora de alcance.');
-      if (unitBlocksLine(state, unit, targetCell, unit.id)) fail('A linha de ataque está bloqueada por outra tropa.');
       fireCannonAt(state, unit, targetCell, card);
       operator.actionUsed = true;
     } else if (action.targetBaseSeat === opponent.seat) {
