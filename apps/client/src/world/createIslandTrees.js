@@ -28,15 +28,23 @@ function prepareTree(tree) {
       part.visible = false;
       return;
     }
-    if (leafMaterials.length) {
-      const bareMaterials = materials.map(material => {
-        if (!isLeafMaterial(material)) return material;
+    const bareMaterials = materials.map(material => {
+      if (isLeafMaterial(material)) {
         const hiddenLeaves = material.clone();
         hiddenLeaves.visible = false;
         return hiddenLeaves;
-      });
-      part.material = Array.isArray(part.material) ? bareMaterials : bareMaterials[0];
-    }
+      }
+      const darkBark = material.clone();
+      darkBark.color?.multiplyScalar(/branches/i.test(material?.name ?? '') ? 0.19 : 0.24);
+      if (darkBark.emissive) {
+        darkBark.emissive.setHex(0x030204);
+        darkBark.emissiveIntensity = 0.04;
+      }
+      darkBark.roughness = 1;
+      darkBark.metalness = 0;
+      return darkBark;
+    });
+    part.material = Array.isArray(part.material) ? bareMaterials : bareMaterials[0];
     part.castShadow = true;
     part.receiveShadow = true;
     part.frustumCulled = true;

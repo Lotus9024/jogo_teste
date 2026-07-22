@@ -25,7 +25,7 @@ function createTerrainMaterials(renderer, quality) {
   const texture = createGroundTexture(renderer, quality === 'low' ? 384 : 1024);
   const cliffTexture = createCliffTexture(renderer, quality === 'low' ? 256 : 512);
   const terrainMaterial = new THREE.MeshStandardMaterial({
-    color: 0xaaa0b0,
+    color: 0x8e8695,
     map: texture,
     bumpMap: texture,
     bumpScale: 0.035,
