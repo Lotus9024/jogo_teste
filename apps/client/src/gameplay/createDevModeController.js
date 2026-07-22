@@ -6,7 +6,7 @@ import { createDevToolsController } from './createDevToolsController.js';
 export function createDevModeController(options) {
   const {
     state, app, scene, tile, half, units, hoverables, roads, boardPresentation,
-    interaction, actions, abilities, handController, cameraTransition, callbacks,
+    interaction, actions, abilities, handController, cameraTransition, deckBuilder, callbacks,
   } = options;
   const toolCallbacks = {
     ...callbacks,
@@ -103,6 +103,7 @@ export function createDevModeController(options) {
   }
 
   function initializeDevMode() {
+    deckBuilder?.close();
     callbacks.activatePreferredGraphics?.();
     Object.assign(state, { devMode: true, onlineState: null, activePlayer: 1, round: 1, selfSeat: 1 });
     app.dataset.mode = 'dev';

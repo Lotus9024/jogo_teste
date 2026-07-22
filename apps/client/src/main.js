@@ -149,6 +149,7 @@ const devController = createDevModeController({
   abilities,
   handController,
   cameraTransition,
+  deckBuilder,
   callbacks,
 });
 Object.assign(callbacks, {

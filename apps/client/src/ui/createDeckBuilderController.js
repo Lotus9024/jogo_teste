@@ -70,5 +70,5 @@ export function createDeckBuilderController() {
   });
   modal.addEventListener('click', event => { if (event.target === modal) close(); });
   document.querySelector('#deck-status').textContent = selected.length ? `${selected.length} CARTAS` : 'NÃO MONTADO';
-  return { open, getDeckCardIds: () => validateDeckCardIds(selected) };
+  return { open, close, getDeckCardIds: () => validateDeckCardIds(selected) };
 }
