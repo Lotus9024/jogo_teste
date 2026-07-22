@@ -1,4 +1,5 @@
 import { GRAPHICS_QUALITY, bootGraphicsQuality, loadGameSettings } from './gameSettings.js';
+import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { createCinematicCamera } from './createCinematicCamera.js';
 import { createGameScene } from './createGameScene.js';
 import { createDamageEffects } from '../gameplay/damageEffects.js';
@@ -31,8 +32,9 @@ export function createGameRuntime() {
     round: 1,
     devCardLevel: 1,
     devInstantBuild: false,
-    deckRemaining: 28,
+    deckRemaining: GAME_CONFIG.deckSize,
     deckHover: false,
+    deckHoverSeat: null,
     deckPreviewIndex: 0,
   };
   const gameScene = createGameScene(app, { quality: bootQuality });

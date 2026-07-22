@@ -146,6 +146,7 @@ export function createOnlineSession({
     devController.setKingdomProgressHud(me.citizens ?? 0, me.baseLevel ?? 1, enemy.baseLevel ?? 1);
     state.deckRemaining = me.deckCount;
     document.querySelector('#deck-count').textContent = String(state.deckRemaining);
+    handController.syncPhysicalDecks(me.deckCount, enemy.deckCount);
     document.querySelector('.enemy-base-tag i').style.width = `${Math.max(0, enemy.baseHp / GAME_CONFIG.startingBaseHp * 100)}%`;
     document.querySelector('.enemy-base-tag').setAttribute(
       'aria-label',

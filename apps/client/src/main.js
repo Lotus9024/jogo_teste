@@ -13,7 +13,7 @@ import './style.css';
 const {
   app, state, scene, renderer, camera, controls, updateDynamicLighting,
   setSceneGraphicsQuality, cameraTransition, damageEffects,
-  tile, half, alliedKeep, enemyKeep, deck3D, topDeckCard, wisps, fireLights,
+  tile, half, alliedKeep, enemyKeep, physicalDecks, wisps, fireLights,
   updateTerrain, setWorldGraphicsQuality, mageEffects, units, hoverables,
   boardCoordinates, boardPresentation, relations, movementOverlay, deploymentOverlay,
   activatePreferredGraphics,
@@ -112,7 +112,7 @@ const handController = createHandController({
   camera,
   controls,
   cameraTransition,
-  deck3D,
+  physicalDecks,
   tile,
   half,
   units,
@@ -168,14 +168,14 @@ const renderLoop = createRenderLoop({
   fireMeshes,
   wisps,
   fireLights,
-  topDeckCard,
+  physicalDecks,
   alliedKeep,
   enemyKeep,
   updateDynamicLighting,
   updateTerrain,
   getSelfSeat: () => state.selfSeat,
   getGraphicsQuality: () => state.graphicsQuality,
-  getDeckHover: () => state.deckHover,
+  getDeckHoverSeat: () => state.deckHoverSeat,
 });
 
 const onlineSession = createOnlineSession({

@@ -1,8 +1,9 @@
 import * as THREE from 'three';
+import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { cards, hideDeckPreview as hideCardPreview, showDeckPreview } from './cardView.js';
 
 export function createDeckController({
-  state, renderer, camera, controls, cameraTransition, deck3D, hand, gallery,
+  state, renderer, camera, controls, cameraTransition, physicalDecks, hand, gallery,
 }) {
   const deckPreview = document.querySelector('#deck-preview');
   const deckPoint = new THREE.Vector3();
@@ -10,15 +11,24 @@ export function createDeckController({
   const pointer = new THREE.Vector2();
   let drawing = false;
   let handShift = 0;
-  let pressed = false;
+  let pressedDeck = null;
 
+  const activeSeat = () => state.onlineState ? state.selfSeat : state.activePlayer;
+  const selfDeck = () => physicalDecks.bySeat[activeSeat() ?? 1];
   const previewCard = index => showDeckPreview(deckPreview, cards[index]);
   const hidePreview = () => hideCardPreview(deckPreview);
-  function screenPosition(y = 0.8) {
-    deck3D.getWorldPosition(deckPoint);
+
+  function screenPosition(deck = selfDeck(), y = 0.8) {
+    deck.getWorldPosition(deckPoint);
     deckPoint.y += y;
     deckPoint.project(camera);
     return { x: (deckPoint.x * 0.5 + 0.5) * innerWidth, y: (-deckPoint.y * 0.5 + 0.5) * innerHeight };
+  }
+
+  function syncCounts(selfCount, enemyCount) {
+    const seat = activeSeat() ?? 1;
+    physicalDecks.bySeat[seat].userData.setCount(selfCount);
+    physicalDecks.bySeat[seat === 1 ? 2 : 1].userData.setCount(enemyCount);
   }
 
   function drawCardPreview() {
@@ -52,6 +62,7 @@ export function createDeckController({
       document.querySelector('#hand-count').textContent = `${hand.children.length} CARTAS`;
       state.deckRemaining -= 1;
       document.querySelector('#deck-count').textContent = state.deckRemaining;
+      selfDeck().userData.setCount(state.deckRemaining);
       state.deckPreviewIndex = (state.deckPreviewIndex + 1) % cards.length;
       hand.classList.add('reflow');
       setTimeout(() => hand.classList.remove('reflow'), 600);
@@ -59,20 +70,29 @@ export function createDeckController({
     };
   }
 
-  function atPointer(event) {
+  function deckAtPointer(event) {
     const rect = renderer.domElement.getBoundingClientRect();
     pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     ray.setFromCamera(pointer, camera);
-    return ray.intersectObject(deck3D, true).length > 0;
+    const hits = physicalDecks.decks
+      .flatMap(deck => ray.intersectObject(deck, true).map(hit => ({ deck, distance: hit.distance })))
+      .sort((a, b) => a.distance - b.distance);
+    return hits[0]?.deck ?? null;
+  }
+
+  function isSelfDeck(deck) {
+    return deck?.userData.ownerSeat === (activeSeat() ?? 1);
   }
 
   function hover(event) {
-    const over = atPointer(event);
-    if (over === state.deckHover) return;
-    state.deckHover = over;
-    renderer.domElement.style.cursor = over ? 'pointer' : '';
-    if (over && !state.onlineState) previewCard(state.deckPreviewIndex);
+    const deck = deckAtPointer(event);
+    const hoverSeat = deck?.userData.ownerSeat ?? null;
+    if (hoverSeat === state.deckHoverSeat) return;
+    state.deckHoverSeat = hoverSeat;
+    state.deckHover = isSelfDeck(deck);
+    renderer.domElement.style.cursor = deck ? (isSelfDeck(deck) ? 'pointer' : 'help') : '';
+    if (isSelfDeck(deck) && !state.onlineState) previewCard(state.deckPreviewIndex);
     else hidePreview();
   }
 
@@ -93,32 +113,39 @@ export function createDeckController({
     ], { duration: 800, easing: 'cubic-bezier(.2,.75,.2,1)' }).onfinish = () => ghost.remove();
   }
 
+  function resetHover() {
+    state.deckHover = false;
+    state.deckHoverSeat = null;
+    pressedDeck = null;
+    controls.enabled = true;
+    renderer.domElement.style.cursor = '';
+    hidePreview();
+  }
+
   function mount() {
+    syncCounts(state.deckRemaining, GAME_CONFIG.deckSize);
     document.querySelector('#draw-card').addEventListener('click', drawCardPreview);
     renderer.domElement.addEventListener('pointermove', hover);
     renderer.domElement.addEventListener('pointerdown', event => {
-      if (event.button !== 0 || !atPointer(event)) return;
+      const deck = deckAtPointer(event);
+      if (event.button !== 0 || !isSelfDeck(deck)) return;
       event.preventDefault();
       event.stopPropagation();
       cameraTransition.cancel({ restoreControls: false });
-      pressed = true;
+      pressedDeck = deck;
       controls.enabled = false;
     }, true);
     renderer.domElement.addEventListener('pointerup', event => {
-      if (!pressed) return;
+      if (!pressedDeck) return;
       event.preventDefault();
       event.stopPropagation();
-      pressed = false;
+      const releasedDeck = deckAtPointer(event);
+      const shouldDraw = releasedDeck === pressedDeck && isSelfDeck(releasedDeck);
+      pressedDeck = null;
       controls.enabled = true;
-      if (atPointer(event)) drawCardPreview();
+      if (shouldDraw) drawCardPreview();
     }, true);
-    renderer.domElement.addEventListener('pointerleave', () => {
-      state.deckHover = false;
-      pressed = false;
-      controls.enabled = true;
-      renderer.domElement.style.cursor = '';
-      hidePreview();
-    });
+    renderer.domElement.addEventListener('pointerleave', resetHover);
     document.querySelector('.card-dock').addEventListener('wheel', event => {
       if (Math.abs(event.deltaY) < Math.abs(event.deltaX)) return;
       event.preventDefault();
@@ -129,5 +156,5 @@ export function createDeckController({
     }, { passive: false });
   }
 
-  return { mount, animateServerDraw };
+  return { mount, animateServerDraw, syncCounts };
 }

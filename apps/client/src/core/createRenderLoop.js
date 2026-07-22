@@ -14,14 +14,14 @@ export function createRenderLoop({
   fireMeshes,
   wisps,
   fireLights,
-  topDeckCard,
+  physicalDecks,
   alliedKeep,
   enemyKeep,
   updateDynamicLighting,
   updateTerrain,
   getSelfSeat,
   getGraphicsQuality,
-  getDeckHover,
+  getDeckHoverSeat,
 }) {
   const clock = new THREE.Clock();
   const enemyBaseTag = document.querySelector('.enemy-base-tag');
@@ -50,7 +50,7 @@ export function createRenderLoop({
     const delta = clock.getDelta();
     const time = clock.elapsedTime;
     const quality = getGraphicsQuality();
-    const deckHover = getDeckHover();
+    const deckHoverSeat = getDeckHoverSeat();
 
     controls.update();
     cameraTransition.update();
@@ -62,8 +62,13 @@ export function createRenderLoop({
       lastStatusUpdate = time;
     }
 
-    topDeckCard.position.y = THREE.MathUtils.lerp(topDeckCard.position.y, deckHover ? 0.98 : 0.766, 0.14);
-    topDeckCard.rotation.z = THREE.MathUtils.lerp(topDeckCard.rotation.z, deckHover ? -0.08 : 0, 0.12);
+    physicalDecks.decks.forEach(deck => {
+      const topCard = deck.userData.getTopCard();
+      if (!topCard) return;
+      const hovered = deck.userData.ownerSeat === deckHoverSeat;
+      topCard.position.y = THREE.MathUtils.lerp(topCard.position.y, topCard.userData.restY + (hovered ? 0.22 : 0), 0.14);
+      topCard.rotation.z = THREE.MathUtils.lerp(topCard.rotation.z, hovered ? -0.08 : 0, 0.12);
+    });
 
     if (quality === 'high') {
       updateDynamicLighting(time);

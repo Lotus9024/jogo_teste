@@ -168,6 +168,7 @@ export function createHandController(options) {
     makeSummonedUnit: summoning.makeSummonedUnit,
     renderOnlineHand,
     animateServerDraw: deck.animateServerDraw,
+    syncPhysicalDecks: deck.syncCounts,
     applyConstructionState: summoning.applyConstructionState,
   };
 }
