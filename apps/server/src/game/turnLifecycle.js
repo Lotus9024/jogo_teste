@@ -16,8 +16,12 @@ export function endTurn(state) {
   resolveEndingFires(state, state.activeSeat);
   state.activeSeat = state.activeSeat === 1 ? 2 : 1;
   if (state.activeSeat === 1) state.round += 1;
+  let completedMageAltars = 0;
   state.units.forEach(unit => {
-    if (unit.underConstruction && unit.ownerSeat === state.activeSeat && unit.buildReadyRound <= state.round) unit.underConstruction = false;
+    if (unit.underConstruction && unit.ownerSeat === state.activeSeat && unit.buildReadyRound <= state.round) {
+      unit.underConstruction = false;
+      if (unit.cardId === 'mage_altar') completedMageAltars += 1;
+    }
   });
   state.roads.forEach(road => {
     if (road.underConstruction && road.ownerSeat === state.activeSeat && road.buildReadyRound <= state.round) road.underConstruction = false;
@@ -27,6 +31,7 @@ export function endTurn(state) {
   const player = state.players.find(item => item.seat === state.activeSeat);
   player.energy = Math.min(player.maxEnergy, player.energy + GAME_CONFIG.energyPerTurn + builderEnergyBonus(state, player.seat));
   drawCard(player, { round: state.round });
+  for (let index = 0; index < completedMageAltars; index += 1) drawCard(player, { round: state.round });
   state.units.filter(unit => unit.ownerSeat === state.activeSeat).forEach(unit => {
     unit.actionUsed = false;
     unit.movedThisTurn = false;

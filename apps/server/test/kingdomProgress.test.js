@@ -36,6 +36,27 @@ test('Rua aumenta o movimento somente depois de concluída', () => {
   assert.deepEqual({ x: room.state.units[0].x, z: room.state.units[0].z }, { x: 7, z: 9 });
 });
 
+test('Estrada de Pedregulhos é construída na rede e acelera somente cartas Básicas', () => {
+  const { rooms, room, first, second } = match();
+  const player = room.state.players[0];
+  const [road] = give(player, 'cobblestone_road');
+  rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: road.instanceId, x: 7, z: 11 }, room.state.version);
+  assert.equal(room.state.roads[0].cardId, 'cobblestone_road');
+  rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
+  rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
+  room.state.units.push(
+    { id: 'basic-on-cobbles', ownerSeat: 1, cardId: 'guard', x: 7, z: 11, hp: 3, shield: 0, actionUsed: false, underConstruction: false },
+  );
+  rooms.action(room.code, first.id, { type: 'move', unitId: 'basic-on-cobbles', x: 7, z: 9 }, room.state.version);
+  room.state.units.push(
+    { id: 'goblin-on-cobbles', ownerSeat: 1, cardId: 'goblin', x: 7, z: 11, hp: 1, shield: 0, actionUsed: false, underConstruction: false },
+  );
+  assert.throws(
+    () => rooms.action(room.code, first.id, { type: 'move', unitId: 'goblin-on-cobbles', x: 9, z: 11 }, room.state.version),
+    /Movimento inválido/,
+  );
+});
+
 test('construções ficam ao lado da Rua e não cobrem o terreno', () => {
   const { rooms, room, first } = match();
   const player = room.state.players[0];

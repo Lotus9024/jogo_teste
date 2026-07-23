@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CARD_BY_ID, CARD_CATEGORY_LABELS, CARD_DEFINITIONS, baseCellsForSeat, citizensForSeat, completedRoadCount, connectedRoadKeys, deploymentDistance, effectiveCardCost, forwardDeltaForSeat, goblinSpawnHp, gridCellsBetween, isBasicCard, isCannonTargetValid, isDeploymentCell, isGoblinCard, isMageCard, isRoadPlacementCell, roadMovementBonus, validateDeckCardIds } from '../src/cards.js';
+import { CARD_BY_ID, CARD_CATEGORY_LABELS, CARD_DEFINITIONS, baseCellsForSeat, citizensForSeat, completedRoadCount, connectedRoadKeys, deploymentDistance, effectiveCardCost, forwardDeltaForSeat, goblinSpawnHp, gridCellsBetween, isBasicCard, isCannonTargetValid, isDeploymentCell, isGoblinCard, isMageCard, isRoadCard, isRoadPlacementCell, roadMovementBonus, validateDeckCardIds } from '../src/cards.js';
 
 test('calcula as casas intermediarias de uma linha no tabuleiro', () => {
   assert.deepEqual(gridCellsBetween({ x: 2, z: 2 }, { x: 5, z: 2 }), [{ x: 3, z: 2 }, { x: 4, z: 2 }]);
@@ -75,6 +75,22 @@ test('ruas formam uma rede conectada ao castelo e não possuem vida', () => {
   assert.equal(completedRoadCount(1, roads), 3);
 });
 
+test('Estrada de Pedregulhos conecta a rede e acelera somente cartas Básicas', () => {
+  const roads = [
+    { cardId: 'road', ownerSeat: 1, x: 7, z: 11 },
+    { cardId: 'cobblestone_road', ownerSeat: 1, x: 7, z: 10 },
+  ];
+  assert.equal(isRoadCard('road'), true);
+  assert.equal(isRoadCard('cobblestone_road'), true);
+  assert.equal(CARD_BY_ID.cobblestone_road.rarityClass, 'uncommon');
+  assert.equal(CARD_BY_ID.cobblestone_road.cost, 4);
+  assert.deepEqual([...connectedRoadKeys(1, roads)].sort(), ['7:10', '7:11']);
+  assert.equal(roadMovementBonus(7, 10, roads, 'warrior'), 1);
+  assert.equal(roadMovementBonus(7, 10, roads, 'goblin'), 0);
+  assert.equal(roadMovementBonus(7, 10, roads, 'mage'), 0);
+  assert.equal(roadMovementBonus(7, 11, roads, 'goblin'), 1);
+});
+
 test('casa concluída fornece cidadãos e recebe bônus quando ligada por Rua', () => {
   const houses = [
     { ownerSeat: 1, cardId: 'wooden_house', x: 6, z: 11, underConstruction: false },
@@ -82,6 +98,15 @@ test('casa concluída fornece cidadãos e recebe bônus quando ligada por Rua', 
   ];
   assert.equal(citizensForSeat(1, houses, []), 3);
   assert.equal(citizensForSeat(1, houses, [{ ownerSeat: 1, x: 7, z: 11 }]), 4);
+});
+
+test('Casa conectada à Estrada de Pedregulhos recebe dois cidadãos adicionais', () => {
+  const house = [{ ownerSeat: 1, cardId: 'wooden_house', x: 6, z: 11, underConstruction: false }];
+  const mixedRoads = [
+    { cardId: 'cobblestone_road', ownerSeat: 1, x: 7, z: 11 },
+    { cardId: 'road', ownerSeat: 1, x: 6, z: 10 },
+  ];
+  assert.equal(citizensForSeat(1, house, mixedRoads), 5);
 });
 
 test('Mago é raro e expõe fogo e ácido com os atributos definidos', () => {
@@ -95,6 +120,7 @@ test('Mago é raro e expõe fogo e ácido com os atributos definidos', () => {
     { cost: 4, damage: 3, radius: 1, cooldown: 2 }
   );
   assert.equal(CARD_BY_ID.mage.instant.name, 'Ácido (Instantâneo)');
+  assert.match(CARD_BY_ID.mage.instant.description, /Todas as cartas em volta/i);
   assert.equal(CARD_BY_ID.mage.ability.enabled, false);
 });
 
@@ -124,8 +150,8 @@ test('Henry participa das sinergias Goblin e também nasce fortalecido pela Torr
   assert.equal(goblinSpawnHp(1, 7, 6, units, 'henry'), 2);
 });
 
-test('descrição da Torre documenta o disparo por cima de construções em linhas separadas', () => {
-  assert.match(CARD_BY_ID.tower.description, /atirar por cima de qualquer construção/);
+test('descrição da Torre documenta o disparo por cima de tropas e construções em linhas separadas', () => {
+  assert.match(CARD_BY_ID.tower.description, /atirar por cima de tropas e construções/);
   assert.equal(CARD_BY_ID.tower.description.split('\n').length, 3);
 });
 

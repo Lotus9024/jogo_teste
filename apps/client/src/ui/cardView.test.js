@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cardMarkup, cards } from './cardView.js';
+import { cardCostText, cardMarkup, cards } from './cardView.js';
 import { canUsePhysicalDeck } from './createDeckController.js';
 import { createDevCardInstanceId } from './createDevCardGallery.js';
 
@@ -14,6 +14,13 @@ test('a carta exibe sua categoria logo abaixo do nome', () => {
 test('máquinas exibem vida como Resistência nas cartas', () => {
   const markup = cardMarkup(cards.find(card => card.id === 'cannon'), 0);
   assert.match(markup, /aria-label="Resistência"/);
+});
+
+test('carta com buff exibe o custo efetivo e o desconto aplicado', () => {
+  const goblin = cards.find(card => card.id === 'goblin');
+  assert.equal(cardCostText({ ...goblin, baseCost: 2, effectiveCost: 1 }), '1 (-1)');
+  assert.match(cardMarkup({ ...goblin, baseCost: 2, effectiveCost: 1 }, 0), /<b>1<\/b><small class="card-cost-discount">\(-1\)<\/small>/);
+  assert.equal(cardCostText(goblin), '2');
 });
 
 test('DEV MODE pode abrir a galeria por qualquer baralho físico', () => {

@@ -30,3 +30,5 @@
 .category-mage .card-category{color:#a98ad9}
 .card-description,.card-ability p{white-space:pre-line}
 .preview-description,.preview-ability p{white-space:pre-line}
+.card-top-cost{display:flex;align-items:center;justify-content:center;gap:3px}
+.card-top-cost .card-cost-discount{font:700 7px/1 Cinzel;letter-spacing:0;color:#82b26f}

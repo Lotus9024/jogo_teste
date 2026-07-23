@@ -38,11 +38,13 @@ export function createBoardPresentation({ scene, app, tile, half, baseCellsForSe
     roads.forEach(road => {
       const mesh = makeRoad(roadConnections(road, roads), tile, {
         underConstruction: Boolean(road.underConstruction),
+        cardId: road.cardId ?? 'road',
       });
       mesh.position.set(road.x * tile - half, 0.072, road.z * tile - half);
       mesh.userData = {
         ...mesh.userData,
         roadId: road.id,
+        cardId: road.cardId ?? 'road',
         ownerSeat: road.ownerSeat,
         buildReadyRound: road.buildReadyRound,
       };

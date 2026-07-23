@@ -44,7 +44,7 @@ export function createHandController(options) {
       const holder = document.createElement('div');
       const card = cards[index];
       const cost = effectiveCardCost(card.id, state.selfSeat, serverUnits);
-      holder.innerHTML = cardMarkup({ ...card, cost }, index);
+      holder.innerHTML = cardMarkup({ ...card, baseCost: card.cost, effectiveCost: cost }, index);
       const node = holder.firstElementChild;
       node.dataset.instance = instance.instanceId;
       hand.appendChild(node);

@@ -105,6 +105,18 @@ test('arqueiro pode subir na torre e recebe mais um de alcance', () => {
   assert.equal(room.state.units.find(unit => unit.id === 'range-five').hp, 3);
 });
 
+test('destruir a Torre também destrói o arqueiro montado', () => {
+  const { rooms, room, first } = match();
+  room.state.units.push(
+    { id: 'tower-attacker', ownerSeat: 1, cardId: 'warrior', x: 7, z: 9, hp: 2, shield: 0, actionUsed: false },
+    { id: 'fragile-tower', ownerSeat: 2, cardId: 'tower', x: 7, z: 8, hp: 1, shield: 0, actionUsed: false, underConstruction: false },
+    { id: 'doomed-archer', ownerSeat: 2, cardId: 'archer', x: 7, z: 8, hp: 2, shield: 0, actionUsed: false, mountedOnTowerId: 'fragile-tower' },
+  );
+  rooms.action(room.code, first.id, { type: 'attack', unitId: 'tower-attacker', targetUnitId: 'fragile-tower' }, room.state.version);
+  assert.equal(room.state.units.some(unit => unit.id === 'fragile-tower'), false);
+  assert.equal(room.state.units.some(unit => unit.id === 'doomed-archer'), false);
+});
+
 test('rajada da torre funciona no próprio turno e recarrega após uma rodada', () => {
   const { rooms, room, first, second } = match();
   room.state.units.push(

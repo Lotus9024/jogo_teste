@@ -36,7 +36,7 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'tower', name: 'Torre', description: 'Você pode colocar um arqueiro em cima da torre.\nEsse arqueiro ganha +1 de distância de ataque e consegue atirar por cima de qualquer construção.\nCaso a torre seja destruída, o arqueiro também é.',
+    id: 'tower', name: 'Torre', description: 'Você pode colocar um arqueiro em cima da torre.\nEsse arqueiro ganha +1 de distância de ataque e consegue atirar por cima de tropas e construções.\nCaso a torre seja destruída, o arqueiro também é.',
     hp: 5, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 7, buildRounds: 2, type: 'construction', category: 'basic', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'CONSTRUÇÃO · TORRE', glyph: '♜',
     ability: Object.freeze({ name: 'Rajada cardinal', cost: 2, cooldownTurns: 2, range: 3, damage: 2, description: 'Atira uma flecha em todas as 4 direções retas, com no máximo 3 blocos de distância e 2 de dano.', enabled: true }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
@@ -62,7 +62,7 @@ export const CARD_DEFINITIONS = Object.freeze([
   }),
   Object.freeze({
     id: 'road', name: 'Rua', description: 'Precisa estar conectada a um castelo ou a outra Rua.\nAumenta em 1 quadrado o alcance de movimento de quem está por cima.\nCasas conectadas às Ruas ganham limite para mais 1 cidadão.',
-    hp: null, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 1, buildRounds: 1, type: 'terrain', indestructible: true, category: 'basic', rarity: 'COMUM', rarityClass: 'common', info: 'TERRENO · RUA', glyph: '═',
+    hp: null, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 1, buildRounds: 1, type: 'terrain', road: true, movementBonus: 1, connectedHouseCitizenBonus: 1, indestructible: true, category: 'basic', rarity: 'COMUM', rarityClass: 'common', info: 'TERRENO · RUA', glyph: '═',
     ability: Object.freeze({ name: 'Caminho do reino', cost: '—', description: 'Terreno permanente que se conecta automaticamente e não pode ser destruído.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
@@ -82,7 +82,7 @@ export const CARD_DEFINITIONS = Object.freeze([
     id: 'mage', name: 'Mago', description: 'Permite atirar fogo em dois quadrados a no máximo 4 de distância. O fogo causa 2 de dano no primeiro ataque e mais 1 se a tropa não sair; ele some quando o turno volta para você.\nO fogo pode ser utilizado em qualquer lugar sem ser bloqueado.',
     hp: 2, damage: 2, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 4, maxFireCells: 2, cost: 6, category: 'mage', family: 'mage', rarity: 'RARA', rarityClass: 'rare', info: 'MAGO · CONJURADOR', glyph: '✦',
     ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'O fogo é conjurado pelo ícone acima do Mago.', enabled: false }),
-    instant: Object.freeze({ name: 'Ácido (Instantâneo)', cost: 4, cooldownTurns: 2, damage: 3, radius: 1, description: 'Jogue um ácido em volta do Mago. Todas as tropas em volta tomam 3 de dano, inclusive as suas.', enabled: true })
+    instant: Object.freeze({ name: 'Ácido (Instantâneo)', cost: 4, cooldownTurns: 2, damage: 3, radius: 1, description: 'Jogue um ácido em volta do Mago. Todas as cartas em volta tomam 3 de dano, inclusive as suas.', enabled: true })
   }),
   Object.freeze({
     id: 'goblin_altar', name: 'Altar Goblin', description: 'É necessário ter 2 tropas Goblin na área da sua base para usar o Altar Goblin.\nTodas as cartas Goblin custam 1 a menos, podendo custar no mínimo 1.',
@@ -100,6 +100,12 @@ export const CARD_DEFINITIONS = Object.freeze([
     id: 'builder_area', name: 'Área de construtor', description: 'Essa carta não tem efeito caso você tenha uma carta Goblin ou Mago na área da sua base.\nVocê ganha +1 de energia por turno (máximo 1) e +1 de resistência nas suas construções no campo e nas próximas.',
     hp: 1, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 7, buildRounds: 1, type: 'construction', category: 'basic', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'CONSTRUÇÃO · SUPORTE', glyph: '⌂',
     ability: Object.freeze({ name: 'Oficina do reino', cost: '—', description: 'O bônus de energia não acumula; a resistência acumula para cada Área de construtor ativa.', enabled: false }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
+  }),
+  Object.freeze({
+    id: 'cobblestone_road', name: 'Estrada de Pedregulhos', description: 'Aumenta em 1 quadrado o alcance de movimento de cartas Básicas que estiverem por cima.\nCasas conectadas às Estradas de Pedregulhos ganham limite para mais 2 cidadãos.\nPrecisa estar conectada a um castelo ou a outra Rua.',
+    hp: null, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 4, buildRounds: 1, type: 'terrain', road: true, movementBonus: 1, movementCategory: 'basic', connectedHouseCitizenBonus: 2, indestructible: true, category: 'basic', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'TERRENO · ESTRADA', glyph: '▰',
+    ability: Object.freeze({ name: 'Caminho pavimentado', cost: '—', description: 'Terreno permanente. Acelera apenas cartas Básicas e conecta Casas ao castelo.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   })
 ]);

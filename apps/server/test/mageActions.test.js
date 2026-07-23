@@ -42,12 +42,14 @@ test('círculo ácido do Mago é instantâneo e recarrega após dois turnos', ()
     { id: 'mage-acid', ownerSeat: 1, cardId: 'mage', x: 7, z: 8, hp: 2, shield: 0, actionUsed: true, instantReadyTurn: 0 },
     { id: 'acid-ally', ownerSeat: 1, cardId: 'guard', x: 6, z: 8, hp: 4, shield: 0, actionUsed: false },
     { id: 'acid-enemy', ownerSeat: 2, cardId: 'guard', x: 8, z: 9, hp: 4, shield: 0, actionUsed: false },
+    { id: 'acid-construction', ownerSeat: 2, cardId: 'wooden_barrier', x: 7, z: 7, hp: 3, shield: 0, actionUsed: false, underConstruction: false },
     { id: 'acid-safe', ownerSeat: 2, cardId: 'guard', x: 9, z: 8, hp: 4, shield: 0, actionUsed: false }
   );
   rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
   rooms.action(room.code, first.id, { type: 'use_instant', unitId: 'mage-acid' }, room.state.version);
   assert.equal(room.state.units.find(unit => unit.id === 'acid-ally').hp, 1);
   assert.equal(room.state.units.find(unit => unit.id === 'acid-enemy').hp, 1);
+  assert.equal(room.state.units.some(unit => unit.id === 'acid-construction'), false);
   assert.equal(room.state.units.find(unit => unit.id === 'acid-safe').hp, 4);
   assert.equal(room.state.units.find(unit => unit.id === 'mage-acid').hp, 2);
   assert.equal(room.state.players[0].energy, 6);

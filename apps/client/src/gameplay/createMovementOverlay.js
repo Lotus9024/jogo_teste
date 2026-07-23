@@ -60,7 +60,7 @@ export function createMovementOverlay({
 
     const originX = Math.round((unit.position.x + half) / tile);
     const originZ = Math.round((unit.position.z + half) / tile);
-    const range = unit.userData.move + roadMovementBonus(originX, originZ, getRoads());
+    const range = unit.userData.move + roadMovementBonus(originX, originZ, getRoads(), unit.userData.cardId);
     const movementAvailable = unit.userData.cardId !== 'henry' || !unit.userData.movedThisTurn || (unit.userData.bonusMoves ?? 0) > 0;
     const attackAvailable = unit.userData.cardId !== 'henry' || !unit.userData.attackedThisTurn;
     if (unit.userData.cardId === 'cannon') {

@@ -1,6 +1,14 @@
 import { CARD_BY_ID } from './cardCatalog.js';
 import { baseCellsForSeat, cellKey, ORTHOGONAL_DIRECTIONS } from './boardRules.js';
 
+function roadCard(road) {
+  return CARD_BY_ID[road.cardId ?? 'road'] ?? CARD_BY_ID.road;
+}
+
+export function isRoadCard(cardId) {
+  return CARD_BY_ID[cardId]?.road === true;
+}
+
 export function connectedRoadKeys(seat, roads, boardSize = 15) {
   const completedRoads = roads.filter(road => road.ownerSeat === seat && !road.underConstruction);
   const owned = new Set(completedRoads.map(road => cellKey(road.x, road.z)));
@@ -33,13 +41,26 @@ export function isRoadPlacementCell(seat, x, z, roads, boardSize = 15) {
 
 export function citizensForSeat(seat, units, roads, boardSize = 15) {
   const connected = connectedRoadKeys(seat, roads, boardSize);
+  const completedRoads = new Map(roads
+    .filter(road => road.ownerSeat === seat && !road.underConstruction)
+    .map(road => [cellKey(road.x, road.z), road]));
   return units
     .filter(unit => unit.ownerSeat === seat && unit.cardId === 'wooden_house' && !unit.underConstruction)
-    .reduce((total, house) => total + CARD_BY_ID.wooden_house.citizens + (ORTHOGONAL_DIRECTIONS.some(direction => connected.has(cellKey(house.x + direction.x, house.z + direction.z))) ? CARD_BY_ID.wooden_house.connectedRoadCitizenBonus : 0), 0);
+    .reduce((total, house) => {
+      const connectedBonuses = ORTHOGONAL_DIRECTIONS
+        .map(direction => cellKey(house.x + direction.x, house.z + direction.z))
+        .filter(key => connected.has(key))
+        .map(key => roadCard(completedRoads.get(key)).connectedHouseCitizenBonus ?? 0);
+      return total + CARD_BY_ID.wooden_house.citizens + Math.max(0, ...connectedBonuses);
+    }, 0);
 }
 
-export function roadMovementBonus(x, z, roads) {
-  return roads.some(road => road.x === x && road.z === z && !road.underConstruction) ? 1 : 0;
+export function roadMovementBonus(x, z, roads, unitCardId = null) {
+  const road = roads.find(item => item.x === x && item.z === z && !item.underConstruction);
+  if (!road) return 0;
+  const definition = roadCard(road);
+  if (definition.movementCategory && CARD_BY_ID[unitCardId]?.category !== definition.movementCategory) return 0;
+  return definition.movementBonus ?? 1;
 }
 
 export function completedRoadCount(seat, roads) {

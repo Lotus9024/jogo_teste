@@ -39,3 +39,17 @@ test('torre leva duas rodadas para concluir', () => {
   rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
   assert.equal(tower.underConstruction, false);
 });
+
+test('Altar Mago compra uma carta adicional ao concluir a construção', () => {
+  const { rooms, room, first, second } = match();
+  const player = room.state.players[0];
+  player.hand = player.hand.slice(0, 5);
+  room.state.units.push({
+    id: 'mage-altar-building', ownerSeat: 1, cardId: 'mage_altar', x: 6, z: 10,
+    hp: 1, maxHp: 1, shield: 0, actionUsed: false, underConstruction: true, buildReadyRound: 2,
+  });
+  rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
+  rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
+  assert.equal(room.state.units.find(unit => unit.id === 'mage-altar-building').underConstruction, false);
+  assert.equal(player.hand.length, 7);
+});

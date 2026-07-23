@@ -59,6 +59,18 @@ test('Rua desenha apenas o centro e as direções conectadas', () => {
   assert.ok(road.getObjectByName('roadConstructionParts').children.length >= 5);
 });
 
+test('Estrada de Pedregulhos possui modelo próprio sem a runa da Rua', () => {
+  const road = makeRoad(
+    { north: true, south: false, east: false, west: false },
+    1.08,
+    { cardId: 'cobblestone_road' },
+  );
+  assert.equal(road.name, 'Estrada de Pedregulhos');
+  assert.equal(road.userData.cardId, 'cobblestone_road');
+  assert.equal(road.getObjectByName('roadRune'), undefined);
+  assert.ok(road.getObjectByName('cobblestoneRoadStone1'));
+});
+
 test('Rua estende o caminho até uma Casa de madeira adjacente', () => {
   const scene = new THREE.Scene();
   const house = makeWoodenHouse();

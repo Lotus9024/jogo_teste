@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
-import { isDeploymentCell, isRoadPlacementCell } from '@tronos/shared/cards';
+import { isDeploymentCell, isRoadCard, isRoadPlacementCell } from '@tronos/shared/cards';
 import { createCardUnit } from '../models/createCardUnit.js';
 import { applyConstructionState as applyUnitConstructionState, setUnitOwnerFacing, setUnitTeamColor } from '../gameplay/unitState.js';
 import { cards } from './cardView.js';
@@ -24,9 +24,10 @@ export function createCardSummoningController({
     const tower = occupants.find(unit => unit.userData.cardId === 'tower'
       && unit.userData.ownerSeat === deploymentSeat() && !unit.userData.underConstruction);
     const mountable = card.id === 'archer' && tower && occupants.length === 1;
+    const roadCard = isRoadCard(card.id);
     const roadBlocker = occupants.some(unit => ['construction', 'machine'].includes(unit.userData.cardType));
     const roadOccupied = roads.some(road => road.x === cell.x && road.z === cell.z);
-    const valid = card.id === 'road'
+    const valid = roadCard
       ? !boardCoordinates.baseSeatAtCell(cell.x, cell.z) && !roadBlocker
         && isRoadPlacementCell(deploymentSeat(), cell.x, cell.z, roads, GAME_CONFIG.boardSize)
       : isDeploymentCell(deploymentSeat(), cell.x, cell.z, GAME_CONFIG.boardSize)
@@ -39,9 +40,10 @@ export function createCardSummoningController({
 
   function summonCard(cardIndex, x, z, mountableTower = null, level = state.devCardLevel) {
     const card = cards[cardIndex];
-    if (card.id === 'road') {
+    if (isRoadCard(card.id)) {
       boardPresentation.reconcileRoads([...roads, {
         id: `local-road-${roads.length + 1}`,
+        cardId: card.id,
         ownerSeat: state.activePlayer,
         x: Math.round((x + half) / tile),
         z: Math.round((z + half) / tile),
@@ -145,8 +147,8 @@ export function createCardSummoningController({
     const index = Number(cardNode.dataset.card);
     const tileInfo = cardTileAtPointer(event, index);
     if (!tileInfo?.valid) {
-      callbacks.showGameError?.(cards[index].id === 'road'
-        ? 'Conecte a Rua ao castelo ou a outra Rua do seu reino.'
+      callbacks.showGameError?.(isRoadCard(cards[index].id)
+        ? 'Conecte a estrada ao castelo ou a outra Rua do seu reino.'
         : 'Escolha uma casa livre a até 2 casas do seu reino.');
       return true;
     }

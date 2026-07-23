@@ -19,6 +19,7 @@ export {
   citizensForSeat,
   completedRoadCount,
   connectedRoadKeys,
+  isRoadCard,
   isRoadPlacementCell,
   roadMovementBonus
 } from './kingdomEconomy.js';

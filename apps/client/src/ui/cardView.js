@@ -33,6 +33,21 @@ function combatStats(card) {
   return `<span aria-label="${resistanceLabel}"><small aria-hidden="true">♥</small><b data-stat="hp">${card.hp}</b></span><span aria-label="Dano"><small aria-hidden="true">⚔</small><b>${damage}</b></span><span aria-label="${lastLabel}"><small aria-hidden="true">${lastIcon}</small><b>${lastValue}</b></span>`;
 }
 
+export function cardCostText(card) {
+  const baseCost = Number.isFinite(card.baseCost) ? card.baseCost : card.cost;
+  const effectiveCost = Number.isFinite(card.effectiveCost) ? card.effectiveCost : card.cost;
+  const discount = Math.max(0, baseCost - effectiveCost);
+  return discount ? `${effectiveCost} (-${discount})` : `${effectiveCost}`;
+}
+
+function cardCostMarkup(card) {
+  const value = cardCostText(card);
+  const [effectiveCost, discount] = value.split(' ');
+  return discount
+    ? `<b>${effectiveCost}</b><small class="card-cost-discount">${discount}</small>`
+    : `<b>${effectiveCost}</b>`;
+}
+
 export function cardMarkup(card, index, { level = null } = {}) {
   const levelAttribute = Number.isInteger(level) ? ` data-card-level="${level}"` : '';
   const copyClass = card.description.length > 180 || card.abilityText.length > 220 ? ' copy-very-long' : card.description.length > 115 || card.abilityText.length > 150 ? ' copy-long' : '';
@@ -40,7 +55,7 @@ export function cardMarkup(card, index, { level = null } = {}) {
   const abilitySize = Math.max(5, Math.min(8, 1050 / card.abilityText.length));
   const categoryLabel = card.categoryLabel ?? CARD_CATEGORY_LABELS[card.category];
   return `<button class="game-card rarity-${card.rarityClass} category-${card.category}${copyClass}" style="--desc-size:${descSize}px;--ability-size:${abilitySize}px" data-card="${index}"${levelAttribute} aria-label="Carta ${card.name}, categoria ${categoryLabel}, ${card.rarity}${level ? `, nível ${level}` : ''}">
-    <span class="card-top"><span class="card-heading"><strong class="card-name">${card.name}</strong><small class="card-category">${categoryLabel}</small></span><span class="card-top-cost"><b>${card.cost}</b></span></span>
+    <span class="card-top"><span class="card-heading"><strong class="card-name">${card.name}</strong><small class="card-category">${categoryLabel}</small></span><span class="card-top-cost">${cardCostMarkup(card)}</span></span>
     <span class="card-art"><span>${card.glyph}</span></span>
     <span class="card-description">${card.description}</span>
     <span class="card-main-row"><span class="card-combat-stats">${combatStats(card)}</span></span>

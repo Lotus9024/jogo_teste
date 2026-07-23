@@ -41,17 +41,19 @@ export function setRoadConstructionState(root, underConstruction) {
   root.userData.underConstruction = underConstruction;
 }
 
-export function makeRoad(connections, tile = 1.08, { underConstruction = false } = {}) {
+export function makeRoad(connections, tile = 1.08, { underConstruction = false, cardId = 'road' } = {}) {
+  const cobblestoneRoad = cardId === 'cobblestone_road';
   const root = new THREE.Group();
-  root.name = 'Rua';
+  root.name = cobblestoneRoad ? 'Estrada de Pedregulhos' : 'Rua';
+  root.userData.cardId = cardId;
   const built = new THREE.Group();
   built.name = 'roadBuiltParts';
   root.add(built);
   const construction = new THREE.Group();
   construction.name = 'roadConstructionParts';
   root.add(construction);
-  const width = tile * 0.24;
-  const center = tile * 0.28;
+  const width = tile * (cobblestoneRoad ? 0.34 : 0.24);
+  const center = tile * (cobblestoneRoad ? 0.38 : 0.28);
   const centerSurface = new THREE.Group();
   centerSurface.name = 'roadCenterSurface';
   addRoadSection(centerSurface, 0, 0, center, center, 'north');
@@ -71,9 +73,27 @@ export function makeRoad(connections, tile = 1.08, { underConstruction = false }
   const centerDetail = new THREE.Group();
   centerDetail.name = 'roadCenterDetail';
   add(new THREE.BoxGeometry(center * 0.72, 0.032, center * 0.72), edgeMaterial, centerDetail, [0, 0.004, 0]);
-  const rune = add(new THREE.TorusGeometry(center * 0.18, 0.012, 5, 18), runeMaterial, centerDetail, [0, 0.026, 0], [-Math.PI / 2, 0, 0]);
-  rune.name = 'roadRune';
-  rune.castShadow = false;
+  if (cobblestoneRoad) {
+    const stones = [
+      [-0.16, -0.1, 0.055], [0.14, -0.12, 0.045], [-0.03, 0.02, 0.06],
+      [-0.14, 0.14, 0.04], [0.17, 0.12, 0.052],
+    ];
+    stones.forEach(([x, z, radius], index) => {
+      const stone = add(
+        new THREE.DodecahedronGeometry(tile * radius, 0),
+        edgeMaterial,
+        centerDetail,
+        [x * tile, 0.035, z * tile],
+        [0, index * 0.71, 0],
+        [1.25, 0.42, 0.9],
+      );
+      stone.name = `cobblestoneRoadStone${index + 1}`;
+    });
+  } else {
+    const rune = add(new THREE.TorusGeometry(center * 0.18, 0.012, 5, 18), runeMaterial, centerDetail, [0, 0.026, 0], [-Math.PI / 2, 0, 0]);
+    rune.name = 'roadRune';
+    rune.castShadow = false;
+  }
   built.add(centerDetail);
   const twigs = [
     [-0.18, -0.12, 0.48], [0.16, -0.15, -0.32], [-0.03, 0.02, 0.08],

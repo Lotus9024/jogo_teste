@@ -25,14 +25,17 @@ export function unitBlocksAttackLine(state, unit, target, card) {
 }
 
 export function damageUnit(state, target, damage) {
+  if (!state.units.includes(target)) return false;
   const absorbed = Math.min(target.shield ?? 0, damage);
   target.shield = (target.shield ?? 0) - absorbed;
   target.hp -= damage - absorbed;
   if (target.hp > 0) return false;
   state.units.splice(state.units.indexOf(target), 1);
-  if (target.cardId === 'tower') state.units.forEach(unit => {
-    if (unit.mountedOnTowerId === target.id) unit.mountedOnTowerId = null;
-  });
+  if (target.cardId === 'tower') {
+    for (let index = state.units.length - 1; index >= 0; index -= 1) {
+      if (state.units[index].mountedOnTowerId === target.id) state.units.splice(index, 1);
+    }
+  }
   return true;
 }
 
