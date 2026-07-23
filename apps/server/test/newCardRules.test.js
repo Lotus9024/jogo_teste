@@ -18,6 +18,54 @@ test('Enxame Goblin se transforma em três Goblins sem ação', () => {
   assert.equal(player.energy, 10 - CARD_BY_ID.goblin_swarm.cost);
 });
 
+test('Goblin, Henry e Goblins do Enxame danificam construções aliadas ao lado no início do turno', () => {
+  const { rooms, room, second } = match();
+  room.state.activeSeat = 2;
+  room.state.units.push(
+    { id: 'goblin', ownerSeat: 1, cardId: 'goblin', x: 6, z: 10, hp: 1, underConstruction: false },
+    { id: 'henry', ownerSeat: 1, cardId: 'henry', x: 8, z: 10, hp: 1, underConstruction: false },
+    { id: 'shared-building', ownerSeat: 1, cardId: 'tower', x: 7, z: 10, hp: 5, maxHp: 5, underConstruction: false },
+    { id: 'swarm-goblin', ownerSeat: 1, cardId: 'goblin', x: 5, z: 9, hp: 1, underConstruction: false },
+    { id: 'swarm-building', ownerSeat: 1, cardId: 'wooden_barrier', x: 5, z: 10, hp: 3, maxHp: 3, underConstruction: false },
+  );
+
+  rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
+
+  assert.equal(room.state.units.find(unit => unit.id === 'shared-building').hp, 3);
+  assert.equal(room.state.units.find(unit => unit.id === 'swarm-building').hp, 1);
+});
+
+test('Desordem não atinge diagonais nem construções inimigas e também é aplicada pelo Bombardeiro', () => {
+  const { rooms, room, second } = match();
+  room.state.activeSeat = 2;
+  room.state.units.push(
+    { id: 'goblin', ownerSeat: 1, cardId: 'goblin', x: 6, z: 10, hp: 1, underConstruction: false },
+    { id: 'diagonal', ownerSeat: 1, cardId: 'tower', x: 7, z: 9, hp: 5, maxHp: 5, underConstruction: false },
+    { id: 'enemy', ownerSeat: 2, cardId: 'tower', x: 6, z: 9, hp: 5, maxHp: 5, underConstruction: false },
+    { id: 'bomber', ownerSeat: 1, cardId: 'goblin_bomber', x: 9, z: 10, hp: 1, underConstruction: false },
+    { id: 'beside-bomber', ownerSeat: 1, cardId: 'tower', x: 9, z: 9, hp: 5, maxHp: 5, underConstruction: false },
+  );
+
+  rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
+
+  assert.equal(room.state.units.find(unit => unit.id === 'diagonal').hp, 5);
+  assert.equal(room.state.units.find(unit => unit.id === 'enemy').hp, 5);
+  assert.equal(room.state.units.find(unit => unit.id === 'beside-bomber').hp, 4);
+});
+
+test('Desordem destrói construções sem resistência restante', () => {
+  const { rooms, room, second } = match();
+  room.state.activeSeat = 2;
+  room.state.units.push(
+    { id: 'goblin', ownerSeat: 1, cardId: 'goblin', x: 6, z: 10, hp: 1, underConstruction: false },
+    { id: 'house', ownerSeat: 1, cardId: 'wooden_house', x: 6, z: 9, hp: 1, maxHp: 1, underConstruction: false },
+  );
+
+  rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
+
+  assert.equal(room.state.units.some(unit => unit.id === 'house'), false);
+});
+
 test('Goblin Bombardeiro corre cinco casas, explode e morre', () => {
   const { rooms, room, first } = match();
   room.state.units.push(

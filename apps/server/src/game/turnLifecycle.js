@@ -3,7 +3,7 @@ import { drawCard, grantRandomCard } from './createInitialState.js';
 import { resolveEndingFires } from './combat.js';
 import { fail } from './gameQueries.js';
 import { healLevelTwoConstructions, refreshKingdomProgress } from './kingdomProgress.js';
-import { builderEnergyBonus } from './kingdomEffects.js';
+import { builderEnergyBonus, damageAlliedConstructionsBesideGoblins } from './kingdomEffects.js';
 
 export function requireTurn(state, player) {
   if (state.phase !== 'playing') fail('A partida ainda não começou.');
@@ -31,6 +31,8 @@ export function endTurn(state) {
   });
   refreshKingdomProgress(state);
   healLevelTwoConstructions(state, state.activeSeat);
+  damageAlliedConstructionsBesideGoblins(state, state.activeSeat);
+  refreshKingdomProgress(state);
   const player = state.players.find(item => item.seat === state.activeSeat);
   player.energy = Math.min(player.maxEnergy, player.energy + GAME_CONFIG.energyPerTurn + builderEnergyBonus(state, player.seat));
   drawCard(player, { round: state.round });

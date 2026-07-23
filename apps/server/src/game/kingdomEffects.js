@@ -1,4 +1,5 @@
 import { CARD_BY_ID, isGoblinCard, isGoblinTroop, isMageCard } from '@tronos/shared/cards';
+import { damageUnit } from './combat.js';
 import { inBaseArea } from './gameQueries.js';
 
 export function goblinTroopsInBaseArea(state, seat) {
@@ -23,6 +24,20 @@ export function activeBuilderAreaCount(state, seat) {
 
 export function builderEnergyBonus(state, seat) {
   return activeBuilderAreaCount(state, seat) > 0 ? 1 : 0;
+}
+
+export function damageAlliedConstructionsBesideGoblins(state, seat) {
+  const disruptiveGoblins = state.units.filter(unit => unit.ownerSeat === seat
+    && !unit.underConstruction
+    && (CARD_BY_ID[unit.cardId]?.adjacentConstructionDamage ?? 0) > 0);
+
+  for (const goblin of disruptiveGoblins) {
+    const damage = CARD_BY_ID[goblin.cardId].adjacentConstructionDamage;
+    const adjacentConstructions = [...state.units].filter(unit => unit.ownerSeat === seat
+      && ['construction', 'machine'].includes(CARD_BY_ID[unit.cardId]?.type)
+      && Math.abs(unit.x - goblin.x) + Math.abs(unit.z - goblin.z) === 1);
+    adjacentConstructions.forEach(unit => damageUnit(state, unit, damage));
+  }
 }
 
 export function refreshBuilderResistance(state) {

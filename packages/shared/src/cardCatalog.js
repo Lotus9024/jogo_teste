@@ -18,8 +18,8 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'henry', name: 'Henry', description: 'Ele pode se movimentar e atacar, ou vice-versa, no mesmo turno.\nEle já entra podendo agir.',
-    hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 4, category: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', family: 'goblin', info: 'GOBLIN · ÁGIL', glyph: '⚡',
+    id: 'henry', name: 'Henry', description: 'Ele pode se movimentar e atacar, ou vice-versa, no mesmo turno.\nEle já entra podendo agir.\nNo início de cada turno seu, causa 1 de dano a cada construção sua diretamente ao lado.',
+    hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 4, adjacentConstructionDamage: 1, category: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', family: 'goblin', info: 'GOBLIN · ÁGIL', glyph: '⚡',
     ability: Object.freeze({ name: 'Agilidade', cost: '—', description: 'Pode realizar um movimento e um ataque no mesmo turno, em qualquer ordem. Entra em campo pronto para agir.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
@@ -73,21 +73,21 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'goblin', name: 'Goblin', description: 'Um goblin frágil, mas que tem coragem de roubar ouro.',
-    hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 2, category: 'goblin', rarity: 'COMUM', rarityClass: 'common', family: 'goblin', info: 'GOBLIN · SAQUEADOR', glyph: '♟',
-    ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade.', enabled: false }),
+    id: 'goblin', name: 'Goblin', description: 'Um goblin frágil, mas que tem coragem de roubar ouro.\nNo início de cada turno seu, causa 1 de dano a cada construção sua diretamente ao lado.',
+    hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 2, adjacentConstructionDamage: 1, category: 'goblin', rarity: 'COMUM', rarityClass: 'common', family: 'goblin', info: 'GOBLIN · SAQUEADOR', glyph: '♟',
+    ability: Object.freeze({ name: 'Desordem', cost: '—', description: 'No início de cada turno seu, causa 1 de dano a cada construção sua diretamente ao lado.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'goblin_swarm', name: 'Enxame Goblin', description: 'Um enxame de Goblins! Três Goblins surgem em posições aleatórias da sua área de lançamento.',
+    id: 'goblin_swarm', name: 'Enxame Goblin', description: 'Um enxame de Goblins! Três Goblins surgem em posições aleatórias da sua área de lançamento.\nCada Goblin criado causa 1 de dano às suas construções diretamente ao lado no início de cada turno seu.',
     hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 4, summonCount: 3, summonsCardId: 'goblin', type: 'summon', category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'GOBLIN · ENXAME', glyph: '♟',
-    ability: Object.freeze({ name: 'Enxame', cost: '—', description: 'Ao ser lançada, esta carta se transforma em três Goblins.', enabled: false }),
+    ability: Object.freeze({ name: 'Enxame', cost: '—', description: 'Ao ser lançada, esta carta se transforma em três Goblins. Cada um aplica Desordem separadamente.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'goblin_bomber', name: 'Goblin Bombardeiro', description: 'Ele simplesmente odeia construções.',
-    hp: 1, damage: 1, move: 1, movementType: 'straight', minAttackRange: 1, attackRange: 1, cost: 5, category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'GOBLIN · BOMBARDEIRO', glyph: '✹',
-    ability: Object.freeze({ name: 'Carga explosiva', cost: 0, chargeDistance: 5, troopDamage: 3, constructionDamage: 4, radius: 1, description: 'Corre 5 blocos para a frente e explode. Causa 3 de dano em tropas e 4 em construções no centro e ao redor. O Goblin morre.', enabled: true }),
+    id: 'goblin_bomber', name: 'Goblin Bombardeiro', description: 'Ele simplesmente odeia construções.\nNo início de cada turno seu, causa 1 de dano a cada construção sua diretamente ao lado.',
+    hp: 1, damage: 1, move: 1, movementType: 'straight', minAttackRange: 1, attackRange: 1, cost: 5, adjacentConstructionDamage: 1, category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'GOBLIN · BOMBARDEIRO', glyph: '✹',
+    ability: Object.freeze({ name: 'Carga explosiva', cost: 0, chargeDistance: 5, troopDamage: 3, constructionDamage: 4, radius: 1, description: 'Corre 5 blocos para a frente e explode. Causa 3 de dano em tropas e 4 em construções no centro e ao redor. O Goblin morre. Enquanto aguarda, também aplica Desordem às construções aliadas diretamente ao lado.', enabled: true }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
