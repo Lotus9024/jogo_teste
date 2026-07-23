@@ -36,15 +36,21 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'tower', name: 'Torre', description: 'Você pode colocar um arqueiro em cima da torre.\nEsse arqueiro ganha +1 de distância de ataque e consegue atirar por cima de tropas e construções.\nCaso a torre seja destruída, o arqueiro também é.',
+    id: 'tower', name: 'Torre', description: 'Você pode colocar um arqueiro em cima da torre.\nEsse arqueiro ganha +1 de distância de ataque e consegue atirar por cima de qualquer carta.\nCaso a torre seja destruída, o arqueiro também é.',
     hp: 5, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 7, buildRounds: 2, type: 'construction', category: 'basic', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'CONSTRUÇÃO · TORRE', glyph: '♜',
     ability: Object.freeze({ name: 'Rajada cardinal', cost: 2, cooldownTurns: 2, range: 3, damage: 2, description: 'Atira uma flecha em todas as 4 direções retas, com no máximo 3 blocos de distância e 2 de dano.', enabled: true }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'operator', name: 'Operador', description: 'Esse operador pode operar tudo! Ou quase tudo. Coloque ele atrás de alguma máquina e ele opera.',
-    hp: 1, damage: 0, move: 1, movementType: 'any', minAttackRange: 0, attackRange: 0, cost: 3, category: 'basic', rarity: 'COMUM', rarityClass: 'common', info: 'HUMANO · OPERADOR', glyph: '⚙',
+    id: 'operator', name: 'Operador', description: 'Esse operador pode operar tudo! Ou quase tudo. Coloque ele atrás de alguma máquina e ele opera.\nEnquanto estiver na arena, ele conta como 1 cidadão.',
+    hp: 1, damage: 0, move: 1, movementType: 'any', minAttackRange: 0, attackRange: 0, cost: 3, arenaCitizens: 1, category: 'basic', rarity: 'COMUM', rarityClass: 'common', info: 'HUMANO · OPERADOR', glyph: '⚙',
     ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade.', enabled: false }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
+  }),
+  Object.freeze({
+    id: 'citizen', name: 'Cidadão', description: 'Enquanto estiver na arena, ele conta como 1 cidadão para o seu reino.',
+    hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 3, arenaCitizens: 1, category: 'basic', rarity: 'COMUM', rarityClass: 'common', info: 'HUMANO · CIDADÃO', glyph: '☺',
+    ability: Object.freeze({ name: 'Morador do reino', cost: '—', description: 'Conta como 1 cidadão enquanto permanecer na arena.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
@@ -73,6 +79,18 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
+    id: 'goblin_swarm', name: 'Enxame Goblin', description: 'Um enxame de Goblins! Três Goblins surgem em posições aleatórias da sua área de lançamento.',
+    hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 4, summonCount: 3, summonsCardId: 'goblin', type: 'summon', category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'GOBLIN · ENXAME', glyph: '♟',
+    ability: Object.freeze({ name: 'Enxame', cost: '—', description: 'Ao ser lançada, esta carta se transforma em três Goblins.', enabled: false }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
+  }),
+  Object.freeze({
+    id: 'goblin_bomber', name: 'Goblin Bombardeiro', description: 'Ele simplesmente odeia construções.',
+    hp: 1, damage: 1, move: 1, movementType: 'straight', minAttackRange: 1, attackRange: 1, cost: 5, category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'GOBLIN · BOMBARDEIRO', glyph: '✹',
+    ability: Object.freeze({ name: 'Carga explosiva', cost: 0, chargeDistance: 5, troopDamage: 3, constructionDamage: 4, radius: 1, description: 'Corre 5 blocos para a frente e explode. Causa 3 de dano em tropas e 4 em construções no centro e ao redor. O Goblin morre.', enabled: true }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
+  }),
+  Object.freeze({
     id: 'goblin_tower', name: 'Torre Goblin', description: 'Cada Goblin seu deixa o custo da torre mais barato.\nQualquer Goblin que nasce ao lado da torre nasce com 1 de vida extra.',
     hp: 5, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 10, minimumCost: 1, goblinDiscount: 1, buildRounds: 1, type: 'construction', category: 'goblin', family: 'goblin', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · GOBLIN', glyph: '♜',
     ability: Object.freeze({ name: 'Reforço Goblin', cost: 3, description: 'Consome um Goblin do seu baralho e o invoca em qualquer casa livre da arena. Ele nasce sem poder agir neste turno.', enabled: true }),
@@ -85,14 +103,14 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Ácido (Instantâneo)', cost: 4, cooldownTurns: 2, damage: 3, radius: 1, description: 'Jogue um ácido em volta do Mago. Todas as cartas em volta tomam 3 de dano, inclusive as suas.', enabled: true })
   }),
   Object.freeze({
-    id: 'goblin_altar', name: 'Altar Goblin', description: 'É necessário ter 2 tropas Goblin na área da sua base para usar o Altar Goblin.\nTodas as cartas Goblin custam 1 a menos, podendo custar no mínimo 1.',
-    hp: 1, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 7, buildRounds: 1, type: 'construction', category: 'goblin', family: 'goblin', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · GOBLIN', glyph: '♨',
-    ability: Object.freeze({ name: 'Marcha Goblin', cost: 5, range: 6, cooldownTurns: 2, description: 'Goblins no raio de 6 casas podem se mover uma vez adicional neste turno.', enabled: true }),
+    id: 'goblin_altar', name: 'Altar Goblin', description: 'É necessário ter 2 tropas Goblin na área da sua base para usar o Altar Goblin.\nTodas as cartas Goblin custam 1 a menos, podendo custar no mínimo 1.\nAo ser construído, você ganha uma carta Goblin aleatória.',
+    hp: 1, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 5, buildRounds: 1, type: 'construction', category: 'goblin', family: 'goblin', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · GOBLIN', glyph: '♨',
+    ability: Object.freeze({ name: 'Marcha Goblin', cost: 5, range: 6, cooldownTurns: 2, description: 'Goblins no raio de 6 casas podem se mover e atacar uma vez adicional neste turno.', enabled: true }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'mage_altar', name: 'Altar Mago', description: 'Todas as cartas Mago custam 1 a menos, podendo custar no mínimo 1.\nAo ser construído, naquela rodada você ganha uma carta a mais.',
-    hp: 1, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 9, buildRounds: 1, type: 'construction', category: 'mage', family: 'mage', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · MAGO', glyph: '✧',
+    id: 'mage_altar', name: 'Altar Mago', description: 'Todas as cartas Mago custam 1 a menos, podendo custar no mínimo 1.\nAo ser construído, escolha uma carta comum, incomum ou rara do seu baralho para comprar.\nVocê não pode controlar um Goblin na arena.',
+    hp: 1, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 6, buildRounds: 1, type: 'construction', category: 'mage', family: 'mage', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · MAGO', glyph: '✧',
     ability: Object.freeze({ name: 'Selo enfraquecedor', cost: 7, cooldownTurns: 2, durationTurns: 2, description: 'Todos os Goblins da arena recebem -1 de ataque por 2 turnos.', enabled: true }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
@@ -103,9 +121,9 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'cobblestone_road', name: 'Estrada de Pedregulhos', description: 'Aumenta em 1 quadrado o alcance de movimento de cartas Básicas que estiverem por cima.\nCasas conectadas às Estradas de Pedregulhos ganham limite para mais 2 cidadãos.\nPrecisa estar conectada a um castelo ou a outra Rua.',
-    hp: null, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 4, buildRounds: 1, type: 'terrain', road: true, movementBonus: 1, movementCategory: 'basic', connectedHouseCitizenBonus: 2, indestructible: true, category: 'basic', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'TERRENO · ESTRADA', glyph: '▰',
-    ability: Object.freeze({ name: 'Caminho pavimentado', cost: '—', description: 'Terreno permanente. Acelera apenas cartas Básicas e conecta Casas ao castelo.', enabled: false }),
+    id: 'cobblestone_road', name: 'Estrada de Pedregulhos', description: 'Aumenta em 1 quadrado o alcance de movimento e ataque de cartas Básicas que estiverem por cima.\nCasas conectadas às Estradas de Pedregulhos ganham limite para mais 2 cidadãos.\nPrecisa estar conectada a um castelo ou a outra Rua.',
+    hp: null, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 4, buildRounds: 1, type: 'terrain', road: true, movementBonus: 1, attackBonus: 1, movementCategory: 'basic', attackCategory: 'basic', connectedHouseCitizenBonus: 2, indestructible: true, category: 'basic', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'TERRENO · ESTRADA', glyph: '▰',
+    ability: Object.freeze({ name: 'Caminho pavimentado', cost: '—', description: 'Terreno permanente. Aumenta movimento e ataque de cartas Básicas e conecta Casas ao castelo.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   })
 ]);

@@ -60,9 +60,16 @@ export function createSocketServer(server, rooms) {
 
 function publicState(room, viewer) {
   const state = room.state;
+  const privatePlayer = state.players.find(player => player.id === viewer.id);
   return {
     code: room.code,
-    self: { id: viewer.id, seat: viewer.seat, hand: state.players.find(player => player.id === viewer.id)?.hand ?? [] },
+    self: {
+      id: viewer.id,
+      seat: viewer.seat,
+      hand: privatePlayer?.hand ?? [],
+      pendingMageAltarChoices: privatePlayer?.pendingMageAltarChoices ?? 0,
+      deckChoices: (privatePlayer?.pendingMageAltarChoices ?? 0) > 0 ? [...new Set(privatePlayer.deck)] : []
+    },
     state: {
       version: state.version, phase: state.phase, round: state.round, activeSeat: state.activeSeat,
       turnEndsAt: state.turnEndsAt, winnerSeat: state.winnerSeat, board: state.board, units: state.units, roads: state.roads, fires: state.fires ?? [],

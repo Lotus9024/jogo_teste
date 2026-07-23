@@ -40,7 +40,7 @@ test('torre leva duas rodadas para concluir', () => {
   assert.equal(tower.underConstruction, false);
 });
 
-test('Altar Mago compra uma carta adicional ao concluir a construção', () => {
+test('Altar Mago permite escolher uma carta do próprio baralho ao concluir', () => {
   const { rooms, room, first, second } = match();
   const player = room.state.players[0];
   player.hand = player.hand.slice(0, 5);
@@ -51,5 +51,27 @@ test('Altar Mago compra uma carta adicional ao concluir a construção', () => {
   rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
   rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
   assert.equal(room.state.units.find(unit => unit.id === 'mage-altar-building').underConstruction, false);
+  assert.equal(player.hand.length, 6);
+  assert.equal(player.pendingMageAltarChoices, 1);
+  const chosenCardId = player.deck[0];
+  const previousCopies = player.deck.filter(cardId => cardId === chosenCardId).length;
+  rooms.action(room.code, first.id, { type: 'choose_deck_card', cardId: chosenCardId }, room.state.version);
   assert.equal(player.hand.length, 7);
+  assert.equal(player.hand.at(-1).cardId, chosenCardId);
+  assert.equal(player.deck.filter(cardId => cardId === chosenCardId).length, previousCopies - 1);
+  assert.equal(player.pendingMageAltarChoices, 0);
+});
+
+test('Altar Goblin concede uma carta Goblin aleatória ao concluir', () => {
+  const { rooms, room, first, second } = match();
+  const player = room.state.players[0];
+  player.hand = player.hand.slice(0, 5);
+  room.state.units.push({
+    id: 'goblin-altar-building', ownerSeat: 1, cardId: 'goblin_altar', x: 6, z: 10,
+    hp: 1, maxHp: 1, shield: 0, actionUsed: false, underConstruction: true, buildReadyRound: 2,
+  });
+  rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
+  rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
+  assert.equal(player.hand.length, 7);
+  assert.equal(['goblin', 'goblin_swarm', 'goblin_bomber', 'henry', 'goblin_tower', 'goblin_altar'].includes(player.hand.at(-1).cardId), true);
 });

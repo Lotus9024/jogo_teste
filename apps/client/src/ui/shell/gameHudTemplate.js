@@ -11,6 +11,14 @@ export function gameHudTemplate() {
       <div id="match-state" class="match-state" hidden><span id="turn-label">SEU TURNO</span><time id="turn-clock">02:00</time></div>
       <button id="settings-toggle" class="settings-toggle" aria-haspopup="dialog" aria-controls="settings-modal" aria-label="Abrir configurações">⚙</button>
       <output id="game-error" class="game-error" aria-live="polite"></output>
+      <section id="mage-altar-choice" class="mage-altar-choice" role="dialog" aria-modal="true" aria-labelledby="mage-altar-choice-title" hidden>
+        <div>
+          <small>ALTAR MAGO</small>
+          <h2 id="mage-altar-choice-title">Escolha uma carta do seu baralho</h2>
+          <p>A carta escolhida será colocada na sua mão.</p>
+          <div id="mage-altar-choice-cards"></div>
+        </div>
+      </section>
       <div class="base-health enemy-base-tag" role="img" aria-label="Vida do castelo inimigo: ${GAME_CONFIG.startingBaseHp} de ${GAME_CONFIG.startingBaseHp}"><b id="enemy-base-level">LV 1</b><i style="width:100%"></i></div>
       <section class="card-dock" aria-label="Mão de cartas">
         <b id="hand-count" class="sr-only">7 CARTAS</b>

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { CARD_BY_ID, isAttackTargetValid, isCannonTargetValid } from '@tronos/shared/cards';
+import { CARD_BY_ID, isAttackTargetValid, isCannonTargetValid, isGoblinTroop } from '@tronos/shared/cards';
 import { attackCard, cannonOperator, damageUnit, fireCannonAt, unitBlocksAttackLine } from '../combat.js';
 import { baseCells, distance, fail, integer, unitAt, validCell } from '../gameQueries.js';
 import { requireTurn } from '../turnLifecycle.js';
@@ -28,8 +28,9 @@ export function attackAction(state, player, opponent, action) {
   const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
   const card = attackCard(state, unit, CARD_BY_ID[unit.cardId]);
   if (card.id === 'mage') fail('Escolha uma ou duas casas para conjurar o fogo.');
+  const usingBonusAttack = card.id !== 'henry' && unit.actionUsed && isGoblinTroop(card.id) && (unit.bonusAttacks ?? 0) > 0;
   if (card.id === 'henry' && unit.attackedThisTurn) fail('Esta unidade já atacou neste turno.');
-  if (card.id !== 'henry' && unit.actionUsed) fail('Esta unidade já agiu neste turno.');
+  if (card.id !== 'henry' && unit.actionUsed && !usingBonusAttack) fail('Esta unidade já agiu neste turno.');
   if (unit.underConstruction) fail('A construção ainda não foi concluída.');
   if (card.damage <= 0 || card.attackRange <= 0) fail('Esta carta não pode atacar.');
   const damage = Math.max(0, card.damage - (unit.attackPenalty ?? 0)) + (unit.empowered ? 8 : 0);
@@ -45,7 +46,8 @@ export function attackAction(state, player, opponent, action) {
   if (card.id === 'henry') {
     unit.attackedThisTurn = true;
     unit.actionUsed = Boolean(unit.movedThisTurn);
-  } else unit.actionUsed = true;
+  } else if (usingBonusAttack) unit.bonusAttacks -= 1;
+  else unit.actionUsed = true;
 }
 
 function attackUnit(state, player, action, unit, card, damage, operator) {

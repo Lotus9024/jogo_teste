@@ -21,6 +21,7 @@ export {
   connectedRoadKeys,
   isRoadCard,
   isRoadPlacementCell,
+  roadAttackBonus,
   roadMovementBonus
 } from './kingdomEconomy.js';
 export { DEFAULT_DECK_CARD_IDS, DECK_LIMITS, DECK_RARITIES, deckCounts, normalizeDeckCardIds, validateDeckCardIds } from './deckRules.js';

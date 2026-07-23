@@ -1,4 +1,4 @@
-import { forwardDeltaForSeat, gridCellsBetween } from '@tronos/shared/cards';
+import { forwardDeltaForSeat, gridCellsBetween, roadAttackBonus } from '@tronos/shared/cards';
 import { unitAt, unitsAt } from './gameQueries.js';
 
 export function cannonOperator(state, cannon) {
@@ -15,7 +15,9 @@ export function mountedTower(state, unit) {
 }
 
 export function attackCard(state, unit, card) {
-  return card.id === 'archer' && mountedTower(state, unit) ? { ...card, attackRange: card.attackRange + 1 } : card;
+  const towerBonus = card.id === 'archer' && mountedTower(state, unit) ? 1 : 0;
+  const roadBonus = roadAttackBonus(unit.x, unit.z, state.roads, card.id);
+  return towerBonus || roadBonus ? { ...card, attackRange: card.attackRange + towerBonus + roadBonus } : card;
 }
 
 export function unitBlocksAttackLine(state, unit, target, card) {
@@ -75,10 +77,10 @@ export function fireTowerVolley(state, player, archer, ability) {
   const directions = [[1, 0], [-1, 0], [0, 1], [0, -1]];
   for (const [dx, dz] of directions) {
     const target = state.units
-      .filter(unit => unit.id !== archer.id)
+      .filter(unit => unit.id !== archer.id && unit.ownerSeat !== player.seat)
       .map(unit => ({ unit, step: dx ? (unit.x - archer.x) / dx : (unit.z - archer.z) / dz }))
       .filter(({ unit, step }) => step >= 1 && step <= ability.range && unit.x === archer.x + dx * step && unit.z === archer.z + dz * step)
       .sort((a, b) => a.step - b.step)[0]?.unit;
-    if (target?.ownerSeat !== player.seat) damageUnit(state, target, ability.damage);
+    if (target) damageUnit(state, target, ability.damage);
   }
 }

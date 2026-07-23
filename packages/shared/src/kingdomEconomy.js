@@ -44,7 +44,7 @@ export function citizensForSeat(seat, units, roads, boardSize = 15) {
   const completedRoads = new Map(roads
     .filter(road => road.ownerSeat === seat && !road.underConstruction)
     .map(road => [cellKey(road.x, road.z), road]));
-  return units
+  const housedCitizens = units
     .filter(unit => unit.ownerSeat === seat && unit.cardId === 'wooden_house' && !unit.underConstruction)
     .reduce((total, house) => {
       const connectedBonuses = ORTHOGONAL_DIRECTIONS
@@ -53,6 +53,10 @@ export function citizensForSeat(seat, units, roads, boardSize = 15) {
         .map(key => roadCard(completedRoads.get(key)).connectedHouseCitizenBonus ?? 0);
       return total + CARD_BY_ID.wooden_house.citizens + Math.max(0, ...connectedBonuses);
     }, 0);
+  const arenaCitizens = units
+    .filter(unit => unit.ownerSeat === seat && !unit.underConstruction)
+    .reduce((total, unit) => total + (CARD_BY_ID[unit.cardId]?.arenaCitizens ?? 0), 0);
+  return housedCitizens + arenaCitizens;
 }
 
 export function roadMovementBonus(x, z, roads, unitCardId = null) {
@@ -61,6 +65,14 @@ export function roadMovementBonus(x, z, roads, unitCardId = null) {
   const definition = roadCard(road);
   if (definition.movementCategory && CARD_BY_ID[unitCardId]?.category !== definition.movementCategory) return 0;
   return definition.movementBonus ?? 1;
+}
+
+export function roadAttackBonus(x, z, roads, unitCardId = null) {
+  const road = roads.find(item => item.x === x && item.z === z && !item.underConstruction);
+  if (!road) return 0;
+  const definition = roadCard(road);
+  if (definition.attackCategory && CARD_BY_ID[unitCardId]?.category !== definition.attackCategory) return 0;
+  return definition.attackBonus ?? 0;
 }
 
 export function completedRoadCount(seat, roads) {

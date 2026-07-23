@@ -61,7 +61,9 @@ export function createDevToolsController({
     });
     document.querySelectorAll('[data-base-level]').forEach(button => {
       button.addEventListener('click', () => {
-        kingdoms[state.activePlayer].baseLevel = Number(button.dataset.baseLevel);
+        const level = Number(button.dataset.baseLevel);
+        kingdoms[state.activePlayer].baseLevel = level;
+        keepForSeat(state.activePlayer).scale.set(level >= 2 ? 5 / 3 : 1, 1, 1);
         callbacks.syncDevKingdomHud?.();
       });
     });

@@ -53,6 +53,23 @@ export function createCardSummoningController({
       callbacks.syncDevKingdomHud?.();
       return;
     }
+    if (card.id === 'goblin_swarm') {
+      const goblinIndex = cards.findIndex(item => item.id === card.summonsCardId);
+      const candidates = [];
+      for (let cellX = 0; cellX < GAME_CONFIG.boardSize; cellX += 1) {
+        for (let cellZ = 0; cellZ < GAME_CONFIG.boardSize; cellZ += 1) {
+          if (isDeploymentCell(state.activePlayer, cellX, cellZ, GAME_CONFIG.boardSize)
+            && !boardCoordinates.baseSeatAtCell(cellX, cellZ)
+            && !boardCoordinates.unitAtCell(cellX, cellZ)) candidates.push({ x: cellX, z: cellZ });
+        }
+      }
+      for (let count = 0; count < card.summonCount && candidates.length; count += 1) {
+        const cell = candidates.splice(Math.floor(Math.random() * candidates.length), 1)[0];
+        summonCard(goblinIndex, cell.x * tile - half, cell.z * tile - half, null, level);
+      }
+      interaction.clearMovementGrid();
+      return;
+    }
     const unit = makeSummonedUnit(cardIndex);
     unit.position.set(x, 0.06, z);
     unit.userData.ownerSeat = state.activePlayer;

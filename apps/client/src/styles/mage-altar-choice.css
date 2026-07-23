@@ -1,0 +1,11 @@
+.mage-altar-choice{position:fixed;z-index:110;inset:0;display:grid;place-items:center;padding:24px;background:rgba(2,4,4,.78);backdrop-filter:blur(8px)}
+.mage-altar-choice[hidden]{display:none}
+.mage-altar-choice>div{width:min(720px,100%);padding:24px;border:1px solid #725b35;background:linear-gradient(145deg,#20251f,#080b09 72%);box-shadow:0 28px 80px #000;color:#d8cfbc}
+.mage-altar-choice small{font:600 10px Cinzel;letter-spacing:.16em;color:#9e8b64}
+.mage-altar-choice h2{margin:6px 0;font:600 24px Cinzel}
+.mage-altar-choice p{margin:0 0 18px;color:#989184}
+#mage-altar-choice-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:9px;max-height:52vh;overflow:auto}
+#mage-altar-choice-cards button{min-height:104px;display:grid;place-items:center;gap:4px;padding:10px;border:1px solid var(--rarity);background:#101410;color:#d8cfbc}
+#mage-altar-choice-cards button b{font:28px Cinzel}
+#mage-altar-choice-cards button span{font:600 11px Cinzel;text-align:center}
+#mage-altar-choice-cards button small{font-size:8px}

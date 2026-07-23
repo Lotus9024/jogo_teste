@@ -27,9 +27,9 @@ test('pode sortear qualquer carta dentro da raridade escolhida', () => {
   assert.deepEqual(deck.slice(0, 3), ['henry', 'archer', 'tower']);
 });
 
-test('nível dois usa chances 55% comum, 30% incomum e 15% rara', () => {
+test('nível dois usa chances 50% comum, 30% incomum e 20% rara', () => {
   assert.deepEqual(Array.from({ length: 20 }, (_, roll) => rarityForRoll(2, roll)), [
-    ...Array(11).fill('common'), ...Array(6).fill('uncommon'), ...Array(3).fill('rare')
+    ...Array(10).fill('common'), ...Array(6).fill('uncommon'), ...Array(4).fill('rare')
   ]);
   let call = 0;
   const deck = createDeck(max => (call++ % 2 === 0 ? 19 : 1) % max, 2, 1);
@@ -49,7 +49,7 @@ test('reduz o peso de Operador conforme a quantidade presente na mão', () => {
   const random = max => { totals.push(max); return 0; };
   weightedCardForRarity('common', { hand: [{ cardId: 'operator' }] }, 4, random);
   weightedCardForRarity('common', { hand: [{ cardId: 'operator' }, { cardId: 'operator' }] }, 4, random);
-  assert.deepEqual(totals, [690, 670]);
+  assert.deepEqual(totals, [790, 770]);
 });
 
 test('aumenta o peso da Casa em 25% a partir da rodada cinco até ela ser comprada', () => {
@@ -60,11 +60,11 @@ test('aumenta o peso da Casa em 25% a partir da rodada cinco até ela ser compra
   weightedCardForRarity('common', player, 5, random);
   player.hasDrawnHouse = true;
   weightedCardForRarity('common', player, 6, random);
-  assert.deepEqual(totals, [700, 725, 700]);
+  assert.deepEqual(totals, [800, 825, 800]);
 });
 
 test('comprar Casa encerra o bônus de proteção contra azar', () => {
-  const rolls = [0, 400];
+  const rolls = [0, 500];
   const player = { baseLevel: 1, hand: [], deck: ['slot'], hasDrawnHouse: false };
   assert.equal(drawCard(player, { round: 5, random: () => rolls.shift() }), true);
   assert.equal(player.hand[0].cardId, 'wooden_house');

@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { CARD_BY_ID, goblinSpawnHp, isGoblinTroop } from '@tronos/shared/cards';
+import { CARD_BY_ID, forwardDeltaForSeat, goblinSpawnHp, gridCellsBetween, isGoblinTroop } from '@tronos/shared/cards';
 import { damageUnit, fireTowerVolley, mountedTower } from '../combat.js';
 import { fail, inBase, integer, turnIndex, unitAt, validCell } from '../gameQueries.js';
 import { requireTurn } from '../turnLifecycle.js';
@@ -18,7 +18,10 @@ export function useAbilityAction(state, player, _opponent, action) {
     state.units.filter(item => item.ownerSeat === player.seat
       && isGoblinTroop(item.cardId)
       && Math.abs(item.x - unit.x) + Math.abs(item.z - unit.z) <= ability.range)
-      .forEach(item => { item.bonusMoves = (item.bonusMoves ?? 0) + 1; });
+      .forEach(item => {
+        item.bonusMoves = (item.bonusMoves ?? 0) + 1;
+        item.bonusAttacks = (item.bonusAttacks ?? 0) + 1;
+      });
   }
   if (card.id === 'mage_altar') {
     const expires = turnIndex(state) + ability.durationTurns;
@@ -27,10 +30,29 @@ export function useAbilityAction(state, player, _opponent, action) {
       item.attackPenaltyUntilTurn = Math.max(item.attackPenaltyUntilTurn ?? 0, expires);
     });
   }
+  if (card.id === 'goblin_bomber') {
+    const forward = forwardDeltaForSeat(player.seat);
+    const destination = {
+      x: unit.x + forward.x * ability.chargeDistance,
+      z: unit.z + forward.z * ability.chargeDistance,
+    };
+    if (!validCell(destination.x, destination.z) || inBase(destination.x, destination.z, state)) fail('A carga explosiva sairia da arena.');
+    if (gridCellsBetween(unit, destination).some(cell => unitAt(state, cell.x, cell.z))) fail('O caminho da carga está bloqueado.');
+    const targets = [...state.units].filter(item => item.id !== unit.id
+      && Math.max(Math.abs(item.x - destination.x), Math.abs(item.z - destination.z)) <= ability.radius);
+    for (const target of targets) {
+      const targetCard = CARD_BY_ID[target.cardId];
+      const construction = ['construction', 'machine'].includes(targetCard?.type);
+      damageUnit(state, target, construction ? ability.constructionDamage : ability.troopDamage);
+    }
+    damageUnit(state, unit, unit.hp);
+  }
   player.energy -= ability.cost;
-  unit.abilityUsed = true;
-  unit.abilityReadyTurn = turnIndex(state) + (ability.cooldownTurns ?? 2);
-  unit.actionUsed = true;
+  if (state.units.includes(unit)) {
+    unit.abilityUsed = true;
+    unit.abilityReadyTurn = turnIndex(state) + (ability.cooldownTurns ?? 2);
+    unit.actionUsed = true;
+  }
 }
 
 export function useInstantAction(state, player, _opponent, action) {

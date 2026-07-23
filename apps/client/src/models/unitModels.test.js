@@ -7,6 +7,8 @@ import { cards } from '../ui/cardView.js';
 import { UNIT_MODEL_SCALE } from './createCardUnit.js';
 import {
   makeArcher,
+  makeCitizen,
+  makeGoblinBomber,
   makeGuard,
   makeHenry,
   makeMage,
@@ -155,6 +157,18 @@ test('guerreiro usa espada sem escudo', () => {
   const warrior = makeWarrior();
   assert.ok(warrior.getObjectByName('warriorSword'));
   assert.equal(warrior.getObjectByName('warriorShield'), undefined);
+});
+
+test('Cidadão e Goblin Bombardeiro possuem modelos próprios', () => {
+  const citizen = makeCitizen();
+  const bomber = makeGoblinBomber();
+  assert.ok(citizen.getObjectByName('citizenPitchfork'));
+  assert.ok(bomber.getObjectByName('goblinBomb'));
+  for (const unit of [citizen, bomber]) {
+    const size = new THREE.Box3().setFromObject(unit).getSize(new THREE.Vector3());
+    assert.ok(size.x * UNIT_MODEL_SCALE <= TILE_SIZE);
+    assert.ok(size.z * UNIT_MODEL_SCALE <= TILE_SIZE);
+  }
 });
 
 test('somente arqueiro montado tem o movimento bloqueado', () => {

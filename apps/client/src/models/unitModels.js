@@ -6,6 +6,8 @@ export { makeWoodBarrier, setWoodBarrierConstructionState } from '../assets/mode
 export { makeWoodenHouse, setWoodenHouseConstructionState } from '../assets/models/woodenHouseModel.js';
 export { makeMage } from '../assets/models/mageModel.js';
 export { makeGoblin } from '../assets/models/goblinModel.js';
+export { makeGoblinBomber } from '../assets/models/goblinBomberModel.js';
+export { makeCitizen } from '../assets/models/citizenModel.js';
 export { makeGoblinTower, setGoblinTowerConstructionState } from '../assets/models/goblinTowerModel.js';
 export { makeHenry } from '../assets/models/henryModel.js';
 export { makeBuilderArea, makeGoblinAltar, makeMageAltar, setSupportConstructionState } from '../assets/models/supportBuildingModels.js';

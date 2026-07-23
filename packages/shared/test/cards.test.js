@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CARD_BY_ID, CARD_CATEGORY_LABELS, CARD_DEFINITIONS, baseCellsForSeat, citizensForSeat, completedRoadCount, connectedRoadKeys, deploymentDistance, effectiveCardCost, forwardDeltaForSeat, goblinSpawnHp, gridCellsBetween, isBasicCard, isCannonTargetValid, isDeploymentCell, isGoblinCard, isMageCard, isRoadCard, isRoadPlacementCell, roadMovementBonus, validateDeckCardIds } from '../src/cards.js';
+import { CARD_BY_ID, CARD_CATEGORY_LABELS, CARD_DEFINITIONS, baseCellsForSeat, citizensForSeat, completedRoadCount, connectedRoadKeys, deploymentDistance, effectiveCardCost, forwardDeltaForSeat, goblinSpawnHp, gridCellsBetween, isBasicCard, isCannonTargetValid, isDeploymentCell, isGoblinCard, isMageCard, isRoadCard, isRoadPlacementCell, roadAttackBonus, roadMovementBonus, validateDeckCardIds } from '../src/cards.js';
 
 test('calcula as casas intermediarias de uma linha no tabuleiro', () => {
   assert.deepEqual(gridCellsBetween({ x: 2, z: 2 }, { x: 5, z: 2 }), [{ x: 3, z: 2 }, { x: 4, z: 2 }]);
@@ -86,7 +86,9 @@ test('Estrada de Pedregulhos conecta a rede e acelera somente cartas Básicas', 
   assert.equal(CARD_BY_ID.cobblestone_road.cost, 4);
   assert.deepEqual([...connectedRoadKeys(1, roads)].sort(), ['7:10', '7:11']);
   assert.equal(roadMovementBonus(7, 10, roads, 'warrior'), 1);
+  assert.equal(roadAttackBonus(7, 10, roads, 'warrior'), 1);
   assert.equal(roadMovementBonus(7, 10, roads, 'goblin'), 0);
+  assert.equal(roadAttackBonus(7, 10, roads, 'goblin'), 0);
   assert.equal(roadMovementBonus(7, 10, roads, 'mage'), 0);
   assert.equal(roadMovementBonus(7, 11, roads, 'goblin'), 1);
 });
@@ -107,6 +109,15 @@ test('Casa conectada à Estrada de Pedregulhos recebe dois cidadãos adicionais'
     { cardId: 'road', ownerSeat: 1, x: 6, z: 10 },
   ];
   assert.equal(citizensForSeat(1, house, mixedRoads), 5);
+});
+
+test('Operador e Cidadão contam como cidadãos enquanto permanecem na arena', () => {
+  const units = [
+    { ownerSeat: 1, cardId: 'operator', x: 4, z: 9, underConstruction: false },
+    { ownerSeat: 1, cardId: 'citizen', x: 5, z: 9, underConstruction: false },
+    { ownerSeat: 2, cardId: 'citizen', x: 6, z: 5, underConstruction: false },
+  ];
+  assert.equal(citizensForSeat(1, units, []), 2);
 });
 
 test('Mago é raro e expõe fogo e ácido com os atributos definidos', () => {
@@ -150,8 +161,8 @@ test('Henry participa das sinergias Goblin e também nasce fortalecido pela Torr
   assert.equal(goblinSpawnHp(1, 7, 6, units, 'henry'), 2);
 });
 
-test('descrição da Torre documenta o disparo por cima de tropas e construções em linhas separadas', () => {
-  assert.match(CARD_BY_ID.tower.description, /atirar por cima de tropas e construções/);
+test('descrição da Torre documenta o disparo por cima de qualquer carta', () => {
+  assert.match(CARD_BY_ID.tower.description, /atirar por cima de qualquer carta/);
   assert.equal(CARD_BY_ID.tower.description.split('\n').length, 3);
 });
 
@@ -167,7 +178,7 @@ test('categorias abrangem tropas e construções de cada família', () => {
   assert.equal(isGoblinCard('warrior'), false);
 });
 
-test('castelo nível dois expande uma casa para cada lateral', () => {
+test('castelo nível dois acrescenta três quadrados em cada lateral', () => {
   assert.equal(baseCellsForSeat(1, 15, 1).length, 9);
   assert.equal(baseCellsForSeat(1, 15, 2).length, 15);
   assert.equal(baseCellsForSeat(1, 15, 2).some(cell => cell.x === 5 && cell.z === 13), true);

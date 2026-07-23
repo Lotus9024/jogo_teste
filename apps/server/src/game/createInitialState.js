@@ -36,7 +36,7 @@ export function weightedCardForRarity(rarity, player, round = 1, random = random
 }
 
 export function rarityForRoll(level, roll) {
-  if (level >= 2) return roll < 11 ? 'common' : roll < 17 ? 'uncommon' : 'rare';
+  if (level >= 2) return roll < 10 ? 'common' : roll < 16 ? 'uncommon' : 'rare';
   return roll < 2 ? 'common' : 'uncommon';
 }
 
@@ -65,12 +65,21 @@ export function drawCard(player, { round = 1, random = randomInt } = {}) {
   return true;
 }
 
+export function grantRandomCard(player, predicate, random = randomInt) {
+  const allowed = new Set(player.deckCardIds?.length ? player.deckCardIds : DEFAULT_DECK_CARD_IDS);
+  const preferred = CARD_DEFINITIONS.filter(card => allowed.has(card.id) && predicate(card));
+  const pool = preferred.length ? preferred : CARD_DEFINITIONS.filter(predicate);
+  if (!pool.length) return false;
+  player.hand.push({ instanceId: randomUUID(), cardId: pool[random(pool.length)].id });
+  return true;
+}
+
 export function createInitialState(players) {
   const ready = players.length === GAME_CONFIG.maxPlayers;
   const statePlayers = players.map(player => ({
     id: player.id, name: player.name, seat: player.seat, connected: true,
     baseHp: GAME_CONFIG.startingBaseHp, energy: GAME_CONFIG.startingEnergy, maxEnergy: GAME_CONFIG.maxEnergy,
-    citizens: 0, baseLevel: 1, hasDrawnHouse: false,
+    citizens: 0, baseLevel: 1, hasDrawnHouse: false, pendingMageAltarChoices: 0,
     deckCardIds: [...(player.deckCardIds?.length ? player.deckCardIds : DEFAULT_DECK_CARD_IDS)],
     hand: [], deck: createDeck(randomInt, 1, GAME_CONFIG.deckSize, player.deckCardIds?.length ? player.deckCardIds : DEFAULT_DECK_CARD_IDS), discard: []
   }));

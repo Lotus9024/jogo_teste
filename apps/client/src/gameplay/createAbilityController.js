@@ -1,4 +1,4 @@
-import { CARD_BY_ID } from '@tronos/shared/cards';
+import { CARD_BY_ID, forwardDeltaForSeat, gridCellsBetween } from '@tronos/shared/cards';
 import { setAbilityBadgeState, setMageFireBadgeCooling } from '../ui/unitHealthBadge.js';
 import { createMageAbilityController } from './createMageAbilityController.js';
 import { createGoblinTowerAbilityController } from './createGoblinTowerAbilityController.js';
@@ -97,12 +97,36 @@ export function createAbilityController(options) {
   function activateSelectedAbility() {
     const selected = state.selected;
     const card = CARD_BY_ID[selected?.userData.cardId];
-    if (!selected || !['goblin_altar', 'mage_altar'].includes(card?.id)) return false;
+    if (!selected || !['goblin_altar', 'mage_altar', 'goblin_bomber'].includes(card?.id)) return false;
     const me = state.onlineState?.state.players.find(player => player.seat === state.selfSeat);
     const ownTurn = (state.onlineState?.state.activeSeat ?? state.activePlayer) === selected.userData.ownerSeat;
     if (selected.userData.underConstruction || selected.userData.actionUsed || !ownTurn || (me && me.energy < card.ability.cost)) return true;
     if (state.onlineState) callbacks.sendOnlineAction?.({ type: 'use_ability', unitId: selected.userData.serverUnitId });
-    else selected.userData.actionUsed = true;
+    else if (card.id === 'goblin_bomber') {
+      const origin = {
+        x: Math.round((selected.position.x + half) / tile),
+        z: Math.round((selected.position.z + half) / tile),
+      };
+      const forward = forwardDeltaForSeat(selected.userData.ownerSeat);
+      const destination = {
+        x: origin.x + forward.x * card.ability.chargeDistance,
+        z: origin.z + forward.z * card.ability.chargeDistance,
+      };
+      const occupied = (x, z) => units.some(unit => unit !== selected
+        && Math.round((unit.position.x + half) / tile) === x
+        && Math.round((unit.position.z + half) / tile) === z);
+      if (destination.x < 0 || destination.x >= 15 || destination.z < 0 || destination.z >= 15
+        || gridCellsBetween(origin, destination).some(cell => occupied(cell.x, cell.z))) return true;
+      units.filter(unit => unit !== selected).forEach(unit => {
+        const x = Math.round((unit.position.x + half) / tile);
+        const z = Math.round((unit.position.z + half) / tile);
+        if (Math.max(Math.abs(x - destination.x), Math.abs(z - destination.z)) > card.ability.radius) return;
+        const targetCard = CARD_BY_ID[unit.userData.cardId];
+        const construction = ['construction', 'machine'].includes(targetCard?.type);
+        callbacks.damageLocalUnit?.(unit, construction ? card.ability.constructionDamage : card.ability.troopDamage);
+      });
+      callbacks.damageLocalUnit?.(selected, selected.userData.hp);
+    } else selected.userData.actionUsed = true;
     return true;
   }
 

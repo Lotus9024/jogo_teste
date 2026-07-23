@@ -1,5 +1,5 @@
 import { GAME_CONFIG } from '@tronos/shared/game-config';
-import { drawCard } from './createInitialState.js';
+import { drawCard, grantRandomCard } from './createInitialState.js';
 import { resolveEndingFires } from './combat.js';
 import { fail } from './gameQueries.js';
 import { healLevelTwoConstructions, refreshKingdomProgress } from './kingdomProgress.js';
@@ -12,15 +12,18 @@ export function requireTurn(state, player) {
 
 export function endTurn(state) {
   const endingPlayer = state.players.find(item => item.seat === state.activeSeat);
+  if ((endingPlayer?.pendingMageAltarChoices ?? 0) > 0) fail('Escolha uma carta do seu baralho pelo Altar Mago antes de passar o turno.');
   if (endingPlayer?.hand.length > GAME_CONFIG.maxHandSize) fail(`Jogue ou descarte até ficar com no máximo ${GAME_CONFIG.maxHandSize} cartas.`);
   resolveEndingFires(state, state.activeSeat);
   state.activeSeat = state.activeSeat === 1 ? 2 : 1;
   if (state.activeSeat === 1) state.round += 1;
   let completedMageAltars = 0;
+  let completedGoblinAltars = 0;
   state.units.forEach(unit => {
     if (unit.underConstruction && unit.ownerSeat === state.activeSeat && unit.buildReadyRound <= state.round) {
       unit.underConstruction = false;
       if (unit.cardId === 'mage_altar') completedMageAltars += 1;
+      if (unit.cardId === 'goblin_altar') completedGoblinAltars += 1;
     }
   });
   state.roads.forEach(road => {
@@ -31,13 +34,17 @@ export function endTurn(state) {
   const player = state.players.find(item => item.seat === state.activeSeat);
   player.energy = Math.min(player.maxEnergy, player.energy + GAME_CONFIG.energyPerTurn + builderEnergyBonus(state, player.seat));
   drawCard(player, { round: state.round });
-  for (let index = 0; index < completedMageAltars; index += 1) drawCard(player, { round: state.round });
+  player.pendingMageAltarChoices = (player.pendingMageAltarChoices ?? 0) + completedMageAltars;
+  for (let index = 0; index < completedGoblinAltars; index += 1) {
+    grantRandomCard(player, card => card.category === 'goblin');
+  }
   state.units.filter(unit => unit.ownerSeat === state.activeSeat).forEach(unit => {
     unit.actionUsed = false;
     unit.movedThisTurn = false;
     unit.attackedThisTurn = false;
     unit.abilityUsed = false;
     unit.bonusMoves = 0;
+    unit.bonusAttacks = 0;
     unit.shield = 0;
   });
   state.units.forEach(unit => {

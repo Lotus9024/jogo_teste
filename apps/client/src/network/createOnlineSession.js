@@ -55,6 +55,7 @@ export function createOnlineSession({
       movedThisTurn: Boolean(data.movedThisTurn),
       attackedThisTurn: Boolean(data.attackedThisTurn),
       bonusMoves: data.bonusMoves ?? 0,
+      bonusAttacks: data.bonusAttacks ?? 0,
       attackPenalty: data.attackPenalty ?? 0,
       abilityUsed: data.abilityUsed,
       abilityReadyTurn: data.abilityReadyTurn ?? 0,
@@ -122,6 +123,7 @@ export function createOnlineSession({
     document.querySelector('#waiting-code').textContent = payload.code;
     document.querySelector('#waiting-room').hidden = false;
     document.querySelector('#match-state').hidden = false;
+    syncMageAltarChoice(payload.self);
     if (payload.state.phase === 'waiting') {
       document.querySelector('#waiting-status').textContent = 'Aguardando o rei rival...';
       return;
@@ -139,8 +141,8 @@ export function createOnlineSession({
     if (!me || !enemy) return;
     const seatOne = payload.state.players.find(player => player.seat === 1);
     const seatTwo = payload.state.players.find(player => player.seat === 2);
-    alliedKeep.scale.set(seatOne?.baseLevel >= 2 ? 1.45 : 1, 1, 1);
-    enemyKeep.scale.set(seatTwo?.baseLevel >= 2 ? 1.45 : 1, 1, 1);
+    alliedKeep.scale.set(seatOne?.baseLevel >= 2 ? 5 / 3 : 1, 1, 1);
+    enemyKeep.scale.set(seatTwo?.baseLevel >= 2 ? 5 / 3 : 1, 1, 1);
     setResource('#self-energy', me.energy, me.maxEnergy ?? GAME_CONFIG.maxEnergy);
     setResource('#self-health', me.baseHp, GAME_CONFIG.startingBaseHp);
     devController.setKingdomProgressHud(me.citizens ?? 0, me.baseLevel ?? 1, enemy.baseLevel ?? 1);
@@ -162,7 +164,26 @@ export function createOnlineSession({
     abilities.syncAbilityBadges();
   }
 
+  function syncMageAltarChoice(self) {
+    const modal = document.querySelector('#mage-altar-choice');
+    const choices = document.querySelector('#mage-altar-choice-cards');
+    const pending = self.pendingMageAltarChoices ?? 0;
+    modal.hidden = pending < 1;
+    if (!pending) {
+      choices.replaceChildren();
+      return;
+    }
+    choices.innerHTML = (self.deckChoices ?? []).map(cardId => {
+      const card = CARD_BY_ID[cardId];
+      return card ? `<button data-mage-altar-card="${card.id}" class="rarity-${card.rarityClass}"><b>${card.glyph}</b><span>${card.name}</span><small>${card.rarity}</small></button>` : '';
+    }).join('');
+  }
+
   function start() {
+    document.querySelector('#mage-altar-choice-cards').addEventListener('click', event => {
+      const button = event.target.closest('[data-mage-altar-card]');
+      if (button) sendAction({ type: 'choose_deck_card', cardId: button.dataset.mageAltarCard });
+    });
     socket.addEventListener('connected', () => {
       connectionState.textContent = 'SERVIDOR CONECTADO';
       lobbyError.textContent = '';
