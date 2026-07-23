@@ -20,14 +20,14 @@ export function createGameScene(app, { quality = 'high' } = {}) {
   app.prepend(renderer.domElement);
   app.dataset.shadows = 'dynamic-soft';
 
-  // The HDRI is rendered on a 68-unit sphere. Its rear hemisphere can sit
-  // farther than 80 units from the elevated camera, especially on wide views,
-  // so keep the far plane beyond the complete sky dome.
+  // The procedural sky is rendered on a 68-unit sphere. Its rear hemisphere
+  // can sit farther than 80 units from the elevated camera, especially on
+  // wide views, so keep the far plane beyond the complete sky dome.
   const camera = new THREE.OrthographicCamera(-6, 6, 6, -6, 0.1, 180);
   camera.position.set(3.1, 14.8, 10.2);
   camera.lookAt(0, 0.32, 0);
   scene.add(camera);
-  const magicSky = createMagicSky(scene, renderer, app, { quality });
+  const magicSky = createMagicSky(scene, renderer, app, { quality, camera });
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
