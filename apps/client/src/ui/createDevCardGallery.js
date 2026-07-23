@@ -1,5 +1,14 @@
 import { cardMarkup, cards } from './cardView.js';
 
+let devCardSequence = 0;
+
+export function createDevCardInstanceId(cryptoApi = globalThis.crypto) {
+  const uuid = cryptoApi?.randomUUID?.();
+  if (uuid) return `dev-${uuid}`;
+  devCardSequence += 1;
+  return `dev-${Date.now().toString(36)}-${devCardSequence.toString(36)}`;
+}
+
 export function createDevCardGallery({ state, app, controls, hand, showGameError }) {
   const gallery = document.querySelector('#dev-card-gallery');
   const grid = document.querySelector('#dev-gallery-grid');
@@ -92,7 +101,7 @@ export function createDevCardGallery({ state, app, controls, hand, showGameError
     const holder = document.createElement('div');
     holder.innerHTML = cardMarkup(cards[cardIndex], cardIndex, { level: state.devCardLevel });
     const node = holder.firstElementChild;
-    node.dataset.instance = `dev-${crypto.randomUUID()}`;
+    node.dataset.instance = createDevCardInstanceId();
     hand.appendChild(node);
     document.querySelector('#hand-count').textContent = `${hand.children.length} CARTAS`;
     hand.classList.add('reflow');
