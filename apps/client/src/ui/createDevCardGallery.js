@@ -35,7 +35,7 @@ export function createDevCardGallery({ state, app, controls, hand, showGameError
     const cost = costFilter.value;
     grid.replaceChildren();
     cards.forEach((card, index) => {
-      const haystack = normalizeSearch(`${card.name} ${card.description} ${card.ability} ${card.abilityText}`);
+      const haystack = normalizeSearch(`${card.name} ${card.categoryLabel} ${card.description} ${card.ability} ${card.abilityText}`);
       if (
         (query && !haystack.includes(query))
         || (rarity && card.rarity !== rarity)

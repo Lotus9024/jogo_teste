@@ -1,4 +1,4 @@
-import { CARD_BY_ID, CARD_DEFINITIONS, DECK_LIMITS, deckCounts, normalizeDeckCardIds, validateDeckCardIds } from '@tronos/shared/cards';
+import { CARD_BY_ID, CARD_CATEGORY_LABELS, CARD_DEFINITIONS, DECK_LIMITS, deckCounts, normalizeDeckCardIds, validateDeckCardIds } from '@tronos/shared/cards';
 
 const STORAGE_KEY = 'tronos.deck.v1';
 
@@ -25,7 +25,7 @@ export function createDeckBuilderController() {
         slot.innerHTML = card ? `<b>${card.glyph}</b><span>${card.name}</span>` : '<i>+</i>';
       });
     });
-    library.innerHTML = CARD_DEFINITIONS.map(card => `<button class="deck-library-card rarity-${card.rarityClass}${selected.includes(card.id) ? ' selected' : ''}" draggable="true" data-card-id="${card.id}"><b>${card.glyph}</b><span>${card.name}</span><small>${card.rarity}</small></button>`).join('');
+    library.innerHTML = CARD_DEFINITIONS.map(card => `<button class="deck-library-card rarity-${card.rarityClass}${selected.includes(card.id) ? ' selected' : ''}" draggable="true" data-card-id="${card.id}"><b>${card.glyph}</b><span>${card.name}</span><small>${card.rarity} · ${CARD_CATEGORY_LABELS[card.category]}</small></button>`).join('');
     library.querySelectorAll('[data-card-id]').forEach(button => {
       button.addEventListener('click', () => toggle(button.dataset.cardId));
       button.addEventListener('dragstart', event => event.dataTransfer.setData('text/card-id', button.dataset.cardId));

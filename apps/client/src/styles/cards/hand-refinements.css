@@ -21,3 +21,12 @@
 /* A carta permanece na mão durante a mira e só ganha corpo no lançamento. */
 .game-card.aiming{z-index:24;filter:brightness(1.18);animation:card-cast-ready .14s ease-in-out infinite alternate}.game-card.casting{opacity:.18;filter:saturate(.5);pointer-events:none}.summon-card-flight{position:fixed!important;z-index:32!important;margin:0!important;pointer-events:none!important;transform-origin:center!important;transition:none!important;filter:brightness(1.18) saturate(1.08)!important;box-shadow:0 0 0 3px var(--rarity),0 0 24px color-mix(in srgb,var(--rarity) 55%,transparent),0 28px 65px rgba(0,0,0,.9)!important}.summon-card-ghost{display:none!important}@keyframes card-cast-ready{from{transform:translateY(-280px) rotate(-1.2deg) scale(1.025)}to{transform:translateY(-284px) rotate(1.2deg) scale(1.035)}}
 @media(prefers-reduced-motion:reduce){.game-card.aiming{animation:none}}
+
+/* Category identity and authored line breaks. */
+.card-heading{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:2px}
+.card-name{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.card-category{font:700 6px/1 Cinzel;letter-spacing:.14em;color:#a9a18f}
+.category-goblin .card-category{color:#8db56d}
+.category-mage .card-category{color:#a98ad9}
+.card-description,.card-ability p{white-space:pre-line}
+.preview-description,.preview-ability p{white-space:pre-line}

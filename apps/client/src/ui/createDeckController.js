@@ -2,6 +2,10 @@ import * as THREE from 'three';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { cards, hideDeckPreview as hideCardPreview, showDeckPreview } from './cardView.js';
 
+export function canUsePhysicalDeck(state, deck, activeSeat) {
+  return Boolean(deck) && (state.devMode || deck.userData.ownerSeat === (activeSeat ?? 1));
+}
+
 export function createDeckController({
   state, renderer, camera, controls, cameraTransition, physicalDecks, hand, gallery,
 }) {
@@ -85,14 +89,18 @@ export function createDeckController({
     return deck?.userData.ownerSeat === (activeSeat() ?? 1);
   }
 
+  function canUseDeck(deck) {
+    return canUsePhysicalDeck(state, deck, activeSeat());
+  }
+
   function hover(event) {
     const deck = deckAtPointer(event);
     const hoverSeat = deck?.userData.ownerSeat ?? null;
     if (hoverSeat === state.deckHoverSeat) return;
     state.deckHoverSeat = hoverSeat;
-    state.deckHover = isSelfDeck(deck);
-    renderer.domElement.style.cursor = deck ? (isSelfDeck(deck) ? 'pointer' : 'help') : '';
-    if (isSelfDeck(deck) && !state.onlineState) previewCard(state.deckPreviewIndex);
+    state.deckHover = canUseDeck(deck);
+    renderer.domElement.style.cursor = deck ? (canUseDeck(deck) ? 'pointer' : 'help') : '';
+    if (canUseDeck(deck) && !state.onlineState) previewCard(state.deckPreviewIndex);
     else hidePreview();
   }
 
@@ -128,7 +136,7 @@ export function createDeckController({
     renderer.domElement.addEventListener('pointermove', hover);
     renderer.domElement.addEventListener('pointerdown', event => {
       const deck = deckAtPointer(event);
-      if (event.button !== 0 || !isSelfDeck(deck)) return;
+      if (event.button !== 0 || !canUseDeck(deck)) return;
       event.preventDefault();
       event.stopPropagation();
       cameraTransition.cancel({ restoreControls: false });
@@ -140,7 +148,7 @@ export function createDeckController({
       event.preventDefault();
       event.stopPropagation();
       const releasedDeck = deckAtPointer(event);
-      const shouldDraw = releasedDeck === pressedDeck && isSelfDeck(releasedDeck);
+      const shouldDraw = releasedDeck === pressedDeck && canUseDeck(releasedDeck);
       pressedDeck = null;
       controls.enabled = true;
       if (shouldDraw) drawCardPreview();

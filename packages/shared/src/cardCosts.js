@@ -8,15 +8,16 @@ export function effectiveCardCost(cardId, seat, units = []) {
   const goblinAltars = completedAllied.filter(unit => unit.cardId === 'goblin_altar').length;
   const mageAltars = completedAllied.filter(unit => unit.cardId === 'mage_altar').length;
   const towerDiscount = card.id === 'goblin_tower' ? goblinTroops * (card.goblinDiscount ?? 1) : 0;
-  const familyDiscount = card.family === 'goblin' ? goblinAltars : card.family === 'mage' ? mageAltars : 0;
+  const familyDiscount = card.category === 'goblin' ? goblinAltars : card.category === 'mage' ? mageAltars : 0;
   return Math.max(card.minimumCost ?? 1, card.cost - towerDiscount - familyDiscount);
 }
 
-export function isGoblinCard(cardId) { return CARD_BY_ID[cardId]?.family === 'goblin'; }
-export function isMageCard(cardId) { return CARD_BY_ID[cardId]?.family === 'mage'; }
+export function isBasicCard(cardId) { return CARD_BY_ID[cardId]?.category === 'basic'; }
+export function isGoblinCard(cardId) { return CARD_BY_ID[cardId]?.category === 'goblin'; }
+export function isMageCard(cardId) { return CARD_BY_ID[cardId]?.category === 'mage'; }
 export function isGoblinTroop(cardId) {
   const card = CARD_BY_ID[cardId];
-  return card?.family === 'goblin' && !card.type;
+  return card?.category === 'goblin' && !card.type;
 }
 
 export function goblinSpawnHp(seat, x, z, units = [], cardId = 'goblin') {

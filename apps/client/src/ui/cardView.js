@@ -1,9 +1,10 @@
-import { CARD_DEFINITIONS } from '@tronos/shared/cards';
+import { CARD_CATEGORY_LABELS, CARD_DEFINITIONS } from '@tronos/shared/cards';
 
 export const cards = CARD_DEFINITIONS.map(card => {
   const featuredAbility = card.instant.enabled ? card.instant : card.ability;
   return {
     ...card,
+    categoryLabel: CARD_CATEGORY_LABELS[card.category],
     ability: featuredAbility.name,
     abilityCost: featuredAbility.cost,
     abilityText: featuredAbility.enabled
@@ -28,7 +29,7 @@ function combatStats(card) {
   const lastLabel = needsConstruction ? 'Construção' : 'Movimento';
   const lastIcon = needsConstruction ? hourglassIcon : bootIcon;
   const lastValue = needsConstruction ? `${card.buildRounds}R` : card.move;
-  const resistanceLabel = card.type === 'construction' ? 'Resistência' : 'Vida';
+  const resistanceLabel = ['construction', 'machine'].includes(card.type) ? 'Resistência' : 'Vida';
   return `<span aria-label="${resistanceLabel}"><small aria-hidden="true">♥</small><b data-stat="hp">${card.hp}</b></span><span aria-label="Dano"><small aria-hidden="true">⚔</small><b>${damage}</b></span><span aria-label="${lastLabel}"><small aria-hidden="true">${lastIcon}</small><b>${lastValue}</b></span>`;
 }
 
@@ -37,8 +38,9 @@ export function cardMarkup(card, index, { level = null } = {}) {
   const copyClass = card.description.length > 180 || card.abilityText.length > 220 ? ' copy-very-long' : card.description.length > 115 || card.abilityText.length > 150 ? ' copy-long' : '';
   const descSize = Math.max(5, Math.min(9, 1100 / card.description.length));
   const abilitySize = Math.max(5, Math.min(8, 1050 / card.abilityText.length));
-  return `<button class="game-card rarity-${card.rarityClass}${copyClass}" style="--desc-size:${descSize}px;--ability-size:${abilitySize}px" data-card="${index}"${levelAttribute} aria-label="Carta ${card.name}, ${card.rarity}${level ? `, nível ${level}` : ''}">
-    <span class="card-top"><strong class="card-name">${card.name}</strong><span class="card-top-cost"><b>${card.cost}</b></span></span>
+  const categoryLabel = card.categoryLabel ?? CARD_CATEGORY_LABELS[card.category];
+  return `<button class="game-card rarity-${card.rarityClass} category-${card.category}${copyClass}" style="--desc-size:${descSize}px;--ability-size:${abilitySize}px" data-card="${index}"${levelAttribute} aria-label="Carta ${card.name}, categoria ${categoryLabel}, ${card.rarity}${level ? `, nível ${level}` : ''}">
+    <span class="card-top"><span class="card-heading"><strong class="card-name">${card.name}</strong><small class="card-category">${categoryLabel}</small></span><span class="card-top-cost"><b>${card.cost}</b></span></span>
     <span class="card-art"><span>${card.glyph}</span></span>
     <span class="card-description">${card.description}</span>
     <span class="card-main-row"><span class="card-combat-stats">${combatStats(card)}</span></span>
@@ -49,7 +51,7 @@ export function cardMarkup(card, index, { level = null } = {}) {
 export function showDeckPreview(element, card) {
   element.className = `deck-preview rarity-${card.rarityClass}`;
   element.innerHTML = `
-    <div class="preview-top"><b class="preview-cost">${card.cost}</b><strong>${card.name}</strong><i class="preview-gem"></i></div>
+    <div class="preview-top"><b class="preview-cost">${card.cost}</b><span class="preview-heading"><strong>${card.name}</strong><small>${card.categoryLabel ?? CARD_CATEGORY_LABELS[card.category]}</small></span><i class="preview-gem"></i></div>
     <div class="preview-art"><span>${card.glyph}</span></div><p class="preview-description">${card.description}</p>
     <div class="preview-stats">${combatStats(card)}</div>
     <div class="preview-ability" aria-label="Habilidade ${card.ability}"><strong>${card.ability}</strong><b class="preview-ability-cost">${card.abilityCost}</b><p>${card.abilityText}</p></div>`;

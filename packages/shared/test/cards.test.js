@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CARD_BY_ID, baseCellsForSeat, citizensForSeat, completedRoadCount, connectedRoadKeys, deploymentDistance, effectiveCardCost, forwardDeltaForSeat, goblinSpawnHp, gridCellsBetween, isCannonTargetValid, isDeploymentCell, isRoadPlacementCell, roadMovementBonus, validateDeckCardIds } from '../src/cards.js';
+import { CARD_BY_ID, CARD_CATEGORY_LABELS, CARD_DEFINITIONS, baseCellsForSeat, citizensForSeat, completedRoadCount, connectedRoadKeys, deploymentDistance, effectiveCardCost, forwardDeltaForSeat, goblinSpawnHp, gridCellsBetween, isBasicCard, isCannonTargetValid, isDeploymentCell, isGoblinCard, isMageCard, isRoadPlacementCell, roadMovementBonus, validateDeckCardIds } from '../src/cards.js';
 
 test('calcula as casas intermediarias de uma linha no tabuleiro', () => {
   assert.deepEqual(gridCellsBetween({ x: 2, z: 2 }, { x: 5, z: 2 }), [{ x: 3, z: 2 }, { x: 4, z: 2 }]);
@@ -17,7 +17,7 @@ test('Henry expõe agilidade, entrada pronta e os atributos definidos', () => {
     { hp: CARD_BY_ID.henry.hp, damage: CARD_BY_ID.henry.damage, move: CARD_BY_ID.henry.move, cost: CARD_BY_ID.henry.cost, rarity: CARD_BY_ID.henry.rarityClass },
     { hp: 1, damage: 1, move: 1, cost: 4, rarity: 'uncommon' }
   );
-  assert.match(CARD_BY_ID.henry.description, /movimentar e atacar.*qualquer ordem/i);
+  assert.match(CARD_BY_ID.henry.description, /movimentar e atacar.*vice-versa.*mesmo turno/is);
   assert.match(CARD_BY_ID.henry.ability.description, /entra em campo pronto/i);
 });
 
@@ -59,8 +59,7 @@ test('canhão separa dano direto do dano em área', () => {
   assert.equal(CARD_BY_ID.cannon.cost, 8);
   assert.equal(CARD_BY_ID.cannon.areaDamage, 1);
   assert.equal(CARD_BY_ID.cannon.areaRadius, 1);
-  assert.match(CARD_BY_ID.cannon.description, /oito casas imediatamente ao redor/i);
-  assert.match(CARD_BY_ID.cannon.description, /não atravessa tropas nem construções/i);
+  assert.match(CARD_BY_ID.cannon.description, /3 de dano central e 1 de dano em área/i);
 });
 
 test('ruas formam uma rede conectada ao castelo e não possuem vida', () => {
@@ -90,7 +89,7 @@ test('Mago é raro e expõe fogo e ácido com os atributos definidos', () => {
     { hp: CARD_BY_ID.mage.hp, damage: CARD_BY_ID.mage.damage, move: CARD_BY_ID.mage.move, cost: CARD_BY_ID.mage.cost, range: CARD_BY_ID.mage.attackRange, cells: CARD_BY_ID.mage.maxFireCells, rarity: CARD_BY_ID.mage.rarityClass },
     { hp: 2, damage: 2, move: 1, cost: 6, range: 4, cells: 2, rarity: 'rare' }
   );
-  assert.match(CARD_BY_ID.mage.description, /mesmo com unidades à frente/i);
+  assert.match(CARD_BY_ID.mage.description, /sem ser bloqueado/i);
   assert.deepEqual(
     { cost: CARD_BY_ID.mage.instant.cost, damage: CARD_BY_ID.mage.instant.damage, radius: CARD_BY_ID.mage.instant.radius, cooldown: CARD_BY_ID.mage.instant.cooldownTurns },
     { cost: 4, damage: 3, radius: 1, cooldown: 2 }
@@ -123,6 +122,18 @@ test('Henry participa das sinergias Goblin e também nasce fortalecido pela Torr
   ];
   assert.equal(effectiveCardCost('goblin_tower', 1, units), 9);
   assert.equal(goblinSpawnHp(1, 7, 6, units, 'henry'), 2);
+});
+
+test('categorias abrangem tropas e construções de cada família', () => {
+  assert.deepEqual(CARD_CATEGORY_LABELS, { basic: 'BÁSICA', goblin: 'GOBLIN', mage: 'MAGO' });
+  assert.equal(CARD_DEFINITIONS.every(card => CARD_CATEGORY_LABELS[card.category]), true);
+  assert.equal(isBasicCard('warrior'), true);
+  assert.equal(isBasicCard('builder_area'), true);
+  assert.equal(isGoblinCard('henry'), true);
+  assert.equal(isGoblinCard('goblin_tower'), true);
+  assert.equal(isMageCard('mage'), true);
+  assert.equal(isMageCard('mage_altar'), true);
+  assert.equal(isGoblinCard('warrior'), false);
 });
 
 test('castelo nível dois expande uma casa para cada lateral', () => {

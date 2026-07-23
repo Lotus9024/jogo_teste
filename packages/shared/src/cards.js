@@ -1,7 +1,7 @@
 // Public compatibility facade. Existing consumers continue importing
 // `@tronos/shared/cards` while implementation details stay separated by domain.
-export { CARD_BY_ID, CARD_DEFINITIONS } from './cardCatalog.js';
-export { effectiveCardCost, goblinSpawnHp, isGoblinCard, isGoblinTroop, isMageCard } from './cardCosts.js';
+export { CARD_BY_ID, CARD_CATEGORY_LABELS, CARD_DEFINITIONS } from './cardCatalog.js';
+export { effectiveCardCost, goblinSpawnHp, isBasicCard, isGoblinCard, isGoblinTroop, isMageCard } from './cardCosts.js';
 export {
   ORTHOGONAL_DIRECTIONS,
   baseCellsForSeat,
