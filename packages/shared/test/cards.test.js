@@ -124,6 +124,11 @@ test('Henry participa das sinergias Goblin e também nasce fortalecido pela Torr
   assert.equal(goblinSpawnHp(1, 7, 6, units, 'henry'), 2);
 });
 
+test('descrição da Torre documenta o disparo por cima de construções em linhas separadas', () => {
+  assert.match(CARD_BY_ID.tower.description, /atirar por cima de qualquer construção/);
+  assert.equal(CARD_BY_ID.tower.description.split('\n').length, 3);
+});
+
 test('categorias abrangem tropas e construções de cada família', () => {
   assert.deepEqual(CARD_CATEGORY_LABELS, { basic: 'BÁSICA', goblin: 'GOBLIN', mage: 'MAGO' });
   assert.equal(CARD_DEFINITIONS.every(card => CARD_CATEGORY_LABELS[card.category]), true);

@@ -36,7 +36,7 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'tower', name: 'Torre', description: 'Você pode colocar um arqueiro em cima da torre.\nEsse arqueiro ganha +1 de distância de ataque.\nCaso a torre seja destruída, o arqueiro também é.',
+    id: 'tower', name: 'Torre', description: 'Você pode colocar um arqueiro em cima da torre.\nEsse arqueiro ganha +1 de distância de ataque e consegue atirar por cima de qualquer construção.\nCaso a torre seja destruída, o arqueiro também é.',
     hp: 5, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 7, buildRounds: 2, type: 'construction', category: 'basic', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'CONSTRUÇÃO · TORRE', glyph: '♜',
     ability: Object.freeze({ name: 'Rajada cardinal', cost: 2, cooldownTurns: 2, range: 3, damage: 2, description: 'Atira uma flecha em todas as 4 direções retas, com no máximo 3 blocos de distância e 2 de dano.', enabled: true }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
