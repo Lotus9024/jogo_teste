@@ -30,6 +30,19 @@ export function useAbilityAction(state, player, _opponent, action) {
       item.attackPenaltyUntilTurn = Math.max(item.attackPenaltyUntilTurn ?? 0, expires);
     });
   }
+  if (card.id === 'goblin_house') {
+    const forward = forwardDeltaForSeat(player.seat);
+    const spawn = { x: unit.x + forward.x, z: unit.z + forward.z };
+    if (!validCell(spawn.x, spawn.z) || inBase(spawn.x, spawn.z, state) || unitAt(state, spawn.x, spawn.z)) fail('A Casa Goblin precisa de espaço livre à frente.');
+    const hp = goblinSpawnHp(player.seat, spawn.x, spawn.z, state.units, 'goblin');
+    state.units.push({
+      id: randomUUID(), ownerSeat: player.seat, cardId: 'goblin', ...spawn, hp, maxHp: hp, shield: 0,
+      actionUsed: true, movedThisTurn: false, attackedThisTurn: false,
+      abilityUsed: false, abilityReadyTurn: 0, instantUsedRound: 0, instantReadyTurn: 0,
+      empowered: false, mountedOnTowerId: null, bonusMoves: 0, bonusAttacks: 0,
+      attackPenalty: 0, attackPenaltyUntilTurn: 0, underConstruction: false, buildReadyRound: null
+    });
+  }
   if (card.id === 'goblin_bomber') {
     const forward = forwardDeltaForSeat(player.seat);
     const destination = {
@@ -59,12 +72,17 @@ export function useInstantAction(state, player, _opponent, action) {
   if (state.phase !== 'playing') fail('A partida ainda não começou.');
   const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
   const card = CARD_BY_ID[unit.cardId];
-  const instant = card.instant;
+  const instant = unit.isGoblinClone ? CARD_BY_ID.goblin_clone.instant : card.instant;
   if (!instant?.enabled || (unit.instantReadyTurn ?? 0) > turnIndex(state) || player.energy < instant.cost) fail('Habilidade instantânea indisponível.');
   if (card.id === 'mage') {
     [...state.units]
       .filter(item => item.id !== unit.id && Math.max(Math.abs(item.x - unit.x), Math.abs(item.z - unit.z)) <= instant.radius)
       .forEach(item => damageUnit(state, item, instant.damage));
+  }
+  if (unit.isGoblinClone) {
+    unit.cloneDamageBonus = (unit.cloneDamageBonus ?? 0) + 1;
+    unit.maxHp += 1;
+    unit.hp = Math.min(unit.maxHp, unit.hp + 1);
   }
   player.energy -= instant.cost;
   unit.instantUsedRound = state.round;

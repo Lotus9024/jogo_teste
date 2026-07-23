@@ -9,6 +9,8 @@ import {
   makeArcher,
   makeCitizen,
   makeGoblinBomber,
+  makeGoblinClone,
+  makeGoblinHouse,
   makeGuard,
   makeHenry,
   makeMage,
@@ -41,6 +43,16 @@ test('construcoes apontam para o reino rival conforme o dono', () => {
   const house = makeWoodenHouse();
   setUnitOwnerFacing(house, 'wooden_house', 1);
   assert.equal(house.rotation.y, 0);
+});
+
+test('Casa Goblin encosta no chão sem plataforma e Clone possui modelo próprio', () => {
+  const house = makeGoblinHouse();
+  assert.ok(house.getObjectByName('rig'));
+  assert.equal(house.getObjectByName('teamPlatform'), undefined);
+  assert.equal(house.getObjectByName('selectionRing'), undefined);
+  const clone = makeGoblinClone();
+  assert.equal(clone.name, 'Clone Goblin');
+  assert.ok(clone.getObjectByName('goblinDagger'));
 });
 
 test('tropas mantêm rig, plataforma e silhueta dentro da casa', () => {

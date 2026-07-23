@@ -4,7 +4,7 @@ import { setCannonConstructionState } from '../assets/models/cannonModel.js';
 const POSITIVE_Z_FRONT_CARDS = new Set(['tower', 'wooden_barrier']);
 
 export function setUnitOwnerFacing(unit, cardId, ownerSeat) {
-  const rotateHalfTurn = cardId === 'cannon'
+  const rotateHalfTurn = ['cannon', 'goblin_house'].includes(cardId)
     ? ownerSeat === 2
     : POSITIVE_Z_FRONT_CARDS.has(cardId) && ownerSeat === 1;
   unit.rotation.y = rotateHalfTurn ? Math.PI : 0;

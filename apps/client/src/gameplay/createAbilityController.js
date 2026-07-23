@@ -31,6 +31,14 @@ export function createAbilityController(options) {
         });
         setMageFireBadgeCooling(unit, Boolean(unit.userData.actionUsed));
       }
+      if (unit.userData.isGoblinClone) {
+        const remaining = Math.max(0, (unit.userData.instantReadyTurn ?? 0) - turn);
+        setAbilityBadgeState(unit, {
+          remaining,
+          enabled: owned && !remaining && !unit.userData.underConstruction
+            && Boolean(!me || me.energy >= CARD_BY_ID.goblin_clone.instant.cost),
+        });
+      }
       if (unit.userData.cardId === 'tower') {
         const archer = relations.archerForTower(unit);
         const remaining = Math.max(0, (archer?.userData.abilityReadyTurn ?? 0) - turn);
@@ -47,6 +55,15 @@ export function createAbilityController(options) {
           remaining: 0,
           enabled: Boolean(owned && ownTurn && !unit.userData.actionUsed && !unit.userData.underConstruction
             && (!me || me.energy >= CARD_BY_ID.goblin_tower.ability.cost)),
+        });
+      }
+      if (unit.userData.cardId === 'goblin_house') {
+        const ownTurn = (state.onlineState?.state.activeSeat ?? state.activePlayer) === unit.userData.ownerSeat;
+        const remaining = Math.max(0, (unit.userData.abilityReadyTurn ?? 0) - turn);
+        setAbilityBadgeState(unit, {
+          remaining,
+          enabled: Boolean(owned && ownTurn && !remaining && !unit.userData.actionUsed && !unit.userData.underConstruction
+            && (!me || me.energy >= CARD_BY_ID.goblin_house.ability.cost)),
         });
       }
     });
@@ -97,10 +114,12 @@ export function createAbilityController(options) {
   function activateSelectedAbility() {
     const selected = state.selected;
     const card = CARD_BY_ID[selected?.userData.cardId];
-    if (!selected || !['goblin_altar', 'mage_altar', 'goblin_bomber'].includes(card?.id)) return false;
+    if (!selected || !['goblin_altar', 'mage_altar', 'goblin_bomber', 'goblin_house'].includes(card?.id)) return false;
     const me = state.onlineState?.state.players.find(player => player.seat === state.selfSeat);
     const ownTurn = (state.onlineState?.state.activeSeat ?? state.activePlayer) === selected.userData.ownerSeat;
-    if (selected.userData.underConstruction || selected.userData.actionUsed || !ownTurn || (me && me.energy < card.ability.cost)) return true;
+    if (selected.userData.underConstruction || selected.userData.actionUsed || !ownTurn
+      || (selected.userData.abilityReadyTurn ?? 0) > currentTurnIndex()
+      || (me && me.energy < card.ability.cost)) return true;
     if (state.onlineState) callbacks.sendOnlineAction?.({ type: 'use_ability', unitId: selected.userData.serverUnitId });
     else if (card.id === 'goblin_bomber') {
       const origin = {
@@ -130,11 +149,28 @@ export function createAbilityController(options) {
     return true;
   }
 
+  function activateCloneInstant() {
+    const selected = state.selected;
+    if (!selected?.userData.isGoblinClone) return false;
+    const me = state.onlineState?.state.players.find(player => player.seat === state.selfSeat);
+    const instant = CARD_BY_ID.goblin_clone.instant;
+    if ((selected.userData.instantReadyTurn ?? 0) > currentTurnIndex() || (me && me.energy < instant.cost)) return true;
+    if (state.onlineState) callbacks.sendOnlineAction?.({ type: 'use_instant', unitId: selected.userData.serverUnitId });
+    else {
+      selected.userData.cloneDamageBonus = (selected.userData.cloneDamageBonus ?? 0) + 1;
+      selected.userData.maxHp += 1;
+      selected.userData.hp = Math.min(selected.userData.maxHp, selected.userData.hp + 1);
+      selected.userData.instantReadyTurn = currentTurnIndex() + (instant.cooldownTurns ?? 2);
+    }
+    return true;
+  }
+
   function mount() {
     addEventListener('keydown', event => {
       if (event.key.toLowerCase() !== 'f' || event.repeat || event.target.closest?.('input,textarea')) return;
       event.preventDefault();
-      if (state.selected?.userData.cardId === 'mage') mage.activateAcid();
+      if (state.selected?.userData.isGoblinClone) activateCloneInstant();
+      else if (state.selected?.userData.cardId === 'mage') mage.activateAcid();
       else if (state.selected?.userData.cardId === 'goblin_tower') goblinTower.activate();
       else if (!activateSelectedAbility()) activateTowerAbility();
     });
@@ -153,6 +189,8 @@ export function createAbilityController(options) {
     activateTowerAbility,
     activateMageFire: mage.activateFire,
     activateMageAcid: mage.activateAcid,
+    activateCloneInstant,
+    activateSelectedAbility,
     isMageAiming: mage.isAiming,
     activateGoblinTower: goblinTower.activate,
     chooseGoblinCell: goblinTower.choose,

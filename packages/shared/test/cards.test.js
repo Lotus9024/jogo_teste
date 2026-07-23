@@ -142,13 +142,13 @@ test('Torre Goblin reduz o custo e fortalece Goblins adjacentes', () => {
     { ownerSeat: 2, cardId: 'goblin', x: 6, z: 4 },
     { ownerSeat: 1, cardId: 'goblin_tower', x: 7, z: 7, underConstruction: false },
   ];
-  assert.equal(effectiveCardCost('goblin_tower', 1, units), 8);
-  assert.equal(effectiveCardCost('goblin_tower', 2, units), 9);
+  assert.equal(effectiveCardCost('goblin_tower', 1, units), 6);
+  assert.equal(effectiveCardCost('goblin_tower', 2, units), 7);
   assert.equal(goblinSpawnHp(1, 7, 6, units), 2);
   assert.equal(goblinSpawnHp(1, 5, 5, units), 1);
   assert.deepEqual(
     { hp: CARD_BY_ID.goblin_tower.hp, cost: CARD_BY_ID.goblin_tower.cost, buildRounds: CARD_BY_ID.goblin_tower.buildRounds, rarity: CARD_BY_ID.goblin_tower.rarityClass },
-    { hp: 5, cost: 10, buildRounds: 1, rarity: 'rare' },
+    { hp: 5, cost: 8, buildRounds: 1, rarity: 'rare' },
   );
 });
 
@@ -157,7 +157,7 @@ test('Henry participa das sinergias Goblin e também nasce fortalecido pela Torr
     { ownerSeat: 1, cardId: 'henry', x: 4, z: 4 },
     { ownerSeat: 1, cardId: 'goblin_tower', x: 7, z: 7, underConstruction: false },
   ];
-  assert.equal(effectiveCardCost('goblin_tower', 1, units), 9);
+  assert.equal(effectiveCardCost('goblin_tower', 1, units), 7);
   assert.equal(goblinSpawnHp(1, 7, 6, units, 'henry'), 2);
 });
 

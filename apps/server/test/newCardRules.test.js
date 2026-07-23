@@ -18,7 +18,7 @@ test('Enxame Goblin se transforma em três Goblins sem ação', () => {
   assert.equal(player.energy, 10 - CARD_BY_ID.goblin_swarm.cost);
 });
 
-test('Goblin, Henry e Goblins do Enxame danificam construções aliadas ao lado no início do turno', () => {
+test('Goblins retiram no máximo 1 de resistência de cada construção Básica adjacente por turno', () => {
   const { rooms, room, second } = match();
   room.state.activeSeat = 2;
   room.state.units.push(
@@ -31,11 +31,11 @@ test('Goblin, Henry e Goblins do Enxame danificam construções aliadas ao lado 
 
   rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
 
-  assert.equal(room.state.units.find(unit => unit.id === 'shared-building').hp, 3);
-  assert.equal(room.state.units.find(unit => unit.id === 'swarm-building').hp, 1);
+  assert.equal(room.state.units.find(unit => unit.id === 'shared-building').hp, 4);
+  assert.equal(room.state.units.find(unit => unit.id === 'swarm-building').hp, 2);
 });
 
-test('Desordem não atinge diagonais nem construções inimigas e também é aplicada pelo Bombardeiro', () => {
+test('Desordem atinge diagonais, ignora inimigos e também é aplicada pelo Bombardeiro', () => {
   const { rooms, room, second } = match();
   room.state.activeSeat = 2;
   room.state.units.push(
@@ -48,9 +48,54 @@ test('Desordem não atinge diagonais nem construções inimigas e também é apl
 
   rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
 
-  assert.equal(room.state.units.find(unit => unit.id === 'diagonal').hp, 5);
+  assert.equal(room.state.units.find(unit => unit.id === 'diagonal').hp, 4);
   assert.equal(room.state.units.find(unit => unit.id === 'enemy').hp, 5);
   assert.equal(room.state.units.find(unit => unit.id === 'beside-bomber').hp, 4);
+});
+
+test('Casa Goblin hospeda cidadãos, é imune à Desordem e gera Goblin à frente', () => {
+  const { rooms, room, first, second } = match();
+  const player = room.state.players[0];
+  player.energy = 10;
+  player.hand = [{ instanceId: 'house-card', cardId: 'goblin_house' }];
+  rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: 'house-card', x: 7, z: 10 }, room.state.version);
+  const house = room.state.units.find(unit => unit.cardId === 'goblin_house');
+  assert.deepEqual({ hp: house.hp, underConstruction: house.underConstruction }, { hp: 1, underConstruction: false });
+  room.state.activeSeat = 2;
+  room.state.units.push({ id: 'beside', ownerSeat: 1, cardId: 'goblin', x: 6, z: 10, hp: 1, underConstruction: false });
+  rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
+  assert.equal(room.state.units.find(unit => unit.id === house.id).hp, 1);
+  rooms.action(room.code, first.id, { type: 'use_ability', unitId: house.id }, room.state.version);
+  const child = room.state.units.find(unit => unit.cardId === 'goblin' && unit.x === 7 && unit.z === 9);
+  assert.equal(child.actionUsed, true);
+  assert.equal(player.energy, 10 - CARD_BY_ID.goblin_house.cost + 3 - CARD_BY_ID.goblin_house.ability.cost);
+});
+
+test('Casa Goblin não pode ficar ao lado de outra casa Básica', () => {
+  const { rooms, room, first } = match();
+  const player = room.state.players[0];
+  player.hand = [{ instanceId: 'house-card', cardId: 'goblin_house' }];
+  room.state.units.push({ id: 'wood-house', ownerSeat: 1, cardId: 'wooden_house', x: 7, z: 10, hp: 1, underConstruction: false });
+  assert.throws(() => rooms.action(room.code, first.id, {
+    type: 'summon', cardInstanceId: 'house-card', x: 8, z: 10,
+  }, room.state.version), /outra casa Básica/);
+});
+
+test('Clone Goblin copia a última tropa lançada e pode se fortalecer', () => {
+  const { rooms, room, first } = match();
+  const player = room.state.players[0];
+  player.energy = 10;
+  player.hand = [
+    { instanceId: 'henry-card', cardId: 'henry' },
+    { instanceId: 'clone-card', cardId: 'goblin_clone' },
+  ];
+  rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: 'henry-card', x: 6, z: 10 }, room.state.version);
+  player.energy = 10;
+  rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: 'clone-card', x: 8, z: 10 }, room.state.version);
+  const clone = room.state.units.find(unit => unit.isGoblinClone);
+  assert.deepEqual({ cardId: clone.cardId, copied: clone.clonedFromCardId, actionUsed: clone.actionUsed }, { cardId: 'henry', copied: 'henry', actionUsed: true });
+  rooms.action(room.code, first.id, { type: 'use_instant', unitId: clone.id }, room.state.version);
+  assert.deepEqual({ hp: clone.hp, maxHp: clone.maxHp, damage: clone.cloneDamageBonus }, { hp: 2, maxHp: 2, damage: 1 });
 });
 
 test('Desordem destrói construções sem resistência restante', () => {

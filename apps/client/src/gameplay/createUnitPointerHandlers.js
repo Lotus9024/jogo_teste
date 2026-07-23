@@ -20,6 +20,12 @@ export function createUnitPointerHandlers({
       } else if (abilityHit.abilityTrigger === 'goblin_tower') {
         if (state.selected !== abilityHit.unit) interaction.selectUnit(abilityHit.unit, { cinematic: false });
         abilities.activateGoblinTower();
+      } else if (abilityHit.abilityTrigger === 'goblin_clone') {
+        if (state.selected !== abilityHit.unit) interaction.selectUnit(abilityHit.unit, { cinematic: false });
+        abilities.activateCloneInstant();
+      } else if (abilityHit.abilityTrigger === 'goblin_house') {
+        if (state.selected !== abilityHit.unit) interaction.selectUnit(abilityHit.unit, { cinematic: false });
+        abilities.activateSelectedAbility();
       } else {
         const archer = relations.archerForTower(abilityHit.unit);
         if (archer) {

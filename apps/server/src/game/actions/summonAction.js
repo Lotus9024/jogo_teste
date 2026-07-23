@@ -20,8 +20,16 @@ export function summonAction(state, player, _opponent, action) {
   if (roadCard) {
     if (!validCell(x, z) || inBase(x, z, state) || roadBlocker || !isRoadPlacementCell(player.seat, x, z, state.roads, GAME_CONFIG.boardSize)) fail('A estrada precisa estar conectada ao castelo ou a outra Rua do seu reino.');
   } else if (!validCell(x, z) || !deploymentCell(player.seat, x, z, state) || inBase(x, z, state) || (unitAt(state, x, z) && !tower) || (roadOccupied && ['construction', 'machine'].includes(card.type))) fail('Escolha uma casa livre a até 2 casas do seu reino.');
+  if (card.id === 'goblin_house' && state.units.some(unit => {
+    const nearbyCard = CARD_BY_ID[unit.cardId];
+    return nearbyCard?.house && nearbyCard.category === 'basic'
+      && Math.max(Math.abs(unit.x - x), Math.abs(unit.z - z)) === 1;
+  })) fail('A Casa Goblin não pode ficar ao lado de outra casa Básica.');
   if (card.id === 'goblin_altar' && goblinTroopsInBaseArea(state, player.seat).length < 2) fail('O Altar Goblin exige duas tropas Goblin na área da sua base.');
   if (card.id === 'mage_altar' && state.units.some(unit => unit.ownerSeat === player.seat && isGoblinTroop(unit.cardId))) fail('O Altar Mago não pode ser usado enquanto você controlar um Goblin na arena.');
+  const clonedCardId = card.id === 'goblin_clone' ? player.lastPlayedGoblinTroopCardId : null;
+  const clonedCard = clonedCardId ? CARD_BY_ID[clonedCardId] : null;
+  if (card.id === 'goblin_clone' && (!clonedCard || !isGoblinTroop(clonedCardId))) fail('Lance uma tropa Goblin antes de usar o Clone Goblin.');
   const swarmCells = [];
   if (card.id === 'goblin_swarm') {
     for (let candidateX = 0; candidateX < GAME_CONFIG.boardSize; candidateX += 1) {
@@ -56,12 +64,14 @@ export function summonAction(state, player, _opponent, action) {
     state.roads.push({ id: randomUUID(), cardId: card.id, ownerSeat: player.seat, x, z, underConstruction: true, buildReadyRound: state.round + card.buildRounds });
     return;
   }
-  const hp = isGoblinTroop(card.id) ? goblinSpawnHp(player.seat, x, z, state.units, card.id) : card.hp;
+  const summonedCard = clonedCard ?? card;
+  const hp = isGoblinTroop(summonedCard.id) ? goblinSpawnHp(player.seat, x, z, state.units, summonedCard.id) : summonedCard.hp;
   state.units.push({
-    id: randomUUID(), ownerSeat: player.seat, cardId: card.id, x, z, hp, maxHp: hp, shield: 0,
-    actionUsed: card.id !== 'henry', movedThisTurn: false, attackedThisTurn: false,
+    id: randomUUID(), ownerSeat: player.seat, cardId: summonedCard.id, x, z, hp, maxHp: hp, shield: 0,
+    actionUsed: clonedCard ? true : card.id !== 'henry', movedThisTurn: false, attackedThisTurn: false,
     abilityUsed: false, abilityReadyTurn: 0, instantUsedRound: 0, instantReadyTurn: 0, empowered: false, mountedOnTowerId: tower?.id ?? null,
-    bonusMoves: 0, bonusAttacks: 0, attackPenalty: 0, attackPenaltyUntilTurn: 0,
+    bonusMoves: 0, bonusAttacks: 0, attackPenalty: 0, attackPenaltyUntilTurn: 0, isGoblinClone: Boolean(clonedCard), clonedFromCardId: clonedCardId, cloneDamageBonus: 0,
     underConstruction: Boolean(card.buildRounds), buildReadyRound: card.buildRounds ? state.round + card.buildRounds : null
   });
+  if (!clonedCard && isGoblinTroop(card.id)) player.lastPlayedGoblinTroopCardId = card.id;
 }

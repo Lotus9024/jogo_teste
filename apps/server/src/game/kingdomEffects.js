@@ -31,13 +31,16 @@ export function damageAlliedConstructionsBesideGoblins(state, seat) {
     && !unit.underConstruction
     && (CARD_BY_ID[unit.cardId]?.adjacentConstructionDamage ?? 0) > 0);
 
-  for (const goblin of disruptiveGoblins) {
-    const damage = CARD_BY_ID[goblin.cardId].adjacentConstructionDamage;
-    const adjacentConstructions = [...state.units].filter(unit => unit.ownerSeat === seat
-      && ['construction', 'machine'].includes(CARD_BY_ID[unit.cardId]?.type)
-      && Math.abs(unit.x - goblin.x) + Math.abs(unit.z - goblin.z) === 1);
-    adjacentConstructions.forEach(unit => damageUnit(state, unit, damage));
-  }
+  const targets = [...state.units].filter(unit => {
+    const card = CARD_BY_ID[unit.cardId];
+    return unit.ownerSeat === seat
+      && !unit.underConstruction
+      && card?.type === 'construction'
+      && card.category === 'basic'
+      && !card.goblinWearImmune
+      && disruptiveGoblins.some(goblin => Math.max(Math.abs(unit.x - goblin.x), Math.abs(unit.z - goblin.z)) === 1);
+  });
+  targets.forEach(unit => damageUnit(state, unit, 1));
 }
 
 export function refreshBuilderResistance(state) {

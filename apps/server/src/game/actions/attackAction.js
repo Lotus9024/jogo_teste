@@ -33,7 +33,7 @@ export function attackAction(state, player, opponent, action) {
   if (card.id !== 'henry' && unit.actionUsed && !usingBonusAttack) fail('Esta unidade já agiu neste turno.');
   if (unit.underConstruction) fail('A construção ainda não foi concluída.');
   if (card.damage <= 0 || card.attackRange <= 0) fail('Esta carta não pode atacar.');
-  const damage = Math.max(0, card.damage - (unit.attackPenalty ?? 0)) + (unit.empowered ? 8 : 0);
+  const damage = Math.max(0, card.damage + (unit.cloneDamageBonus ?? 0) - (unit.attackPenalty ?? 0)) + (unit.empowered ? 8 : 0);
   const operator = card.id === 'cannon' ? cannonOperator(state, unit) : null;
   if (card.id === 'cannon' && (!operator || operator.actionUsed)) fail('O Canhão precisa de um Operador disponível exatamente atrás.');
 

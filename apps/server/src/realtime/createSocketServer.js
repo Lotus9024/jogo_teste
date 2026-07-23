@@ -67,6 +67,7 @@ function publicState(room, viewer) {
       id: viewer.id,
       seat: viewer.seat,
       hand: privatePlayer?.hand ?? [],
+      lastPlayedGoblinTroopCardId: privatePlayer?.lastPlayedGoblinTroopCardId ?? null,
       pendingMageAltarChoices: privatePlayer?.pendingMageAltarChoices ?? 0,
       deckChoices: (privatePlayer?.pendingMageAltarChoices ?? 0) > 0 ? [...new Set(privatePlayer.deck)] : []
     },

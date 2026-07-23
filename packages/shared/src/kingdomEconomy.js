@@ -45,13 +45,14 @@ export function citizensForSeat(seat, units, roads, boardSize = 15) {
     .filter(road => road.ownerSeat === seat && !road.underConstruction)
     .map(road => [cellKey(road.x, road.z), road]));
   const housedCitizens = units
-    .filter(unit => unit.ownerSeat === seat && unit.cardId === 'wooden_house' && !unit.underConstruction)
+    .filter(unit => unit.ownerSeat === seat && (CARD_BY_ID[unit.cardId]?.citizens ?? 0) > 0 && !unit.underConstruction)
     .reduce((total, house) => {
+      const card = CARD_BY_ID[house.cardId];
       const connectedBonuses = ORTHOGONAL_DIRECTIONS
         .map(direction => cellKey(house.x + direction.x, house.z + direction.z))
         .filter(key => connected.has(key))
         .map(key => roadCard(completedRoads.get(key)).connectedHouseCitizenBonus ?? 0);
-      return total + CARD_BY_ID.wooden_house.citizens + Math.max(0, ...connectedBonuses);
+      return total + card.citizens + (card.connectedRoadCitizenBonus ? Math.max(0, ...connectedBonuses) : 0);
     }, 0);
   const arenaCitizens = units
     .filter(unit => unit.ownerSeat === seat && !unit.underConstruction)

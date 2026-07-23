@@ -3,7 +3,7 @@ import { M, add } from '../core/scenePrimitives.js';
 import { ensureHealthBadge } from '../ui/unitHealthBadge.js';
 import { makeCannon } from '../assets/models/cannonModel.js';
 import { makeOperator } from '../assets/models/operatorModel.js';
-import { makeArcher, makeBuilderArea, makeCitizen, makeGoblin, makeGoblinAltar, makeGoblinBomber, makeGoblinTower, makeGuard, makeHenry, makeMage, makeMageAltar, makeTower, makeWarrior, makeWoodBarrier, makeWoodenHouse, unitBase } from './unitModels.js';
+import { makeArcher, makeBuilderArea, makeCitizen, makeGoblin, makeGoblinAltar, makeGoblinBomber, makeGoblinClone, makeGoblinHouse, makeGoblinTower, makeGuard, makeHenry, makeMage, makeMageAltar, makeTower, makeWarrior, makeWoodBarrier, makeWoodenHouse, unitBase } from './unitModels.js';
 import { prepareConstructionUnit } from './prepareConstructionUnit.js';
 
 const UNIT_FACTORIES = Object.freeze({
@@ -17,10 +17,12 @@ const UNIT_FACTORIES = Object.freeze({
   citizen: makeCitizen,
   cannon: makeCannon,
   wooden_house: makeWoodenHouse,
+  goblin_house: makeGoblinHouse,
   mage: makeMage,
   goblin: makeGoblin,
   goblin_swarm: makeGoblin,
   goblin_bomber: makeGoblinBomber,
+  goblin_clone: makeGoblinClone,
   goblin_tower: makeGoblinTower,
   goblin_altar: makeGoblinAltar,
   mage_altar: makeMageAltar,

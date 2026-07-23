@@ -18,7 +18,7 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'henry', name: 'Henry', description: 'Ele pode se movimentar e atacar, ou vice-versa, no mesmo turno.\nEle já entra podendo agir.\nNo início de cada turno seu, causa 1 de dano a cada construção sua diretamente ao lado.',
+    id: 'henry', name: 'Henry', description: 'Ele pode se movimentar e atacar, ou vice-versa, no mesmo turno.\nEle já entra podendo agir.\nAo lado de uma construção Básica sua, retira 1 de resistência dela no início dos seus próximos turnos.',
     hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 4, adjacentConstructionDamage: 1, category: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', family: 'goblin', info: 'GOBLIN · ÁGIL', glyph: '⚡',
     ability: Object.freeze({ name: 'Agilidade', cost: '—', description: 'Pode realizar um movimento e um ataque no mesmo turno, em qualquer ordem. Entra em campo pronto para agir.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
@@ -61,9 +61,16 @@ export const CARD_DEFINITIONS = Object.freeze([
   }),
   Object.freeze({
     id: 'wooden_house', name: 'Casa de madeira', description: 'Uma casa de madeira simples e frágil, essa casa hospeda 3 cidadãos.',
-    hp: 1, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 3, buildRounds: 1, type: 'construction', category: 'basic', rarity: 'COMUM', rarityClass: 'common', info: 'CONSTRUÇÃO · MORADIA', glyph: '⌂',
+    hp: 1, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 3, buildRounds: 1, type: 'construction', house: true, category: 'basic', rarity: 'COMUM', rarityClass: 'common', info: 'CONSTRUÇÃO · MORADIA', glyph: '⌂',
     citizens: 3, connectedRoadCitizenBonus: 1,
     ability: Object.freeze({ name: 'Hospedagem', cost: '—', description: 'Fornece 3 cidadãos e mais 1 quando conectada ao castelo por Ruas.', enabled: false }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
+  }),
+  Object.freeze({
+    id: 'goblin_house', name: 'Casa Goblin', description: 'Essa casa hospeda 2 cidadãos.\nNão pode ser colocada ao lado de outra casa Básica.\nGoblins não retiram resistência dela.',
+    hp: 1, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 4, buildRounds: 0, type: 'construction', house: true, goblinWearImmune: true, category: 'basic', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'CONSTRUÇÃO · MORADIA GOBLIN', glyph: '⌂',
+    citizens: 2,
+    ability: Object.freeze({ name: 'Ninhada Goblin', cost: 1, cooldownTurns: 2, description: 'Gera um Goblin na casa à frente. A casa precisa estar livre, e o Goblin nasce sem poder agir neste turno.', enabled: true }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
@@ -73,27 +80,33 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'goblin', name: 'Goblin', description: 'Um goblin frágil, mas que tem coragem de roubar ouro.\nNo início de cada turno seu, causa 1 de dano a cada construção sua diretamente ao lado.',
+    id: 'goblin', name: 'Goblin', description: 'Um goblin frágil, mas que tem coragem de roubar ouro.\nAo lado de uma construção Básica sua, retira 1 de resistência dela no início dos seus próximos turnos.',
     hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 2, adjacentConstructionDamage: 1, category: 'goblin', rarity: 'COMUM', rarityClass: 'common', family: 'goblin', info: 'GOBLIN · SAQUEADOR', glyph: '♟',
     ability: Object.freeze({ name: 'Desordem', cost: '—', description: 'No início de cada turno seu, causa 1 de dano a cada construção sua diretamente ao lado.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'goblin_swarm', name: 'Enxame Goblin', description: 'Um enxame de Goblins! Três Goblins surgem em posições aleatórias da sua área de lançamento.\nCada Goblin criado causa 1 de dano às suas construções diretamente ao lado no início de cada turno seu.',
+    id: 'goblin_swarm', name: 'Enxame Goblin', description: 'Um enxame de Goblins! Três Goblins surgem em posições aleatórias da sua área de lançamento.\nEles não retiram resistência de construções no surgimento; o efeito começa no seu próximo turno.',
     hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 4, summonCount: 3, summonsCardId: 'goblin', type: 'summon', category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'GOBLIN · ENXAME', glyph: '♟',
     ability: Object.freeze({ name: 'Enxame', cost: '—', description: 'Ao ser lançada, esta carta se transforma em três Goblins. Cada um aplica Desordem separadamente.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
     id: 'goblin_bomber', name: 'Goblin Bombardeiro', description: 'Ele simplesmente odeia construções.\nNo início de cada turno seu, causa 1 de dano a cada construção sua diretamente ao lado.',
-    hp: 1, damage: 1, move: 1, movementType: 'straight', minAttackRange: 1, attackRange: 1, cost: 5, adjacentConstructionDamage: 1, category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'GOBLIN · BOMBARDEIRO', glyph: '✹',
+    hp: 1, damage: 1, move: 1, movementType: 'straight', minAttackRange: 1, attackRange: 1, cost: 4, adjacentConstructionDamage: 1, category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'GOBLIN · BOMBARDEIRO', glyph: '✹',
     ability: Object.freeze({ name: 'Carga explosiva', cost: 0, chargeDistance: 5, troopDamage: 3, constructionDamage: 4, radius: 1, description: 'Corre 5 blocos para a frente e explode. Causa 3 de dano em tropas e 4 em construções no centro e ao redor. O Goblin morre. Enquanto aguarda, também aplica Desordem às construções aliadas diretamente ao lado.', enabled: true }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
+    id: 'goblin_clone', name: 'Clone Goblin', description: 'Coloca em campo uma cópia da última tropa Goblin que você lançou.\nA cópia mantém as características impressas da tropa e entra sem poder agir.',
+    hp: 1, damage: 1, move: 1, movementType: 'straight', minAttackRange: 1, attackRange: 1, cost: 4, type: 'summon', category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'MAGIA · CLONE GOBLIN', glyph: '♟',
+    ability: Object.freeze({ name: 'Clone', cost: '—', description: 'Copia a última tropa Goblin lançada. Não copia Enxame, construções nem altares.', enabled: false }),
+    instant: Object.freeze({ name: 'Fortalecer Clone (Instantâneo)', cost: 2, cooldownTurns: 2, description: 'A cópia recebe +1 de vida máxima, recupera 1 de vida e ganha +1 de dano.', enabled: true })
+  }),
+  Object.freeze({
     id: 'goblin_tower', name: 'Torre Goblin', description: 'Cada Goblin seu deixa o custo da torre mais barato.\nQualquer Goblin que nasce ao lado da torre nasce com 1 de vida extra.',
-    hp: 5, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 10, minimumCost: 1, goblinDiscount: 1, buildRounds: 1, type: 'construction', category: 'goblin', family: 'goblin', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · GOBLIN', glyph: '♜',
-    ability: Object.freeze({ name: 'Reforço Goblin', cost: 3, description: 'Consome um Goblin do seu baralho e o invoca em qualquer casa livre da arena. Ele nasce sem poder agir neste turno.', enabled: true }),
+    hp: 5, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 8, minimumCost: 1, goblinDiscount: 1, buildRounds: 1, type: 'construction', category: 'goblin', family: 'goblin', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · GOBLIN', glyph: '♜',
+    ability: Object.freeze({ name: 'Reforço Goblin', cost: 2, description: 'Consome um Goblin do seu baralho e o invoca em qualquer casa livre da arena. Ele nasce sem poder agir neste turno.', enabled: true }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({

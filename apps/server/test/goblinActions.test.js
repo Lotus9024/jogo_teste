@@ -9,7 +9,7 @@ test('Goblins na arena reduzem o custo da Torre Goblin', () => {
   player.hand.push({ instanceId: 'goblin-tower-card', cardId: 'goblin_tower' });
   room.state.units.push({ id: 'goblin-one', ownerSeat: 1, cardId: 'goblin', x: 6, z: 10, hp: 1, actionUsed: false });
   rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: 'goblin-tower-card', x: 8, z: 10 }, room.state.version);
-  assert.equal(player.energy, 1);
+  assert.equal(player.energy, 3);
   const tower = room.state.units.find(unit => unit.cardId === 'goblin_tower');
   assert.equal(tower.underConstruction, true);
   assert.equal(tower.buildReadyRound, 2);
@@ -28,7 +28,7 @@ test('Torre Goblin consome um Goblin do baralho e o invoca sem ação', () => {
   const goblin = room.state.units.find(unit => unit.cardId === 'goblin');
   assert.deepEqual({ hp: goblin.hp, maxHp: goblin.maxHp, actionUsed: goblin.actionUsed }, { hp: 2, maxHp: 2, actionUsed: true });
   assert.deepEqual(player.deck, ['guard', 'warrior']);
-  assert.equal(player.energy, 7);
+  assert.equal(player.energy, 8);
   assert.equal(room.state.units[0].actionUsed, true);
   assert.throws(() => rooms.action(room.code, first.id, { type: 'summon_goblin', unitId: 'goblin-tower', x: 5, z: 5 }, room.state.version), /indisponível/);
 });

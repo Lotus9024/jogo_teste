@@ -4,7 +4,7 @@ import { setArcherMountedState } from '../models/unitModels.js';
 import { isMountedArcher, setUnitOwnerFacing, setUnitTeamColor } from '../gameplay/unitState.js';
 import { cards } from '../ui/cardView.js';
 import { setResource } from '../ui/resourceView.js';
-import { updateHealthBadge } from '../ui/unitHealthBadge.js';
+import { ensureAbilityBadge, updateHealthBadge } from '../ui/unitHealthBadge.js';
 import { GameSocketClient, SERVER_EVENTS } from './gameSocket.js';
 
 export function createOnlineSession({
@@ -61,10 +61,14 @@ export function createOnlineSession({
       abilityReadyTurn: data.abilityReadyTurn ?? 0,
       instantUsedRound: data.instantUsedRound,
       instantReadyTurn: data.instantReadyTurn ?? 0,
+      isGoblinClone: Boolean(data.isGoblinClone),
+      clonedFromCardId: data.clonedFromCardId ?? null,
+      cloneDamageBonus: data.cloneDamageBonus ?? 0,
       mountedOnTowerId: data.mountedOnTowerId,
       buildReadyRound: data.buildReadyRound,
       attackRange: card.attackRange + (data.cardId === 'archer' && data.mountedOnTowerId ? 1 : 0),
     };
+    ensureAbilityBadge(unit);
     updateHealthBadge(unit);
     setUnitTeamColor(unit, data.ownerSeat === 1 ? 0x168cff : 0xff352f);
     handController.applyConstructionState(unit, Boolean(data.underConstruction));

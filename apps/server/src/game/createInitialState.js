@@ -80,6 +80,7 @@ export function createInitialState(players) {
     id: player.id, name: player.name, seat: player.seat, connected: true,
     baseHp: GAME_CONFIG.startingBaseHp, energy: GAME_CONFIG.startingEnergy, maxEnergy: GAME_CONFIG.maxEnergy,
     citizens: 0, baseLevel: 1, hasDrawnHouse: false, pendingMageAltarChoices: 0,
+    lastPlayedGoblinTroopCardId: null,
     deckCardIds: [...(player.deckCardIds?.length ? player.deckCardIds : DEFAULT_DECK_CARD_IDS)],
     hand: [], deck: createDeck(randomInt, 1, GAME_CONFIG.deckSize, player.deckCardIds?.length ? player.deckCardIds : DEFAULT_DECK_CARD_IDS), discard: []
   }));
