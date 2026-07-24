@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { abilityTriggerForUnit } from './abilityBadge.js';
+import { abilityBadgeTypeForUnit, abilityTriggerForUnit } from './abilityBadge.js';
 
 function unit(cardId, extras = {}) {
   return { userData: { cardId, ...extras } };
@@ -16,4 +16,15 @@ test('todas as habilidades ativas possuem acionador visual', () => {
   assert.equal(abilityTriggerForUnit(unit('goblin_bomber')), 'goblin_bomber');
   assert.equal(abilityTriggerForUnit(unit('goblin', { isGoblinClone: true })), 'goblin_clone');
   assert.equal(abilityTriggerForUnit(unit('warrior')), null);
+});
+
+test('habilidades passivas e automáticas também possuem ícone informativo', () => {
+  assert.equal(abilityBadgeTypeForUnit(unit('henry')), 'henry_agility');
+  assert.equal(abilityBadgeTypeForUnit(unit('citizen')), 'citizen_resident');
+  assert.equal(abilityBadgeTypeForUnit(unit('wooden_house')), 'wooden_house_lodging');
+  assert.equal(abilityBadgeTypeForUnit(unit('goblin')), 'goblin_disorder');
+  assert.equal(abilityBadgeTypeForUnit(unit('builder_area')), 'builder_workshop');
+  assert.equal(abilityBadgeTypeForUnit(unit('road')), 'road_path');
+  assert.equal(abilityBadgeTypeForUnit(unit('cobblestone_road')), 'cobblestone_path');
+  assert.equal(abilityBadgeTypeForUnit(unit('warrior')), null);
 });

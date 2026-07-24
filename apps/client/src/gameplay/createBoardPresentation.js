@@ -1,6 +1,7 @@
 import { ORTHOGONAL_DIRECTIONS, cellKey } from '@tronos/shared/cards';
 import { makeFireHazard } from '../assets/models/fireHazardModel.js';
 import { makeRoad } from '../assets/models/roadModel.js';
+import { ensureAbilityBadge } from '../ui/unitHealthBadge.js';
 
 export function createBoardPresentation({ scene, app, tile, half, baseCellsForSeat, getUnits = () => [] }) {
   const roads = [];
@@ -48,6 +49,7 @@ export function createBoardPresentation({ scene, app, tile, half, baseCellsForSe
         ownerSeat: road.ownerSeat,
         buildReadyRound: road.buildReadyRound,
       };
+      ensureAbilityBadge(mesh);
       roadMeshes.push(mesh);
       scene.add(mesh);
     });

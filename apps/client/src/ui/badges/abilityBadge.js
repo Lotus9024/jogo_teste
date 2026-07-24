@@ -9,6 +9,13 @@ const BADGE_APPEARANCE = Object.freeze({
   goblin_altar: { icon: '♨', tone: 'goblin' },
   mage_altar: { icon: '✧', tone: 'arcane' },
   goblin_bomber: { icon: '✹', tone: 'danger' },
+  henry_agility: { icon: '⚡', tone: 'goblin' },
+  citizen_resident: { icon: '☺', tone: 'gold' },
+  wooden_house_lodging: { icon: '⌂', tone: 'gold' },
+  goblin_disorder: { icon: '⚠', tone: 'goblin' },
+  builder_workshop: { icon: '⚒', tone: 'gold' },
+  road_path: { icon: '═', tone: 'gold' },
+  cobblestone_path: { icon: '▰', tone: 'gold' },
 });
 
 const BADGE_NAME = Object.freeze({
@@ -20,6 +27,23 @@ const BADGE_NAME = Object.freeze({
   goblin_altar: 'goblinAltarAbilityBadge',
   mage_altar: 'mageAltarAbilityBadge',
   goblin_bomber: 'goblinBomberAbilityBadge',
+  henry_agility: 'henryAgilityBadge',
+  citizen_resident: 'citizenResidentBadge',
+  wooden_house_lodging: 'woodenHouseLodgingBadge',
+  goblin_disorder: 'goblinDisorderBadge',
+  builder_workshop: 'builderWorkshopBadge',
+  road_path: 'roadPathBadge',
+  cobblestone_path: 'cobblestonePathBadge',
+});
+
+const PASSIVE_BADGE_TYPE = Object.freeze({
+  henry: 'henry_agility',
+  citizen: 'citizen_resident',
+  wooden_house: 'wooden_house_lodging',
+  goblin: 'goblin_disorder',
+  builder_area: 'builder_workshop',
+  road: 'road_path',
+  cobblestone_road: 'cobblestone_path',
 });
 
 function badgeColors(tone, loading, enabled) {
@@ -32,9 +56,9 @@ function badgeColors(tone, loading, enabled) {
 }
 
 function drawAbilityBadge(sprite, { remaining = 0, enabled = false } = {}) {
-  const { canvas, context, texture, abilityTrigger } = sprite.userData;
+  const { canvas, context, texture, abilityType } = sprite.userData;
   const loading = remaining > 0;
-  const appearance = BADGE_APPEARANCE[abilityTrigger] ?? BADGE_APPEARANCE.tower;
+  const appearance = BADGE_APPEARANCE[abilityType] ?? BADGE_APPEARANCE.tower;
   const colors = badgeColors(appearance.tone, loading, enabled);
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.beginPath();
@@ -82,23 +106,35 @@ export function abilityTriggerForUnit(unit) {
               : null;
 }
 
+export function abilityBadgeTypeForUnit(unit) {
+  return abilityTriggerForUnit(unit) ?? PASSIVE_BADGE_TYPE[unit.userData.cardId] ?? null;
+}
+
 export function ensureAbilityBadge(unit) {
   const abilityTrigger = abilityTriggerForUnit(unit);
-  if (!abilityTrigger) return null;
-  const name = BADGE_NAME[abilityTrigger];
+  const abilityType = abilityBadgeTypeForUnit(unit);
+  if (!abilityType) return null;
+  if (typeof document === 'undefined') return null;
+  const passive = !abilityTrigger;
+  const terrain = ['road', 'cobblestone_road'].includes(unit.userData.cardId);
+  const name = BADGE_NAME[abilityType];
   let badge = unit.getObjectByName(name);
   if (badge) return badge;
   badge = createCanvasBadge({
     name,
     canvasSize: 96,
-    position: [abilityTrigger === 'acid' || abilityTrigger === 'goblin_clone' ? -0.72 : 0.72, abilityTrigger === 'acid' || abilityTrigger === 'goblin_clone' ? 0.48 : 0.38, 0],
-    scale: 0.72,
+    position: [
+      terrain ? -0.28 : abilityTrigger === 'acid' || abilityTrigger === 'goblin_clone' || passive ? -0.72 : 0.72,
+      terrain ? 0.24 : abilityTrigger === 'acid' || abilityTrigger === 'goblin_clone' ? 0.48 : passive ? 0.42 : 0.38,
+      0
+    ],
+    scale: terrain ? 0.3 : passive ? 0.58 : 0.72,
     renderOrder: 15,
     depthTest: false,
-    userData: { abilityTrigger, loading: false, enabled: false }
+    userData: { abilityType, abilityTrigger, passive, terrain, loading: false, enabled: passive }
   });
   unit.add(badge);
-  drawAbilityBadge(badge);
+  drawAbilityBadge(badge, { enabled: passive });
   return badge;
 }
 
@@ -109,7 +145,7 @@ export function setAbilityBadgeState(unit, state) {
 }
 
 export function animateAbilityBadges(units, time) {
-  units.forEach(unit => unit.children.filter(child => child.userData.abilityTrigger).forEach(badge => {
+  units.forEach(unit => unit.children.filter(child => child.userData.abilityType).forEach(badge => {
     badge.material.opacity = badge.userData.loading ? 0.72 + Math.sin(time * 5) * 0.18 : 1;
   }));
 }
