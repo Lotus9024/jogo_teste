@@ -90,6 +90,25 @@ test('tropas mantêm rig, plataforma e silhueta dentro da casa', () => {
   }
 });
 
+test('troncos dos personagens possuem faces voltadas para fora', () => {
+  for (const [factory, torsoName] of [
+    [makeWarrior, 'warriorTunic'],
+    [makeGuard, 'guardCoat'],
+    [makeGoblin, 'goblinTunic'],
+    [makeOperator, 'operatorShirt'],
+  ]) {
+    const torsoMesh = factory().getObjectByName(torsoName);
+    assert.ok(torsoMesh, `${torsoName} não foi criado`);
+    const positions = torsoMesh.geometry.getAttribute('position');
+    const normals = torsoMesh.geometry.getAttribute('normal');
+    for (let index = 0; index < positions.count; index += 1) {
+      const position = new THREE.Vector3().fromBufferAttribute(positions, index);
+      const normal = new THREE.Vector3().fromBufferAttribute(normals, index);
+      assert.ok(position.dot(normal) > 0, `${torsoName} possui uma face invertida`);
+    }
+  }
+});
+
 test('Henry tem silhueta baixa e duas lâminas próprias', () => {
   const henry = makeHenry();
   assert.equal(henry.userData.role, 'HUMANO · ÁGIL');

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { NexusApi, resolveApiBase } from './nexusApi.js';
+import { lobbyTemplate } from '../ui/shell/lobbyTemplate.js';
 
 function jsonResponse(status, payload) {
   return {
@@ -9,6 +10,12 @@ function jsonResponse(status, payload) {
     json: async () => payload,
   };
 }
+
+test('Jogar com IA permanece desativado enquanto o modo não está disponível', () => {
+  const html = lobbyTemplate();
+  assert.match(html, /id="play-ai"[^>]*disabled/u);
+  assert.match(html, /id="play-ai"[^>]*aria-disabled="true"/u);
+});
 
 test('a API usa o backend local somente em endereços locais', () => {
   assert.equal(resolveApiBase({ hostname: '127.0.0.1' }), 'http://127.0.0.1:3001/api');

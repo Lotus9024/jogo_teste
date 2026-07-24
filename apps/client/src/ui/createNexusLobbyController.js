@@ -14,7 +14,7 @@ export function createNexusLobbyController({
   const lobby = document.querySelector('#online-lobby');
   const errorOutput = document.querySelector('#lobby-error');
   const deckMessage = document.querySelector('#deck-required-message');
-  const protectedActions = ['#open-rooms', '#open-create-room', '#play-ai']
+  const protectedActions = ['#open-rooms', '#open-create-room']
     .map(selector => document.querySelector(selector))
     .filter(Boolean);
   let account = null;
@@ -218,13 +218,6 @@ export function createNexusLobbyController({
     document.querySelector('#open-create-room')?.addEventListener('click', () => {
       pendingRoomCancelled = false;
       showScreen('create-room');
-    });
-    document.querySelector('#play-ai')?.addEventListener('click', () => {
-      pendingRoomCancelled = false;
-      showScreen('waiting');
-      document.querySelector('#waiting-code').textContent = 'IA';
-      document.querySelector('#waiting-status').textContent = 'Preparando o rival...';
-      onlineSession.createAiRoom();
     });
     document.querySelector('#room-code')?.addEventListener('input', event => {
       event.target.value = cleanRoomCode(event.target.value);

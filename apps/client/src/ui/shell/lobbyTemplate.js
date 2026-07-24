@@ -100,7 +100,7 @@ export function lobbyTemplate() {
           <div class="nexus-actions nexus-hub-actions">
             <button type="button" id="open-rooms" disabled>ENTRAR EM SALAS</button>
             <button type="button" id="open-create-room" disabled>CRIAR SALA</button>
-            <button type="button" id="play-ai" disabled>JOGAR COM IA</button>
+            <button type="button" id="play-ai" disabled aria-disabled="true" title="Em breve">JOGAR COM IA</button>
             <button type="button" id="open-deck-builder" class="nexus-deck-button">
               <span>ESCOLHER DECK</span>
               <small id="deck-status">NÃO MONTADO</small>

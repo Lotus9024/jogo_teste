@@ -80,13 +80,13 @@ function torsoGeometry(height, shoulder, waist, hem, depth) {
     const upper = (level + 1) * 4;
     for (let side = 0; side < 4; side += 1) {
       const next = (side + 1) % 4;
-      indices.push(lower + side, lower + next, upper + next);
-      indices.push(lower + side, upper + next, upper + side);
+      indices.push(lower + side, upper + next, lower + next);
+      indices.push(lower + side, upper + side, upper + next);
     }
   }
-  indices.push(0, 3, 2, 0, 2, 1);
+  indices.push(0, 2, 3, 0, 1, 2);
   const top = (levels.length - 1) * 4;
-  indices.push(top, top + 1, top + 2, top, top + 2, top + 3);
+  indices.push(top, top + 2, top + 1, top, top + 3, top + 2);
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setIndex(indices);
