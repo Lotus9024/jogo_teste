@@ -30,7 +30,7 @@
 ## Projetos e destinos de deploy
 
 - Código-fonte: GitHub `Lotus9024/jogo_teste`.
-- Frontend: projeto Netlify `tronos-em-ruinas`, ID `f26cfbca-b41e-429f-b413-dd6a8dddcef7`, publicado em `https://tronos-em-ruinas.netlify.app`. A configuração está no `netlify.toml`, o build é `npm run build --workspace @tronos/client` e a pasta publicada é `apps/client/dist`.
+- Frontend: projeto Netlify `nexuschessdemo`, ID `f26cfbca-b41e-429f-b413-dd6a8dddcef7`, publicado em `https://nexuschessdemo.netlify.app`. A configuração está no `netlify.toml`, o build é `npm run build --workspace @tronos/client` e a pasta publicada é `apps/client/dist`.
 - Backend: projeto Square Cloud `Tronos em Ruinas API`, subdomínio `tronos-em-ruinas-api`, publicado em `https://tronos-em-ruinas-api.squareweb.app` e iniciado por `apps/server/src/index.js`, conforme `squarecloud.app`.
 - Banco de dados: PostgreSQL usado pelo backend por meio de `DATABASE_URL` e `MIGRATION_DATABASE_URL`. Nunca revele nem publique os valores dessas variáveis.
 
