@@ -11,12 +11,21 @@ test('a carta exibe sua categoria logo abaixo do nome', () => {
   assert.match(markup, /Cada Goblin seu[^]*\nQualquer Goblin/);
 });
 
-test('cartas com texto denso recebem o modo de leitura ampliada', () => {
-  for (const cardId of ['goblin_altar', 'mage', 'mage_altar', 'goblin_swarm', 'road', 'cannon', 'tower', 'henry']) {
-    const markup = cardMarkup(cards.find(card => card.id === cardId), 0);
-    assert.match(markup, /copy-readable/);
-    const size = Number(markup.match(/--desc-size:([\d.]+)px/)?.[1]);
-    assert.ok(size >= 7.5);
+test('todas as cartas usam tipografia mínima padronizada', () => {
+  for (const card of cards) {
+    const markup = cardMarkup(card, 0);
+    const descriptionSize = Number(markup.match(/--desc-size:([\d.]+)px/)?.[1]);
+    const abilitySize = Number(markup.match(/--ability-size:([\d.]+)px/)?.[1]);
+    assert.ok(descriptionSize >= 7.5, `${card.id} reduziu demais a descrição`);
+    assert.ok(abilitySize >= 7.5, `${card.id} reduziu demais a habilidade`);
+  }
+});
+
+test('cartas com texto denso recebem automaticamente o modo de leitura ampliada', () => {
+  for (const cardId of ['goblin_altar', 'mage', 'mage_altar', 'goblin_swarm', 'road', 'cobblestone_road', 'cannon', 'tower', 'henry']) {
+    const card = cards.find(candidate => candidate.id === cardId);
+    if (!card) continue;
+    assert.match(cardMarkup(card, 0), /copy-readable/);
   }
 });
 

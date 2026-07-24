@@ -1,8 +1,12 @@
-import 'dotenv/config';
 import pg from 'pg';
+import { config } from '../src/config.js';
+import { createDatabaseConnectionOptions } from '../src/database/tls.js';
 
-if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL não configurada.');
-const client = new pg.Client({ connectionString: process.env.DATABASE_URL, application_name: 'tronos-security-check' });
+if (!config.databaseUrl) throw new Error('DATABASE_URL não configurada.');
+const client = new pg.Client({
+  ...createDatabaseConnectionOptions(config.databaseUrl, config),
+  application_name: 'nexus-security-check'
+});
 await client.connect();
 
 const privileges = await client.query(`
@@ -22,7 +26,9 @@ if (Object.values(privileges.rows[0]).some(value => value !== true)) {
 }
 
 await client.query('begin');
-const inserted = await client.query("insert into game.players (display_name) values ('Teste Segurança') returning id");
+const inserted = await client.query(
+  "insert into game.players (display_name, normalized_name, auth_provider) values ('Teste Segurança', 'teste segurança', 'guest') returning id"
+);
 if (!inserted.rows[0]?.id) throw new Error('Usuário da aplicação não consegue gravar dados válidos.');
 await client.query('rollback');
 

@@ -4,10 +4,12 @@ import { createAbilityController } from './gameplay/createAbilityController.js';
 import { createDevModeController } from './gameplay/createDevModeController.js';
 import { createUnitActionController } from './gameplay/createUnitActionController.js';
 import { createUnitInteractionController } from './gameplay/createUnitInteractionController.js';
+import { NexusApi } from './network/nexusApi.js';
 import { createOnlineSession } from './network/createOnlineSession.js';
 import { createHandController } from './ui/createHandController.js';
 import { createSettingsController } from './ui/createSettingsController.js';
 import { createDeckBuilderController } from './ui/createDeckBuilderController.js';
+import { createNexusLobbyController } from './ui/createNexusLobbyController.js';
 import './style.css';
 
 const {
@@ -202,6 +204,11 @@ const onlineSession = createOnlineSession({
   deckBuilder,
   callbacks,
 });
+const lobbyController = createNexusLobbyController({
+  api: new NexusApi(),
+  onlineSession,
+  deckBuilder,
+});
 Object.assign(callbacks, {
   sendOnlineAction: onlineSession.sendAction,
   setOnlinePerspective: onlineSession.setPerspective,
@@ -212,4 +219,5 @@ devController.mount();
 handController.mount();
 abilities.mount();
 onlineSession.start();
+void lobbyController.start();
 renderLoop.start();

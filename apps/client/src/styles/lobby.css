@@ -1,6 +1,644 @@
-/* Online lobby and compact match telemetry. */
-.online-lobby{position:fixed;inset:0;z-index:100;display:grid;place-items:center;background:radial-gradient(circle at 50% 42%,rgba(31,38,34,.38),rgba(2,4,4,.9) 68%);backdrop-filter:blur(5px);transition:opacity .45s,visibility .45s}.online-lobby.closed{opacity:0;visibility:hidden;pointer-events:none}.lobby-panel{position:relative;width:min(430px,calc(100vw - 38px));padding:38px 42px 32px;color:#cfc6b2;background:linear-gradient(145deg,rgba(25,29,27,.98),rgba(5,7,7,.98));border:1px solid rgba(180,139,73,.5);box-shadow:0 35px 100px #000,inset 0 0 0 4px rgba(6,8,7,.8);clip-path:polygon(14px 0,calc(100% - 14px) 0,100% 14px,100% calc(100% - 14px),calc(100% - 14px) 100%,14px 100%,0 calc(100% - 14px),0 14px)}.lobby-panel::before{content:"";position:absolute;inset:8px;border:1px solid rgba(180,139,73,.16);pointer-events:none}.lobby-kicker{font-size:7px;letter-spacing:.28em;color:#a68149}.lobby-panel h1{margin:8px 0 9px;font:600 30px Cinzel;color:#e1d6bd}.lobby-panel>p{margin:0 0 25px;color:#77756d;font-size:10px;line-height:1.6}.lobby-field{display:grid;gap:7px}.lobby-field span{font-size:6px;letter-spacing:.2em;color:#8c816e}.lobby-field input,.join-row input{box-sizing:border-box;width:100%;height:42px;padding:0 13px;border:1px solid #3b403b;outline:0;background:#090c0b;color:#d6cdb9;font:500 12px Cinzel}.lobby-field input:focus,.join-row input:focus{border-color:#9f7a43}.lobby-actions{display:grid;gap:10px;margin-top:13px;text-align:center}.lobby-actions>i{font:6px Inter;letter-spacing:.2em;color:#555851}.lobby-actions button{height:42px;border:1px solid #70562f;background:linear-gradient(#382e1f,#19140e);color:#d8c6a3;font:600 9px Cinzel;letter-spacing:.14em;cursor:pointer}.lobby-actions button:hover:not(:disabled){filter:brightness(1.2)}.lobby-actions button:disabled{opacity:.35;cursor:wait}.join-row{display:grid;grid-template-columns:1fr 112px;gap:8px}.join-row input{text-transform:uppercase;letter-spacing:.25em;text-align:center}.waiting-room{margin-top:18px;padding:15px;text-align:center;background:rgba(82,105,94,.09);border:1px solid rgba(117,146,130,.25)}.waiting-room small,.waiting-room span{display:block;font-size:6px;letter-spacing:.16em;color:#747c74}.waiting-room strong{display:block;margin:7px 0;font:600 25px Cinzel;letter-spacing:.23em;color:#cbb17e}.lobby-error{display:block;min-height:16px;margin-top:12px;color:#bd665d;font-size:8px;text-align:center}.connection-state{display:block;margin-top:5px;text-align:center;font-size:5px;letter-spacing:.17em;color:#628879}.match-state{position:fixed;z-index:5;top:15px;left:50%;display:grid;grid-template-columns:auto auto auto;align-items:center;gap:12px;padding:8px 14px;transform:translateX(-50%);border:1px solid rgba(169,130,69,.3);background:rgba(6,8,8,.88);color:#8c877b;font-size:6px;letter-spacing:.14em}.match-state b{color:#aa8950}.match-state time{font:600 10px Cinzel;color:#c8b99d}.bottom-command button:disabled{filter:grayscale(1);opacity:.42;cursor:not-allowed}
-.dev-mode-button{border-color:#42615b!important;background:linear-gradient(180deg,#182923,#0b1512)!important;color:#9fc9b9!important;box-shadow:inset 0 0 18px rgba(71,128,105,.12)}
-.game-error{position:fixed;z-index:20;top:58px;left:50%;min-height:0;padding:0 14px;transform:translateX(-50%);background:rgba(35,8,7,.92);border:0 solid #8f4139;color:#e0a39d;font:600 8px Cinzel;line-height:30px;letter-spacing:.08em;opacity:0;pointer-events:none;transition:opacity .18s}.game-error:not(:empty){border-width:1px;opacity:1}
-@media(max-width:560px){.lobby-panel{padding:30px 24px 25px}.match-state{top:8px;gap:7px;padding:7px 9px}}
+/* Nexus entry, authentication and matchmaking surfaces. */
+.online-lobby {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 35%, rgba(50, 57, 49, .3), transparent 44%),
+    rgba(2, 4, 4, .88);
+  backdrop-filter: blur(6px);
+  transition: opacity .35s ease, visibility .35s ease;
+}
 
+.online-lobby.closed {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.nexus-lobby {
+  position: relative;
+  width: min(470px, 100%);
+  max-height: min(760px, calc(100vh - 32px));
+  overflow: auto;
+  padding: 34px 38px 24px;
+  color: #d8cfbc;
+  border: 1px solid rgba(188, 146, 77, .52);
+  border-radius: 16px;
+  background: linear-gradient(150deg, rgba(24, 28, 24, .98), rgba(5, 8, 7, .99) 68%);
+  box-shadow: 0 32px 90px rgba(0, 0, 0, .82), inset 0 0 0 3px rgba(255, 255, 255, .018);
+  scrollbar-width: thin;
+  scrollbar-color: #655338 transparent;
+}
+
+.nexus-lobby::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(188, 146, 77, .12);
+  border-radius: 11px;
+  pointer-events: none;
+}
+
+.nexus-brand {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-bottom: 26px;
+}
+
+.nexus-brand > span {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: #d6b16d;
+  border: 1px solid rgba(190, 149, 78, .38);
+  border-radius: 50%;
+  background: rgba(183, 138, 65, .07);
+  font-size: 17px;
+}
+
+.nexus-brand h1 {
+  margin: 2px 0 0;
+  color: #eee2c8;
+  font: 600 25px/1 Cinzel, serif;
+  letter-spacing: .08em;
+}
+
+.nexus-screen[hidden] {
+  display: none;
+}
+
+.nexus-screen {
+  position: relative;
+}
+
+.nexus-screen-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 38px;
+  margin-bottom: 23px;
+}
+
+.nexus-screen-header h2 {
+  margin: 0;
+  color: #e4dac4;
+  font: 600 28px/1.12 Cinzel, serif;
+}
+
+.nexus-screen-header p {
+  margin: 8px 0 0;
+  color: #989388;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.nexus-lobby .nexus-back {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  margin: 0;
+  padding: 0 0 2px;
+  color: #c9b895;
+  border: 1px solid rgba(151, 111, 53, .58);
+  border-radius: 0;
+  background: linear-gradient(180deg, #292015, #0f0c08);
+  clip-path: none;
+  box-shadow: inset 0 1px rgba(235, 205, 150, .08);
+  font: 22px/1 Cinzel, serif;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+
+.nexus-screen:has(.nexus-back) .nexus-screen-header {
+  padding-left: 45px;
+}
+
+.nexus-actions,
+.nexus-form {
+  display: grid;
+  gap: 11px;
+}
+
+.nexus-lobby button,
+.nexus-lobby input {
+  font: 600 12px Inter, sans-serif;
+}
+
+.nexus-lobby button {
+  min-height: 42px;
+  padding: 0 15px;
+  color: #d2c7b1;
+  border: 1px solid rgba(139, 101, 49, .68);
+  border-radius: 0;
+  background: linear-gradient(180deg, #2d2418 0%, #19130d 48%, #100d09 100%);
+  clip-path: none;
+  box-shadow:
+    inset 0 1px rgba(236, 207, 151, .08),
+    inset 0 -1px rgba(0, 0, 0, .6);
+  font-family: Cinzel, serif;
+  letter-spacing: .12em;
+  cursor: pointer;
+  transition: border-color .16s ease, color .16s ease, filter .16s ease, transform .16s ease;
+}
+
+.nexus-lobby button:hover:not(:disabled),
+.nexus-lobby button:focus-visible {
+  color: #f0ddba;
+  border-color: #c29652;
+  outline: none;
+  filter: brightness(1.13);
+}
+
+.nexus-lobby button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.nexus-lobby button:disabled {
+  color: #686762;
+  border-color: #333833;
+  background: #0d100e;
+  box-shadow: none;
+  cursor: not-allowed;
+  filter: grayscale(1);
+  opacity: .62;
+}
+
+.nexus-primary {
+  color: #ead8b5 !important;
+  border-color: #8f6b38 !important;
+  background: linear-gradient(180deg, #3a2c19 0%, #21180e 52%, #130e09 100%) !important;
+}
+
+.nexus-quiet {
+  color: #9e9a90 !important;
+  border-color: #363b37 !important;
+  background: #0a0d0b !important;
+}
+
+.nexus-form label,
+.nexus-code-form > label,
+.nexus-visibility legend {
+  color: #b8ab92;
+  font: 600 12px/1.2 Inter, sans-serif;
+}
+
+.nexus-form input,
+.nexus-code-form input {
+  width: 100%;
+  height: 45px;
+  padding: 0 13px;
+  color: #e1d7c2;
+  border: 1px solid #3b423c;
+  border-radius: 0;
+  outline: none;
+  background: #080b0a;
+  letter-spacing: .02em;
+}
+
+.nexus-form input:focus,
+.nexus-code-form input:focus {
+  border-color: #ac8248;
+  box-shadow: 0 0 0 2px rgba(172, 130, 72, .12);
+}
+
+.nexus-form button[type="submit"] {
+  margin-top: 5px;
+}
+
+.nexus-divider {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 16px 0;
+  color: #696a64;
+  font-size: 11px;
+}
+
+.nexus-divider::before,
+.nexus-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(169, 130, 69, .18);
+}
+
+.nexus-discord-button {
+  width: 100%;
+  border-color: #535a91 !important;
+  background: linear-gradient(180deg, #252b4b, #12162a) !important;
+}
+
+.nexus-discord-button span {
+  margin-right: 7px;
+  color: #aeb9ff;
+}
+
+.nexus-text-button {
+  display: block;
+  width: max-content;
+  min-height: 34px !important;
+  margin: 9px auto 0;
+  padding-inline: 8px !important;
+  color: #aaa393 !important;
+  border: 0 !important;
+  background: transparent !important;
+  letter-spacing: 0 !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.nexus-hub-actions {
+  gap: 10px;
+}
+
+.nexus-account-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -8px 0 16px;
+  color: #8f8b81;
+  font-size: 12px;
+}
+
+.nexus-account-line b {
+  color: #c7baa1;
+  font-family: Cinzel, serif;
+}
+
+.nexus-account-line button {
+  min-height: 30px;
+  padding-inline: 10px;
+  border: 0;
+  background: transparent;
+  color: #8f8b81;
+  font-size: 11px;
+}
+
+.nexus-deck-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 54px !important;
+  margin-top: 5px;
+  overflow: hidden;
+  color: #fff0c9 !important;
+  border-color: #d0a85d !important;
+  background: linear-gradient(105deg, #4a3517, #8b6427 50%, #4a3517) !important;
+  box-shadow: 0 0 20px rgba(210, 165, 78, .3), inset 0 0 18px rgba(255, 226, 155, .1);
+  animation: nexus-deck-glow 2.4s ease-in-out infinite;
+}
+
+.nexus-deck-button::after {
+  content: "";
+  position: absolute;
+  top: -70%;
+  left: -30%;
+  width: 18%;
+  height: 240%;
+  background: rgba(255, 239, 193, .22);
+  transform: rotate(22deg);
+  animation: nexus-deck-shine 3.6s ease-in-out infinite;
+}
+
+.nexus-deck-button small {
+  color: #ead398;
+  font-size: 11px;
+  letter-spacing: .08em;
+}
+
+.deck-required-message {
+  margin: 13px 0 0;
+  color: #d18979;
+  font-size: 12px;
+  text-align: center;
+}
+
+.nexus-dev-button {
+  display: block;
+  width: 100%;
+  margin-top: 13px;
+  color: #8db9a8 !important;
+  border-color: #36554d !important;
+  background: #0b1713 !important;
+}
+
+.nexus-code-form {
+  display: grid;
+  gap: 8px;
+}
+
+.nexus-code-form > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 110px;
+  gap: 8px;
+}
+
+.nexus-code-form input {
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: .2em;
+}
+
+.nexus-room-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 22px 0 9px;
+}
+
+.nexus-room-heading h3 {
+  margin: 0;
+  color: #cbc0aa;
+  font: 600 14px Cinzel, serif;
+}
+
+.nexus-room-heading button {
+  min-width: 35px;
+  min-height: 35px;
+  padding: 0;
+  font-size: 18px;
+}
+
+.nexus-rooms-list {
+  display: grid;
+  gap: 8px;
+  max-height: 270px;
+  overflow: auto;
+  padding-right: 3px;
+}
+
+.nexus-room-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 9px;
+  min-height: 57px;
+  padding: 9px 10px 9px 13px;
+  border: 1px solid #323832;
+  border-radius: 8px;
+  background: rgba(8, 11, 9, .76);
+}
+
+.nexus-room-card strong {
+  overflow: hidden;
+  color: #cec4b0;
+  font: 600 12px Cinzel, serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nexus-room-card small,
+.nexus-room-card .room-occupancy {
+  color: #8a887f;
+  font-size: 11px;
+}
+
+.nexus-room-card button {
+  min-height: 34px;
+  padding-inline: 10px;
+  font-size: 11px;
+}
+
+.nexus-room-card[data-room-private="true"]::before {
+  content: "🔒";
+  grid-column: 1;
+  grid-row: 1;
+  margin-right: 5px;
+  font-size: 12px;
+}
+
+.nexus-empty-state {
+  margin: 0;
+  padding: 24px 12px;
+  color: #7e7e77;
+  border: 1px dashed #333a34;
+  border-radius: 8px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.nexus-visibility {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 4px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.nexus-visibility legend {
+  grid-column: 1 / -1;
+  margin-bottom: 7px;
+}
+
+.nexus-visibility label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 66px;
+  padding: 10px;
+  border: 1px solid #353b36;
+  border-radius: 8px;
+  background: #0a0d0b;
+  cursor: pointer;
+}
+
+.nexus-visibility input {
+  width: 16px;
+  height: 16px;
+  accent-color: #bd914c;
+}
+
+.nexus-visibility span {
+  display: grid;
+  gap: 4px;
+}
+
+.nexus-visibility b {
+  color: #c8bda7;
+  font-size: 12px;
+}
+
+.nexus-visibility small {
+  color: #7f8079;
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.nexus-waiting {
+  padding: 24px;
+  color: #9a988f;
+  border: 1px solid rgba(117, 146, 130, .27);
+  border-radius: 10px;
+  background: rgba(82, 105, 94, .08);
+  text-align: center;
+}
+
+.nexus-waiting small,
+.nexus-waiting span {
+  display: block;
+  font-size: 11px;
+}
+
+.nexus-waiting strong {
+  display: block;
+  margin: 12px 0;
+  color: #d8bc83;
+  font: 600 30px Cinzel, serif;
+  letter-spacing: .2em;
+}
+
+.nexus-lobby-footer {
+  position: relative;
+  margin-top: 16px;
+  text-align: center;
+}
+
+.lobby-error {
+  display: block;
+  min-height: 18px;
+  color: #d4776d;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+@keyframes nexus-deck-glow {
+  50% { box-shadow: 0 0 30px rgba(220, 174, 83, .48), inset 0 0 22px rgba(255, 226, 155, .16); }
+}
+
+@keyframes nexus-deck-shine {
+  0%, 35% { left: -30%; opacity: 0; }
+  50% { opacity: 1; }
+  72%, 100% { left: 120%; opacity: 0; }
+}
+
+/* Compact match telemetry remains separate from the lobby. */
+.match-state {
+  position: fixed;
+  z-index: 5;
+  top: 15px;
+  left: 50%;
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 250px;
+  min-height: 58px;
+  padding: 10px 20px;
+  transform: translateX(-50%);
+  color: #c5bba6;
+  border: 1px solid rgba(169, 130, 69, .42);
+  background: linear-gradient(180deg, rgba(20, 22, 20, .96), rgba(5, 7, 7, .96));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .6), inset 0 0 0 2px rgba(255, 255, 255, .015);
+  font: 600 10px Cinzel, serif;
+  letter-spacing: .1em;
+  clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 8px 100%, 0 50%);
+}
+
+.match-state b {
+  color: #aa8950;
+}
+
+.match-state time {
+  color: #d7c49e;
+  font: 600 18px Cinzel, serif;
+  letter-spacing: .04em;
+}
+
+.game-error {
+  position: fixed;
+  z-index: 20;
+  top: 58px;
+  left: 50%;
+  min-height: 0;
+  padding: 0 14px;
+  color: #e0a39d;
+  border: 0 solid #8f4139;
+  background: rgba(35, 8, 7, .92);
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .18s;
+  font: 600 11px/30px Cinzel, serif;
+  letter-spacing: .08em;
+}
+
+.game-error:not(:empty) {
+  border-width: 1px;
+  opacity: 1;
+}
+
+.bottom-command button:disabled {
+  cursor: not-allowed;
+  filter: grayscale(1);
+  opacity: .42;
+}
+
+@media (max-width: 560px) {
+  .online-lobby {
+    align-items: start;
+    padding: 10px;
+  }
+
+  .nexus-lobby {
+    max-height: calc(100vh - 20px);
+    padding: 25px 20px 19px;
+    border-radius: 12px;
+  }
+
+  .nexus-brand {
+    margin-bottom: 21px;
+  }
+
+  .nexus-screen-header h2 {
+    font-size: 24px;
+  }
+
+  .nexus-code-form > div {
+    grid-template-columns: minmax(0, 1fr) 94px;
+  }
+
+  .nexus-visibility {
+    grid-template-columns: 1fr;
+  }
+
+  .match-state {
+    top: 8px;
+    min-width: 210px;
+    min-height: 48px;
+    gap: 12px;
+    padding: 7px 14px;
+    font-size: 8px;
+  }
+
+  .match-state time {
+    font-size: 15px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nexus-deck-button,
+  .nexus-deck-button::after {
+    animation: none;
+  }
+
+  .online-lobby {
+    backdrop-filter: none;
+    transition: none;
+  }
+}

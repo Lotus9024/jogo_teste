@@ -1,11 +1,22 @@
 import { createServer } from 'node:http';
 import { config } from './config.js';
-import { databaseHealth } from './database/pool.js';
+import { databaseHealth, pool } from './database/pool.js';
 import { RoomManager } from './game/roomManager.js';
+import { createApiRouter } from './http/createApiRouter.js';
 import { createSocketServer } from './realtime/createSocketServer.js';
 
 const rooms = new RoomManager();
+const initialDatabaseHealth = await databaseHealth();
+if (config.nodeEnv === 'production' && !initialDatabaseHealth.connected) {
+  throw new Error('PostgreSQL indisponível: o Nexus não inicia sessões em memória na produção.');
+}
+const api = createApiRouter({
+  config,
+  pool: initialDatabaseHealth.connected ? pool : null
+});
 const server = createServer(async (request, response) => {
+  if (await api.handle(request, response)) return;
+
   const origin = request.headers.origin;
   if (origin && config.clientOrigins.includes(origin)) response.setHeader('Access-Control-Allow-Origin', origin);
   response.setHeader('Vary', 'Origin');
@@ -18,14 +29,14 @@ const server = createServer(async (request, response) => {
 
   if (request.url === '/health') {
     response.writeHead(200);
-    return response.end(JSON.stringify({ ok: true, service: 'tronos-server', database: await databaseHealth() }));
+    return response.end(JSON.stringify({ ok: true, service: 'nexus-server', database: await databaseHealth() }));
   }
 
   response.writeHead(404);
   response.end(JSON.stringify({ error: 'Not found' }));
 });
 
-createSocketServer(server, rooms);
+createSocketServer(server, rooms, api.authService);
 server.requestTimeout = 10_000;
 server.headersTimeout = 12_000;
 server.keepAliveTimeout = 5_000;

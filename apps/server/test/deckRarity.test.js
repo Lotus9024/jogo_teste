@@ -47,9 +47,12 @@ test('renova o baralho quando ele acaba e continua comprando cartas', () => {
 test('reduz o peso de Operador conforme a quantidade presente na mão', () => {
   const totals = [];
   const random = max => { totals.push(max); return 0; };
+  weightedCardForRarity('common', { hand: [] }, 4, random);
   weightedCardForRarity('common', { hand: [{ cardId: 'operator' }] }, 4, random);
   weightedCardForRarity('common', { hand: [{ cardId: 'operator' }, { cardId: 'operator' }] }, 4, random);
-  assert.deepEqual(totals, [790, 770]);
+  const [base, oneOperator, twoOperators] = totals;
+  assert.equal(oneOperator, base - 10);
+  assert.equal(twoOperators, base - 30);
 });
 
 test('aumenta o peso da Casa em 25% a partir da rodada cinco até ela ser comprada', () => {
@@ -60,7 +63,9 @@ test('aumenta o peso da Casa em 25% a partir da rodada cinco até ela ser compra
   weightedCardForRarity('common', player, 5, random);
   player.hasDrawnHouse = true;
   weightedCardForRarity('common', player, 6, random);
-  assert.deepEqual(totals, [800, 825, 800]);
+  const [base, protectedFromBadLuck, afterDrawingHouse] = totals;
+  assert.equal(protectedFromBadLuck, base + 25);
+  assert.equal(afterDrawingHouse, base);
 });
 
 test('comprar Casa encerra o bônus de proteção contra azar', () => {

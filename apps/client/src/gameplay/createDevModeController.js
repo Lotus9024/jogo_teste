@@ -137,7 +137,7 @@ export function createDevModeController(options) {
     addEventListener('keydown', event => {
       if (event.key === 'Enter' && !event.target.closest?.('input,select,button')) endTurn(state.devMode);
     });
-    document.querySelector('#dev-mode').addEventListener('click', initializeDevMode);
+    document.querySelector('#dev-mode')?.addEventListener('click', initializeDevMode);
   }
 
   return {

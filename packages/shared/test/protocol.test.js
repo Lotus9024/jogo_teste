@@ -1,10 +1,22 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { encodeMessage, parseMessage, PROTOCOL_LIMITS, SERVER_EVENTS } from '../src/protocol.js';
+import {
+  CLIENT_EVENTS,
+  encodeMessage,
+  parseMessage,
+  PROTOCOL_LIMITS,
+  SERVER_EVENTS
+} from '../src/protocol.js';
 
 test('codifica e interpreta mensagens do protocolo', () => {
-  const encoded = encodeMessage('room:create', { playerName: 'Aldren' });
-  assert.deepEqual(parseMessage(encoded), { type: 'room:create', payload: { playerName: 'Aldren' } });
+  const encoded = encodeMessage(CLIENT_EVENTS.AUTHENTICATE, { ticket: 'a'.repeat(43) });
+  assert.deepEqual(parseMessage(encoded), {
+    type: CLIENT_EVENTS.AUTHENTICATE,
+    payload: { ticket: 'a'.repeat(43) }
+  });
+  assert.equal(CLIENT_EVENTS.ROOM_SPECTATE, 'room:spectate');
+  assert.equal(CLIENT_EVENTS.AI_CREATE, 'ai:create');
+  assert.equal(SERVER_EVENTS.ROOM_DIRECTORY, 'room:directory');
 });
 
 test('rejeita mensagens inválidas', () => {

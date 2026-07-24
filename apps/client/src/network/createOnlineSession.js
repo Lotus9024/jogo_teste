@@ -31,12 +31,18 @@ export function createOnlineSession({
   callbacks,
 }) {
   const socket = new GameSocketClient();
+  const events = new EventTarget();
   const lobbyError = document.querySelector('#lobby-error');
   const gameError = document.querySelector('#game-error');
-  const connectionState = document.querySelector('#connection-state');
+
+  function emit(type, detail = {}) {
+    events.dispatchEvent(new CustomEvent(type, { detail }));
+  }
 
   function sendAction(action) {
-    if (state.onlineState) socket.sendAction(action, state.onlineState.state.version);
+    if (state.onlineState && !state.onlineState.self?.spectator) {
+      socket.sendAction(action, state.onlineState.state.version);
+    }
   }
 
   function onlineUnit(data) {
@@ -118,25 +124,33 @@ export function createOnlineSession({
 
   function applyState(payload) {
     const previous = state.onlineState;
+    const spectator = Boolean(payload.self?.spectator);
+    const selfSeat = spectator ? (payload.self?.perspectiveSeat ?? 1) : payload.self.seat;
     const shouldSetPerspective = !previous
-      || previous.self.seat !== payload.self.seat
+      || previous.self?.seat !== payload.self?.seat
       || previous.state.phase === 'waiting';
     state.onlineState = payload;
-    state.selfSeat = payload.self.seat;
+    state.selfSeat = selfSeat;
     handController.showDeploymentArea(false);
     document.querySelector('#waiting-code').textContent = payload.code;
-    document.querySelector('#waiting-room').hidden = false;
     document.querySelector('#match-state').hidden = false;
     syncMageAltarChoice(payload.self);
     if (payload.state.phase === 'waiting') {
       document.querySelector('#waiting-status').textContent = 'Aguardando o rei rival...';
+      emit('waiting', { code: payload.code });
       return;
     }
     callbacks.activatePreferredGraphics?.();
     document.querySelector('#online-lobby').classList.add('closed');
+    document.querySelector('.card-dock').hidden = spectator;
+    document.querySelector('.bottom-command').hidden = spectator;
+    app.dataset.spectator = String(spectator);
+    emit('match-started', { spectator });
     if (shouldSetPerspective) setPerspective();
-    if (previous && payload.self.hand.length > previous.self.hand.length) handController.animateServerDraw();
-    handController.renderOnlineHand(payload.self.hand, payload.state.units);
+    const currentHand = payload.self?.hand ?? [];
+    const previousHand = previous?.self?.hand ?? [];
+    if (!spectator && previous && currentHand.length > previousHand.length) handController.animateServerDraw();
+    handController.renderOnlineHand(currentHand, payload.state.units);
     boardPresentation.reconcileFires(payload.state.fires ?? []);
     reconcileOnlineUnits(payload.state.units);
     boardPresentation.reconcileRoads(payload.state.roads ?? []);
@@ -158,11 +172,13 @@ export function createOnlineSession({
       'aria-label',
       `Castelo inimigo nível ${enemy.baseLevel ?? 1}, vida ${enemy.baseHp} de ${GAME_CONFIG.startingBaseHp}`,
     );
-    const mine = payload.state.activeSeat === state.selfSeat;
+    const mine = !spectator && payload.state.activeSeat === state.selfSeat;
     const finished = payload.state.phase === 'finished';
-    document.querySelector('#turn-label').textContent = finished
-      ? (payload.state.winnerSeat === state.selfSeat ? 'VITÓRIA' : 'DERROTA')
-      : (mine ? 'SEU TURNO' : 'TURNO RIVAL');
+    document.querySelector('#turn-label').textContent = spectator
+      ? (finished ? `VITÓRIA ${payload.state.winnerSeat === 1 ? 'AZUL' : 'VERMELHA'}` : 'ESPECTANDO')
+      : finished
+        ? (payload.state.winnerSeat === state.selfSeat ? 'VITÓRIA' : 'DERROTA')
+        : (mine ? 'SEU TURNO' : 'TURNO RIVAL');
     document.querySelector('#end-turn').disabled = !mine || finished;
     devController.syncTurnRoundStatus(payload.state.activeSeat, payload.state.round);
     abilities.syncAbilityBadges();
@@ -171,7 +187,7 @@ export function createOnlineSession({
   function syncMageAltarChoice(self) {
     const modal = document.querySelector('#mage-altar-choice');
     const choices = document.querySelector('#mage-altar-choice-cards');
-    const pending = self.pendingMageAltarChoices ?? 0;
+    const pending = self?.pendingMageAltarChoices ?? 0;
     modal.hidden = pending < 1;
     if (!pending) {
       choices.replaceChildren();
@@ -189,15 +205,13 @@ export function createOnlineSession({
       if (button) sendAction({ type: 'choose_deck_card', cardId: button.dataset.mageAltarCard });
     });
     socket.addEventListener('connected', () => {
-      connectionState.textContent = 'SERVIDOR CONECTADO';
       lobbyError.textContent = '';
-      document.querySelectorAll('#create-room,#join-room').forEach(button => { button.disabled = false; });
+      emit('connected');
     });
     socket.addEventListener('disconnected', () => {
-      connectionState.textContent = 'RECONECTANDO...';
-      lobbyError.textContent = 'Reconectando ao servidor da partida...';
-      document.querySelectorAll('#create-room,#join-room').forEach(button => { button.disabled = true; });
+      emit('disconnected');
     });
+    socket.addEventListener(SERVER_EVENTS.ROOM_DIRECTORY, event => emit('directory', event.detail));
     socket.addEventListener(SERVER_EVENTS.ROOM_STATE, event => {
       lobbyError.textContent = '';
       gameError.textContent = '';
@@ -207,25 +221,8 @@ export function createOnlineSession({
       const message = String(event.detail.message ?? 'Erro na partida.');
       if (document.querySelector('#online-lobby').classList.contains('closed')) callbacks.showGameError?.(message);
       else lobbyError.textContent = message;
+      emit('session-error', { message });
     });
-    document.querySelectorAll('#create-room,#join-room').forEach(button => { button.disabled = true; });
-    document.querySelector('#room-code').addEventListener('input', event => {
-      event.target.value = event.target.value.toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 6);
-    });
-    document.querySelector('#create-room').addEventListener('click', () => {
-      try { socket.createRoom(document.querySelector('#player-name').value, deckBuilder.getDeckCardIds()); }
-      catch (error) { lobbyError.textContent = error.message; deckBuilder.open(); }
-    });
-    document.querySelector('#join-room').addEventListener('click', () => {
-      try {
-        socket.joinRoom(
-          document.querySelector('#room-code').value,
-          document.querySelector('#player-name').value,
-          deckBuilder.getDeckCardIds(),
-        );
-      } catch (error) { lobbyError.textContent = error.message; deckBuilder.open(); }
-    });
-    socket.connect();
     setInterval(() => {
       if (!state.onlineState?.state.turnEndsAt) return;
       const remaining = Math.max(0, state.onlineState.state.turnEndsAt - Date.now());
@@ -235,5 +232,20 @@ export function createOnlineSession({
     }, 250);
   }
 
-  return { start, sendAction, setPerspective, applyState };
+  return {
+    start,
+    sendAction,
+    setPerspective,
+    applyState,
+    addEventListener: (...args) => events.addEventListener(...args),
+    setTicketProvider: provider => socket.setTicketProvider(provider),
+    connect: () => { void socket.connect(); },
+    disconnect: () => socket.disconnect(),
+    requestRooms: () => socket.requestRooms(),
+    createRoom: options => socket.createRoom(options),
+    joinRoom: code => socket.joinRoom(code),
+    spectateRoom: code => socket.spectateRoom(code),
+    createAiRoom: () => socket.createAiRoom(),
+    leaveRoom: () => socket.leaveRoom(),
+  };
 }

@@ -11,6 +11,7 @@ class FakeWebSocket extends EventTarget {
     super();
     this.url = url;
     this.readyState = 0;
+    this.sent = [];
     FakeWebSocket.instances.push(this);
   }
 
@@ -22,6 +23,16 @@ class FakeWebSocket extends EventTarget {
   close() {
     this.readyState = 3;
     this.dispatchEvent(new Event('close'));
+  }
+
+  send(message) {
+    this.sent.push(JSON.parse(message));
+  }
+
+  receive(type, payload = {}) {
+    this.dispatchEvent(new MessageEvent('message', {
+      data: JSON.stringify({ type, payload }),
+    }));
   }
 }
 
@@ -41,19 +52,30 @@ test('preserva o servidor da rede local durante desenvolvimento', () => {
   }), 'ws://192.168.0.45:3001/ws');
 });
 
-test('reconecta automaticamente depois que o servidor reinicia', async () => {
+test('autentica com ticket de uso único fora da URL e renova ao reconectar', async () => {
   FakeWebSocket.instances = [];
+  let ticketNumber = 0;
   const client = new GameSocketClient('ws://local/ws', {
     WebSocketImpl: FakeWebSocket,
-    reconnectBaseDelay: 1
+    reconnectBaseDelay: 1,
+    ticketProvider: async () => `ticket-${++ticketNumber}`,
   });
   let connections = 0;
   client.addEventListener('connected', () => { connections += 1; });
-  client.connect();
+  await client.connect();
   FakeWebSocket.instances[0].open();
+  assert.equal(FakeWebSocket.instances[0].url, 'ws://local/ws');
+  assert.deepEqual(FakeWebSocket.instances[0].sent[0], {
+    type: 'auth:authenticate',
+    payload: { ticket: 'ticket-1' },
+  });
+  FakeWebSocket.instances[0].receive('auth:authenticated');
+  assert.equal(connections, 1);
   FakeWebSocket.instances[0].close();
   await new Promise(resolve => setTimeout(resolve, 10));
   assert.equal(FakeWebSocket.instances.length, 2);
   FakeWebSocket.instances[1].open();
+  FakeWebSocket.instances[1].receive('auth:authenticated');
   assert.equal(connections, 2);
+  assert.equal(FakeWebSocket.instances[1].sent[0].payload.ticket, 'ticket-2');
 });

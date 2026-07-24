@@ -17,43 +17,105 @@ export function resolveSocketUrl({
 }
 
 export class GameSocketClient extends EventTarget {
-  constructor(url = resolveSocketUrl(), { WebSocketImpl = globalThis.WebSocket, reconnectBaseDelay = 500 } = {}) {
+  constructor(url = resolveSocketUrl(), {
+    WebSocketImpl = globalThis.WebSocket,
+    reconnectBaseDelay = 500,
+    ticketProvider = null,
+  } = {}) {
     super();
     this.url = url;
     this.WebSocketImpl = WebSocketImpl;
     this.reconnectBaseDelay = reconnectBaseDelay;
+    this.ticketProvider = ticketProvider;
     this.socket = null;
     this.reconnectTimer = null;
     this.reconnectAttempt = 0;
+    this.connecting = false;
+    this.authenticated = false;
+    this.reconnectEnabled = true;
   }
 
-  connect() {
+  setTicketProvider(provider) {
+    this.ticketProvider = provider;
+  }
+
+  async connect() {
     if (this.socket && this.socket.readyState < this.WebSocketImpl.CLOSING) return;
+    if (this.connecting || typeof this.ticketProvider !== 'function') return;
     clearTimeout(this.reconnectTimer);
-    const socket = new this.WebSocketImpl(this.url);
+    this.reconnectEnabled = true;
+    this.connecting = true;
+    let ticket;
+    try {
+      ticket = await this.ticketProvider();
+    } catch (error) {
+      this.connecting = false;
+      this.#emit(SERVER_EVENTS.ERROR, { message: error.message });
+      this.#scheduleReconnect();
+      return;
+    }
+    if (!this.reconnectEnabled) {
+      this.connecting = false;
+      return;
+    }
+    const socket = new this.WebSocketImpl(this.url, ['nexus-v1']);
     this.socket = socket;
+    this.authenticated = false;
     socket.addEventListener('open', () => {
       if (socket !== this.socket) return;
-      this.reconnectAttempt = 0;
-      this.#emit('connected');
+      this.connecting = false;
+      this.#send(CLIENT_EVENTS.AUTHENTICATE, { ticket });
     });
     socket.addEventListener('close', () => {
       if (socket !== this.socket) return;
+      this.connecting = false;
+      this.authenticated = false;
       this.#emit('disconnected');
       this.#scheduleReconnect();
     });
     socket.addEventListener('message', ({ data }) => {
       const message = parseMessage(data, { maxBytes: PROTOCOL_LIMITS.serverMessageBytes });
-      if (message) this.#emit(message.type, message.payload);
+      if (!message) return;
+      if (message.type === SERVER_EVENTS.AUTHENTICATED) {
+        this.authenticated = true;
+        this.reconnectAttempt = 0;
+        this.#emit('connected', message.payload);
+      }
+      this.#emit(message.type, message.payload);
     });
   }
 
-  createRoom(playerName, deckCardIds) {
-    this.#send(CLIENT_EVENTS.ROOM_CREATE, { playerName, deckCardIds });
+  disconnect() {
+    this.reconnectEnabled = false;
+    clearTimeout(this.reconnectTimer);
+    this.socket?.close();
+    this.socket = null;
+    this.authenticated = false;
+    this.connecting = false;
   }
 
-  joinRoom(roomCode, playerName, deckCardIds) {
-    this.#send(CLIENT_EVENTS.ROOM_JOIN, { roomCode, playerName, deckCardIds });
+  requestRooms() {
+    this.#send(CLIENT_EVENTS.ROOM_LIST);
+  }
+
+  createRoom({ name, visibility }) {
+    this.#send(CLIENT_EVENTS.ROOM_CREATE, { name, visibility });
+  }
+
+  joinRoom(roomCode) {
+    this.#send(CLIENT_EVENTS.ROOM_JOIN, { roomCode });
+  }
+
+  spectateRoom(roomCode) {
+    this.#send(CLIENT_EVENTS.ROOM_SPECTATE, { roomCode });
+  }
+
+  createAiRoom() {
+    this.#send(CLIENT_EVENTS.AI_CREATE);
+  }
+
+  leaveRoom() {
+    this.#send(CLIENT_EVENTS.ROOM_LEAVE);
   }
 
   sendAction(action, version) {
@@ -62,6 +124,9 @@ export class GameSocketClient extends EventTarget {
 
   #send(type, payload) {
     if (this.socket?.readyState !== this.WebSocketImpl.OPEN) throw new Error('WebSocket desconectado');
+    if (type !== CLIENT_EVENTS.AUTHENTICATE && !this.authenticated) {
+      throw new Error('Conexão ainda não autenticada');
+    }
     this.socket.send(JSON.stringify({ type, payload }));
   }
 
@@ -69,7 +134,8 @@ export class GameSocketClient extends EventTarget {
     clearTimeout(this.reconnectTimer);
     const delay = Math.min(this.reconnectBaseDelay * 2 ** this.reconnectAttempt, 5_000);
     this.reconnectAttempt += 1;
-    this.reconnectTimer = setTimeout(() => this.connect(), delay);
+    if (!this.reconnectEnabled) return;
+    this.reconnectTimer = setTimeout(() => { void this.connect(); }, delay);
   }
 
   #emit(type, detail) {

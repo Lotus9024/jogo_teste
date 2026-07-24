@@ -3,14 +3,17 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import pg from 'pg';
 import { config } from '../config.js';
+import { createDatabaseConnectionOptions } from './tls.js';
 
 if (!config.migrationDatabaseUrl) throw new Error('Defina MIGRATION_DATABASE_URL antes de executar as migrations.');
-const databaseTls = config.databaseSsl
-  ? config.databaseCertificate
-    ? { cert: config.databaseCertificate, key: config.databaseCertificate, rejectUnauthorized: false }
-    : { rejectUnauthorized: false }
-  : false;
-const pool = new pg.Pool({ connectionString: config.migrationDatabaseUrl, ssl: databaseTls, max: 2, application_name: 'tronos-migrator' });
+if (config.nodeEnv === 'production' && !config.databaseSsl) {
+  throw new Error('DATABASE_SSL=true é obrigatório em produção.');
+}
+const pool = new pg.Pool({
+  ...createDatabaseConnectionOptions(config.migrationDatabaseUrl, config),
+  max: 2,
+  application_name: 'nexus-migrator'
+});
 
 const migrationDirectory = join(dirname(fileURLToPath(import.meta.url)), 'migrations');
 const client = await pool.connect();

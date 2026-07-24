@@ -1,23 +1,21 @@
 import pg from 'pg';
 import { config } from '../config.js';
+import { createDatabaseConnectionOptions } from './tls.js';
 
 const { Pool } = pg;
-const databaseTls = config.databaseSsl
-  ? config.databaseCertificate
-    ? { cert: config.databaseCertificate, key: config.databaseCertificate, rejectUnauthorized: false }
-    : { rejectUnauthorized: false }
-  : false;
+if (config.nodeEnv === 'production' && !config.databaseSsl) {
+  throw new Error('DATABASE_SSL=true é obrigatório em produção.');
+}
 
 export const pool = config.databaseUrl
   ? new Pool({
-      connectionString: config.databaseUrl,
-      ssl: databaseTls,
+      ...createDatabaseConnectionOptions(config.databaseUrl, config),
       max: 10,
       idleTimeoutMillis: 10_000,
       connectionTimeoutMillis: 3_000,
       statement_timeout: 5_000,
       query_timeout: 6_000,
-      application_name: 'tronos-server'
+      application_name: 'nexus-server'
     })
   : null;
 
@@ -26,7 +24,7 @@ export async function databaseHealth() {
   try {
     await pool.query('select 1');
     return { configured: true, connected: true };
-  } catch (error) {
-    return { configured: true, connected: false, error: error.message };
+  } catch {
+    return { configured: true, connected: false };
   }
 }

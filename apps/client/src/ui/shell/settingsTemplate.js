@@ -2,7 +2,7 @@ export function settingsTemplate() {
   return `
       <div id="settings-modal" class="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title" hidden>
         <section class="settings-panel">
-          <header><div><small>TRONOS EM RUÍNAS</small><h2 id="settings-title">Configurações</h2></div><button id="settings-close" aria-label="Fechar configurações">×</button></header>
+          <header><div><small>NEXUS</small><h2 id="settings-title">Configurações</h2></div><button id="settings-close" aria-label="Fechar configurações">×</button></header>
           <div class="settings-group">
             <div><small>DESEMPENHO</small><h3>Gráficos</h3><p>Baixo reduz polígonos, efeitos e resolução. Alto preserva o visual completo.</p></div>
             <div class="settings-options" role="group" aria-label="Qualidade dos gráficos"><button data-graphics="low">BAIXO</button><button data-graphics="high">ALTO</button></div>

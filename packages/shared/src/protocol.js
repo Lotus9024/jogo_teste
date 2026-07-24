@@ -1,12 +1,19 @@
 export const CLIENT_EVENTS = Object.freeze({
+  AUTHENTICATE: 'auth:authenticate',
+  ROOM_LIST: 'room:list',
   ROOM_CREATE: 'room:create',
   ROOM_JOIN: 'room:join',
+  ROOM_SPECTATE: 'room:spectate',
   ROOM_LEAVE: 'room:leave',
+  AI_CREATE: 'ai:create',
   GAME_ACTION: 'game:action'
 });
 
 export const SERVER_EVENTS = Object.freeze({
   CONNECTION_READY: 'connection:ready',
+  AUTHENTICATED: 'auth:authenticated',
+  ROOM_DIRECTORY: 'room:directory',
+  ROOM_LEFT: 'room:left',
   ROOM_STATE: 'room:state',
   GAME_STATE: 'game:state',
   ERROR: 'server:error'
