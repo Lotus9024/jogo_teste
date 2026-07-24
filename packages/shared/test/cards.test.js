@@ -68,7 +68,11 @@ test('ruas formam uma rede conectada ao castelo e não possuem vida', () => {
   assert.equal(CARD_BY_ID.road.indestructible, true);
   assert.equal(CARD_BY_ID.road.buildRounds, 1);
   assert.deepEqual([...connectedRoadKeys(1, roads)].sort(), ['7:10', '7:11']);
-  assert.equal(isRoadPlacementCell(1, 7, 9, roads), true);
+  assert.equal(isRoadPlacementCell(1, 7, 9, roads), false);
+  assert.equal(isRoadPlacementCell(1, 9, 10, roads), false);
+  assert.equal(isRoadPlacementCell(1, 8, 10, roads), true);
+  assert.equal(isRoadPlacementCell(1, 5, 11, roads, 15, 1), false);
+  assert.equal(isRoadPlacementCell(1, 5, 11, roads, 15, 2), true);
   assert.equal(isRoadPlacementCell(1, 2, 3, roads), false);
   assert.equal(roadMovementBonus(7, 10, roads), 1);
   assert.equal(roadMovementBonus(8, 11, roads), 0);
@@ -83,10 +87,10 @@ test('Estrada de Pedregulhos conecta a rede e acelera somente cartas Básicas', 
   assert.equal(isRoadCard('road'), true);
   assert.equal(isRoadCard('cobblestone_road'), true);
   assert.equal(CARD_BY_ID.cobblestone_road.rarityClass, 'uncommon');
-  assert.equal(CARD_BY_ID.cobblestone_road.cost, 4);
+  assert.equal(CARD_BY_ID.cobblestone_road.cost, 5);
   assert.deepEqual([...connectedRoadKeys(1, roads)].sort(), ['7:10', '7:11']);
-  assert.equal(roadMovementBonus(7, 10, roads, 'warrior'), 1);
-  assert.equal(roadAttackBonus(7, 10, roads, 'warrior'), 1);
+  assert.equal(roadMovementBonus(7, 10, roads, 'warrior'), 2);
+  assert.equal(roadAttackBonus(7, 10, roads, 'warrior'), 0);
   assert.equal(roadMovementBonus(7, 10, roads, 'goblin'), 0);
   assert.equal(roadAttackBonus(7, 10, roads, 'goblin'), 0);
   assert.equal(roadMovementBonus(7, 10, roads, 'mage'), 0);

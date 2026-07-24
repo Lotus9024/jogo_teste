@@ -18,7 +18,10 @@ export function summonAction(state, player, _opponent, action) {
   const roadBlocker = unitsAt(state, x, z).some(unit => ['construction', 'machine'].includes(CARD_BY_ID[unit.cardId]?.type));
   const roadOccupied = state.roads.some(road => road.x === x && road.z === z);
   if (roadCard) {
-    if (!validCell(x, z) || inBase(x, z, state) || roadBlocker || !isRoadPlacementCell(player.seat, x, z, state.roads, GAME_CONFIG.boardSize)) fail('A estrada precisa estar conectada ao castelo ou a outra Rua do seu reino.');
+    if (!validCell(x, z) || !deploymentCell(player.seat, x, z, state) || inBase(x, z, state) || roadBlocker
+      || !isRoadPlacementCell(player.seat, x, z, state.roads, GAME_CONFIG.boardSize, player.baseLevel)) {
+      fail('A estrada precisa estar na área do reino e conectada ao castelo ou a outra Rua sua.');
+    }
   } else if (!validCell(x, z) || !deploymentCell(player.seat, x, z, state) || inBase(x, z, state) || (unitAt(state, x, z) && !tower) || (roadOccupied && ['construction', 'machine'].includes(card.type))) fail('Escolha uma casa livre a até 2 casas do seu reino.');
   if (card.id === 'goblin_house' && state.units.some(unit => {
     const nearbyCard = CARD_BY_ID[unit.cardId];

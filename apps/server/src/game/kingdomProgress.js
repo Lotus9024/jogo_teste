@@ -4,7 +4,7 @@ import { refreshBuilderResistance } from './kingdomEffects.js';
 
 export function refreshKingdomProgress(state) {
   state.players.forEach(player => {
-    player.citizens = citizensForSeat(player.seat, state.units, state.roads, GAME_CONFIG.boardSize);
+    player.citizens = citizensForSeat(player.seat, state.units, state.roads, GAME_CONFIG.boardSize, player.baseLevel);
     const qualifies = player.citizens >= GAME_CONFIG.level2CitizenRequirement
       && completedRoadCount(player.seat, state.roads) >= GAME_CONFIG.level2RoadRequirement;
     const nextLevel = qualifies ? 2 : 1;

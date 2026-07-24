@@ -37,10 +37,7 @@ const BADGE_NAME = Object.freeze({
 });
 
 const PASSIVE_BADGE_TYPE = Object.freeze({
-  henry: 'henry_agility',
-  citizen: 'citizen_resident',
   wooden_house: 'wooden_house_lodging',
-  goblin: 'goblin_disorder',
   builder_area: 'builder_workshop',
   road: 'road_path',
   cobblestone_road: 'cobblestone_path',

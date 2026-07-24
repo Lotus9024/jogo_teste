@@ -126,17 +126,16 @@ test('Goblin Bombardeiro corre cinco casas, explode e morre', () => {
   assert.equal(room.state.units.find(unit => unit.id === 'ally-troop').hp, 1);
 });
 
-test('Estrada de Pedregulhos dá mais um de ataque apenas para cartas Básicas', () => {
+test('Estrada de Pedregulhos não aumenta mais o ataque', () => {
   const basic = match();
   basic.room.state.roads.push({ cardId: 'cobblestone_road', ownerSeat: 1, x: 5, z: 8, underConstruction: false });
   basic.room.state.units.push(
     { id: 'warrior', ownerSeat: 1, cardId: 'warrior', x: 5, z: 8, hp: 2, actionUsed: false },
     { id: 'target', ownerSeat: 2, cardId: 'guard', x: 5, z: 11, hp: 3, actionUsed: false },
   );
-  basic.rooms.action(basic.room.code, basic.first.id, {
+  assert.throws(() => basic.rooms.action(basic.room.code, basic.first.id, {
     type: 'attack', unitId: 'warrior', targetUnitId: 'target',
-  }, basic.room.state.version);
-  assert.equal(basic.room.state.units.find(unit => unit.id === 'target').hp, 1);
+  }, basic.room.state.version), /fora de alcance/);
 
   const goblin = match();
   goblin.room.state.roads.push({ cardId: 'cobblestone_road', ownerSeat: 1, x: 5, z: 8, underConstruction: false });

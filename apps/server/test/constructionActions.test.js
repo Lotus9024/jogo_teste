@@ -73,5 +73,5 @@ test('Altar Goblin concede uma carta Goblin aleatória ao concluir', () => {
   rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
   rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
   assert.equal(player.hand.length, 7);
-  assert.equal(['goblin', 'goblin_swarm', 'goblin_bomber', 'henry', 'goblin_tower', 'goblin_altar'].includes(player.hand.at(-1).cardId), true);
+  assert.equal(['goblin', 'goblin_swarm', 'goblin_bomber', 'goblin_clone', 'goblin_house', 'henry', 'goblin_tower', 'goblin_altar'].includes(player.hand.at(-1).cardId), true);
 });

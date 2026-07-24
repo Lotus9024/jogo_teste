@@ -15,6 +15,8 @@ export function createCardSummoningController({
     applyUnitConstructionState(unit, underConstruction, units, app);
   };
   const deploymentSeat = () => state.onlineState ? state.selfSeat : state.activePlayer;
+  const deploymentLevel = () => state.onlineState?.state.players
+    ?.find(player => player.seat === deploymentSeat())?.baseLevel ?? 1;
 
   function cardTileAtPointer(event, cardIndex) {
     const cell = interaction.boardCellAtPointer(event);
@@ -29,8 +31,8 @@ export function createCardSummoningController({
     const roadOccupied = roads.some(road => road.x === cell.x && road.z === cell.z);
     const valid = roadCard
       ? !boardCoordinates.baseSeatAtCell(cell.x, cell.z) && !roadBlocker
-        && isRoadPlacementCell(deploymentSeat(), cell.x, cell.z, roads, GAME_CONFIG.boardSize)
-      : isDeploymentCell(deploymentSeat(), cell.x, cell.z, GAME_CONFIG.boardSize)
+        && isRoadPlacementCell(deploymentSeat(), cell.x, cell.z, roads, GAME_CONFIG.boardSize, deploymentLevel())
+      : isDeploymentCell(deploymentSeat(), cell.x, cell.z, GAME_CONFIG.boardSize, deploymentLevel())
         && (!occupants.length || mountable)
         && !(roadOccupied && ['construction', 'machine'].includes(card.type));
     return { ...cell, valid, mountableTower: tower ?? null };
@@ -165,7 +167,7 @@ export function createCardSummoningController({
     const tileInfo = cardTileAtPointer(event, index);
     if (!tileInfo?.valid) {
       callbacks.showGameError?.(isRoadCard(cards[index].id)
-        ? 'Conecte a estrada ao castelo ou a outra Rua do seu reino.'
+        ? 'Coloque a estrada na área do reino e conecte-a ao castelo ou a outra Rua sua.'
         : 'Escolha uma casa livre a até 2 casas do seu reino.');
       return true;
     }
