@@ -1,4 +1,5 @@
-import { CARD_BY_ID, CARD_CATEGORY_LABELS, CARD_DEFINITIONS, DECK_LIMITS, deckCounts, normalizeDeckCardIds, validateDeckCardIds } from '@tronos/shared/cards';
+import { CARD_BY_ID, DECK_LIMITS, deckCounts, normalizeDeckCardIds, validateDeckCardIds } from '@tronos/shared/cards';
+import { cardMarkup, cards as availableCards } from './cardView.js';
 
 const STORAGE_KEY = 'tronos.deck.v1';
 
@@ -25,11 +26,22 @@ export function createDeckBuilderController() {
         slot.innerHTML = card ? `<b>${card.glyph}</b><span>${card.name}</span>` : '<i>+</i>';
       });
     });
-    library.innerHTML = CARD_DEFINITIONS.map(card => `<button class="deck-library-card rarity-${card.rarityClass}${selected.includes(card.id) ? ' selected' : ''}" draggable="true" data-card-id="${card.id}"><b>${card.glyph}</b><span>${card.name}</span><small>${card.rarity} · ${CARD_CATEGORY_LABELS[card.category]}</small></button>`).join('');
+    library.innerHTML = availableCards.map((card, index) => cardMarkup(card, index)
+      .replace(
+        'class="game-card',
+        `type="button" class="game-card deck-library-card${selected.includes(card.id) ? ' selected' : ''}`
+      )
+      .replace(
+        `data-card="${index}"`,
+        `data-card="${index}" data-card-id="${card.id}" draggable="true"`
+      )).join('');
     library.querySelectorAll('[data-card-id]').forEach(button => {
       button.addEventListener('click', () => toggle(button.dataset.cardId));
       button.addEventListener('dragstart', event => event.dataTransfer.setData('text/card-id', button.dataset.cardId));
     });
+    const complete = Object.entries(DECK_LIMITS).every(([rarity, limit]) => counts[rarity] === limit);
+    document.querySelector('#deck-builder-save').disabled = !complete;
+    document.querySelector('#deck-status').textContent = complete ? `${selected.length} CARTAS` : 'INCOMPLETO';
   }
 
   function toggle(cardId) {
@@ -69,6 +81,8 @@ export function createDeckBuilderController() {
     });
   });
   modal.addEventListener('click', event => { if (event.target === modal) close(); });
-  document.querySelector('#deck-status').textContent = selected.length ? `${selected.length} CARTAS` : 'NÃO MONTADO';
+  const initialCounts = deckCounts(selected);
+  const initialComplete = Object.entries(DECK_LIMITS).every(([rarity, limit]) => initialCounts[rarity] === limit);
+  document.querySelector('#deck-status').textContent = initialComplete ? `${selected.length} CARTAS` : 'INCOMPLETO';
   return { open, close, getDeckCardIds: () => validateDeckCardIds(selected) };
 }

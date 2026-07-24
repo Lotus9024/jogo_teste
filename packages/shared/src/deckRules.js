@@ -1,8 +1,13 @@
 import { CARD_BY_ID, CARD_DEFINITIONS } from './cardCatalog.js';
 
-export const DECK_LIMITS = Object.freeze({ common: 9, uncommon: 7, rare: 5 });
+export const DECK_LIMITS = Object.freeze({ common: 6, uncommon: 4, rare: 2 });
 export const DECK_RARITIES = Object.freeze(Object.keys(DECK_LIMITS));
-export const DEFAULT_DECK_CARD_IDS = Object.freeze(CARD_DEFINITIONS.map(card => card.id));
+export const DEFAULT_DECK_CARD_IDS = Object.freeze(DECK_RARITIES.flatMap(rarity =>
+  CARD_DEFINITIONS
+    .filter(card => card.rarityClass === rarity)
+    .slice(0, DECK_LIMITS[rarity])
+    .map(card => card.id)
+));
 
 export function normalizeDeckCardIds(value) {
   if (!Array.isArray(value)) return [];
@@ -21,8 +26,9 @@ export function validateDeckCardIds(value, { allowDefault = false } = {}) {
   if (!ids.length) throw new Error('Monte um Deck antes de criar ou entrar em uma sala.');
   const counts = deckCounts(ids);
   for (const rarity of DECK_RARITIES) {
-    if (counts[rarity] < 1) throw new Error('O Deck precisa ter ao menos uma carta comum, uma incomum e uma rara.');
-    if (counts[rarity] > DECK_LIMITS[rarity]) throw new Error(`O Deck excedeu o limite de cartas ${rarity}.`);
+    if (counts[rarity] !== DECK_LIMITS[rarity]) {
+      throw new Error('O Deck precisa ter exatamente 6 cartas comuns, 4 incomuns e 2 raras.');
+    }
   }
   return ids;
 }

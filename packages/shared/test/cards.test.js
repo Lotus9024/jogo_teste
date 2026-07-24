@@ -188,7 +188,13 @@ test('castelo nível dois acrescenta três quadrados em cada lateral', () => {
   assert.equal(baseCellsForSeat(1, 15, 2).some(cell => cell.x === 5 && cell.z === 13), true);
 });
 
-test('Deck aceita menos que os limites, mas exige as três raridades disponíveis', () => {
-  assert.deepEqual(validateDeckCardIds(['warrior', 'archer', 'mage']), ['warrior', 'archer', 'mage']);
-  assert.throws(() => validateDeckCardIds(['warrior', 'archer']), /carta comum, uma incomum e uma rara/);
+test('Deck exige exatamente seis comuns, quatro incomuns e duas raras', () => {
+  const validDeck = [
+    'warrior', 'guard', 'wooden_barrier', 'operator', 'citizen', 'wooden_house',
+    'henry', 'archer', 'tower', 'cannon',
+    'goblin_tower', 'mage',
+  ];
+  assert.deepEqual(validateDeckCardIds(validDeck), validDeck);
+  assert.throws(() => validateDeckCardIds(validDeck.slice(0, -1)), /exatamente 6 cartas comuns, 4 incomuns e 2 raras/);
+  assert.throws(() => validateDeckCardIds([...validDeck, 'road']), /exatamente 6 cartas comuns, 4 incomuns e 2 raras/);
 });
