@@ -51,7 +51,7 @@ export function refreshBuilderResistance(state) {
     const oldBonus = unit.builderResistanceBonus ?? 0;
     const baseResistance = card.hp;
     unit.builderResistanceBonus = bonus;
-    unit.maxHp = baseResistance + bonus;
+    unit.maxHp = baseResistance + bonus + (unit.royalConstructionBonus ?? 0);
     unit.hp = Math.max(0, Math.min(unit.maxHp, unit.hp + bonus - oldBonus));
   }
 }

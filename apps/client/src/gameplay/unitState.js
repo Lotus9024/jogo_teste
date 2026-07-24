@@ -1,9 +1,28 @@
 import { setGoblinTowerConstructionState, setSupportConstructionState, setTowerConstructionState, setWoodBarrierConstructionState, setWoodenHouseConstructionState } from '../models/unitModels.js';
 import { setCannonConstructionState } from '../assets/models/cannonModel.js';
 
-const POSITIVE_Z_FRONT_CARDS = new Set(['tower', 'wooden_barrier']);
+const POSITIVE_Z_FRONT_CARDS = new Set(['tower', 'royal_tower', 'wooden_barrier']);
+const CHARACTER_CARDS = new Set([
+  'warrior',
+  'royal_warrior',
+  'guard',
+  'henry',
+  'archer',
+  'operator',
+  'citizen',
+  'mage',
+  'goblin',
+  'goblin_bomber',
+  'goblin_clone',
+]);
 
 export function setUnitOwnerFacing(unit, cardId, ownerSeat) {
+  if (CHARACTER_CARDS.has(cardId)) {
+    const modelFrontZ = Math.sign(unit.userData.modelFrontZ ?? 1);
+    const enemyDirectionZ = ownerSeat === 1 ? -1 : 1;
+    unit.rotation.y = modelFrontZ === enemyDirectionZ ? 0 : Math.PI;
+    return;
+  }
   const rotateHalfTurn = ['cannon', 'goblin_house'].includes(cardId)
     ? ownerSeat === 2
     : POSITIVE_Z_FRONT_CARDS.has(cardId) && ownerSeat === 1;
@@ -46,7 +65,7 @@ export function setUnitTeamColor(unit, color) {
 export function applyConstructionState(unit, underConstruction, units, app) {
   unit.userData.underConstruction = underConstruction;
   if (unit.userData.cardId === 'wooden_barrier') setWoodBarrierConstructionState(unit, underConstruction);
-  if (unit.userData.cardId === 'tower') setTowerConstructionState(unit, underConstruction);
+  if (['tower', 'royal_tower'].includes(unit.userData.cardId)) setTowerConstructionState(unit, underConstruction);
   if (unit.userData.cardId === 'cannon') setCannonConstructionState(unit, underConstruction);
   if (unit.userData.cardId === 'wooden_house') setWoodenHouseConstructionState(unit, underConstruction);
   if (unit.userData.cardId === 'goblin_tower') setGoblinTowerConstructionState(unit, underConstruction);

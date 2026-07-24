@@ -14,6 +14,7 @@ export function createLocalCombatController({
   unitsAtCell,
   baseSeatAtCell,
   damageEffects,
+  battleAnimations,
   relations,
   boardPresentation,
   callbacks,
@@ -26,6 +27,7 @@ export function createLocalCombatController({
     units.filter(candidate => candidate.userData.mountedOnTowerId === removedTowerId).forEach(candidate => {
       candidate.userData.mountedOnTowerId = null;
       candidate.userData.attackRange = CARD_BY_ID[candidate.userData.cardId].attackRange;
+      candidate.userData.damage = CARD_BY_ID[candidate.userData.cardId].damage;
       candidate.position.y = 0.06;
       setArcherMountedState(candidate, false);
     });
@@ -102,10 +104,12 @@ export function createLocalCombatController({
       callbacks.showGameError?.('A casa à frente do Canhão está bloqueada.');
       return;
     }
-    operator.position.set(origin.x * tile - half, 0.06, origin.z * tile - half);
-    unit.position.set(destination.worldX, 0.06, destination.worldZ);
-    applyLocalFireEntry(operator);
-    applyLocalFireEntry(unit);
+    battleAnimations.slideUnit(operator, operator.position.clone().set(origin.x * tile - half, 0.06, origin.z * tile - half), {
+      onComplete: () => applyLocalFireEntry(operator),
+    });
+    battleAnimations.slideUnit(unit, unit.position.clone().set(destination.worldX, 0.06, destination.worldZ), {
+      onComplete: () => applyLocalFireEntry(unit),
+    });
   }
 
   function attackTarget(unit, target, destination, origin, originPosition, validDistance) {
@@ -127,11 +131,12 @@ export function createLocalCombatController({
     units.filter(candidate => candidate.userData.mountedOnTowerId === removedTowerId).forEach(candidate => {
       candidate.userData.mountedOnTowerId = null;
       candidate.userData.attackRange = CARD_BY_ID[candidate.userData.cardId].attackRange;
+      candidate.userData.damage = CARD_BY_ID[candidate.userData.cardId].damage;
       candidate.position.y = 0.06;
       setArcherMountedState(candidate, false);
     });
     if (unit.userData.cardId !== 'archer' && !unitsAtCell(destination.x, destination.z, unit).length) {
-      unit.position.set(defeatedPosition.x, 0.06, defeatedPosition.z);
+      battleAnimations.slideUnit(unit, defeatedPosition.clone().setY(0.06));
     }
     return true;
   }

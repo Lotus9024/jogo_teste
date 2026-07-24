@@ -12,7 +12,7 @@ import { createLocalCombatController } from './createLocalCombatController.js';
 
 export function createUnitActionController(options) {
   const {
-    state, tile, half, units, unitAtCell, unitsAtCell, baseSeatAtCell, relations, callbacks,
+    state, tile, half, units, unitAtCell, unitsAtCell, baseSeatAtCell, relations, battleAnimations, callbacks,
   } = options;
   const local = createLocalCombatController(options);
 
@@ -24,7 +24,7 @@ export function createUnitActionController(options) {
   }
 
   function canCommandUnit(unit) {
-    return Boolean(unit && (state.devMode
+    return Boolean(unit && !unit.userData.isMoving && (state.devMode
       ? unit.userData.ownerSeat === state.activePlayer
       : state.onlineState
         && unit.userData.ownerSeat === state.selfSeat
@@ -35,7 +35,9 @@ export function createUnitActionController(options) {
   function mountArcherLocally(unit, tower) {
     relations.placeArcherOnTower(unit, tower);
     unit.userData.mountedOnTowerId = relations.towerId(tower);
-    unit.userData.attackRange = CARD_BY_ID.archer.attackRange + 1;
+    const towerCard = CARD_BY_ID[tower.userData.cardId];
+    unit.userData.attackRange = CARD_BY_ID.archer.attackRange + (towerCard.archerRangeBonus ?? 1);
+    unit.userData.damage = CARD_BY_ID.archer.damage + (towerCard.archerDamageBonus ?? 0);
     callbacks.selectUnit?.(unit, { cinematic: false });
     callbacks.syncAbilityBadges?.();
   }
@@ -121,12 +123,15 @@ export function createUnitActionController(options) {
       unit.position.copy(originPosition);
       callbacks.showGameError?.('Movimento fora de alcance.');
     } else {
-      unit.position.set(destination.worldX, 0.06, destination.worldZ);
+      const destinationPosition = originPosition.clone().set(destination.worldX, 0.06, destination.worldZ);
       unit.userData.mountedOnTowerId = null;
       setArcherMountedState(unit, false);
       unit.userData.attackRange = CARD_BY_ID[unit.userData.cardId].attackRange;
-      local.applyLocalFireEntry(unit);
+      unit.userData.damage = CARD_BY_ID[unit.userData.cardId].damage;
       markHenryAction(unit, 'move');
+      battleAnimations.slideUnit(unit, destinationPosition, {
+        onComplete: () => local.applyLocalFireEntry(unit),
+      });
     }
   }
 

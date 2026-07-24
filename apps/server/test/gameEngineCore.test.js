@@ -74,7 +74,10 @@ test('cartas usam os atributos definidos', () => {
       goblin_altar: { hp: 1, damage: 0, move: 0, movementType: 'none', cost: 5 },
       mage_altar: { hp: 1, damage: 0, move: 0, movementType: 'none', cost: 6 },
       builder_area: { hp: 1, damage: 0, move: 0, movementType: 'none', cost: 7 },
-      cobblestone_road: { hp: null, damage: 0, move: 0, movementType: 'none', cost: 5 }
+      cobblestone_road: { hp: null, damage: 0, move: 0, movementType: 'none', cost: 5 },
+      royal_warrior: { hp: 3, damage: 5, move: 2, movementType: 'straight', cost: 8 },
+      royal_tower: { hp: 7, damage: 5, move: 0, movementType: 'none', cost: 9 },
+      blizzard: { hp: null, damage: 1, move: 0, movementType: 'none', cost: 4 }
     }
   );
   assert.deepEqual(

@@ -1,0 +1,64 @@
+.card-illustration {
+  display: block;
+  width: min(72%, 82px);
+  height: min(72%, 82px);
+  color: color-mix(in srgb, var(--rarity) 82%, #e7dcc4);
+  filter: drop-shadow(0 5px 7px rgba(0, 0, 0, .72));
+  overflow: visible;
+}
+
+.card-illustration--game-icon {
+  flex: 0 0 auto;
+  background-color: currentColor;
+  -webkit-mask-image: var(--card-icon);
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-size: contain;
+  mask-image: var(--card-icon);
+  mask-position: center;
+  mask-repeat: no-repeat;
+  mask-size: contain;
+}
+
+.card-illustration .card-icon-fill {
+  fill: currentColor;
+  fill-opacity: .14;
+}
+
+.card-illustration .card-icon-accent {
+  fill: currentColor;
+  fill-opacity: .34;
+}
+
+.card-icon-fallback {
+  color: color-mix(in srgb, var(--rarity) 80%, #ddd2ba);
+  font: 52px Cinzel, serif;
+  filter: drop-shadow(0 5px 8px #000);
+}
+
+.deck-slot .card-illustration,
+.deck-library-card .card-illustration,
+#mage-altar-choice-cards .card-illustration {
+  width: 34px;
+  height: 34px;
+  color: color-mix(in srgb, var(--rarity) 76%, #ded3bd);
+  filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .72));
+}
+
+.deck-slot .card-illustration {
+  width: 30px;
+  height: 30px;
+}
+
+#mage-altar-choice-cards .card-illustration {
+  width: 42px;
+  height: 42px;
+}
+
+.category-goblin .card-illustration {
+  color: color-mix(in srgb, var(--rarity) 68%, #a8d78d);
+}
+
+.category-mage .card-illustration {
+  color: color-mix(in srgb, var(--rarity) 70%, #c9b4ee);
+}

@@ -4,6 +4,7 @@ import { resolveEndingFires } from './combat.js';
 import { fail } from './gameQueries.js';
 import { healLevelTwoConstructions, refreshKingdomProgress } from './kingdomProgress.js';
 import { builderEnergyBonus, damageAlliedConstructionsBesideGoblins } from './kingdomEffects.js';
+import { applyRoyalTowerBlessing, finishSnowstormTurn } from './battleEffects.js';
 
 export function requireTurn(state, player) {
   if (state.phase !== 'playing') fail('A partida ainda não começou.');
@@ -15,17 +16,21 @@ export function endTurn(state) {
   if ((endingPlayer?.pendingMageAltarChoices ?? 0) > 0) fail('Escolha uma carta do seu baralho pelo Altar Mago antes de passar o turno.');
   if (endingPlayer?.hand.length > GAME_CONFIG.maxHandSize) fail(`Jogue ou descarte até ficar com no máximo ${GAME_CONFIG.maxHandSize} cartas.`);
   resolveEndingFires(state, state.activeSeat);
+  finishSnowstormTurn(state, state.activeSeat);
   state.activeSeat = state.activeSeat === 1 ? 2 : 1;
   if (state.activeSeat === 1) state.round += 1;
   let completedMageAltars = 0;
   let completedGoblinAltars = 0;
+  const completedRoyalTowers = [];
   state.units.forEach(unit => {
     if (unit.underConstruction && unit.ownerSeat === state.activeSeat && unit.buildReadyRound <= state.round) {
       unit.underConstruction = false;
       if (unit.cardId === 'mage_altar') completedMageAltars += 1;
       if (unit.cardId === 'goblin_altar') completedGoblinAltars += 1;
+      if (unit.cardId === 'royal_tower') completedRoyalTowers.push(unit);
     }
   });
+  completedRoyalTowers.forEach(tower => applyRoyalTowerBlessing(state, tower));
   state.roads.forEach(road => {
     if (road.underConstruction && road.ownerSeat === state.activeSeat && road.buildReadyRound <= state.round) road.underConstruction = false;
   });

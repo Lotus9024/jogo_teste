@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { CARD_BY_ID, forwardDeltaForSeat, goblinSpawnHp, gridCellsBetween, isGoblinTroop } from '@tronos/shared/cards';
 import { damageUnit, fireTowerVolley, mountedTower } from '../combat.js';
+import { pushBattleEffect } from '../battleEffects.js';
 import { fail, inBase, integer, turnIndex, unitAt, validCell } from '../gameQueries.js';
 import { requireTurn } from '../turnLifecycle.js';
 
@@ -10,10 +11,20 @@ export function useAbilityAction(state, player, _opponent, action) {
   const card = CARD_BY_ID[unit.cardId];
   if (card.id === 'goblin_tower') fail('Escolha a casa onde o Goblin será invocado.');
   const tower = mountedTower(state, unit);
-  const ability = card.id === 'archer' && tower ? CARD_BY_ID.tower.ability : card.ability;
+  const ability = card.id === 'archer' && tower?.cardId === 'tower' ? CARD_BY_ID.tower.ability : card.ability;
   if (!ability?.enabled || (unit.abilityReadyTurn ?? 0) > turnIndex(state) || player.energy < ability.cost) fail('Habilidade indisponível.');
   if (unit.actionUsed || unit.underConstruction) fail('Esta unidade já agiu neste turno.');
-  if (card.id === 'archer' && tower) fireTowerVolley(state, player, unit, ability);
+  if (card.id === 'archer' && tower?.cardId === 'tower') {
+    fireTowerVolley(state, player, unit, ability);
+    pushBattleEffect(state, {
+      type: 'tower_arrow_volley',
+      unitId: unit.id,
+      ownerSeat: player.seat,
+      x: unit.x,
+      z: unit.z,
+      range: ability.range,
+    });
+  }
   if (card.id === 'goblin_altar') {
     state.units.filter(item => item.ownerSeat === player.seat
       && isGoblinTroop(item.cardId)
@@ -51,6 +62,16 @@ export function useAbilityAction(state, player, _opponent, action) {
     };
     if (!validCell(destination.x, destination.z) || inBase(destination.x, destination.z, state)) fail('A carga explosiva sairia da arena.');
     if (gridCellsBetween(unit, destination).some(cell => unitAt(state, cell.x, cell.z))) fail('O caminho da carga está bloqueado.');
+    pushBattleEffect(state, {
+      type: 'goblin_bomber_charge',
+      unitId: unit.id,
+      ownerSeat: player.seat,
+      fromX: unit.x,
+      fromZ: unit.z,
+      toX: destination.x,
+      toZ: destination.z,
+      radius: ability.radius,
+    });
     const targets = [...state.units].filter(item => item.id !== unit.id
       && Math.max(Math.abs(item.x - destination.x), Math.abs(item.z - destination.z)) <= ability.radius);
     for (const target of targets) {

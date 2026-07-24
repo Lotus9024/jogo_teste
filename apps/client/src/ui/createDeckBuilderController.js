@@ -1,5 +1,6 @@
 import { CARD_BY_ID, CARD_CATEGORY_LABELS, DECK_LIMITS, deckCounts, normalizeDeckCardIds, validateDeckCardIds } from '@tronos/shared/cards';
 import { cardMarkup, cards as availableCards } from './cardView.js';
+import { cardIconMarkup } from './cardIcon.js';
 
 const STORAGE_KEY = 'nexus.deck.v1';
 const LEGACY_STORAGE_KEY = 'tronos.deck.v1';
@@ -37,12 +38,12 @@ export function createDeckBuilderController() {
         const card = CARD_BY_ID[cards[index]];
         slot.className = `deck-slot${card ? ` filled rarity-${rarity}` : ''}`;
         slot.dataset.cardId = card?.id ?? '';
-        slot.innerHTML = card ? `<b>${card.glyph}</b><span>${card.name}</span>` : '<i>+</i>';
+        slot.innerHTML = card ? `${cardIconMarkup(card)}<span>${card.name}</span>` : '<i>+</i>';
       });
     });
     library.innerHTML = orderedCards.map(card => `
       <button type="button" class="deck-library-card rarity-${card.rarityClass}${selected.includes(card.id) ? ' selected' : ''}" draggable="true" data-card-id="${card.id}" aria-pressed="${selected.includes(card.id)}">
-        <b aria-hidden="true">${card.glyph}</b>
+        ${cardIconMarkup(card)}
         <span>${card.name}</span>
         <small>${card.rarity} · ${CARD_CATEGORY_LABELS[card.category]}</small>
       </button>`).join('');

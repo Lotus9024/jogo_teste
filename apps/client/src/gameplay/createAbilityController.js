@@ -4,7 +4,7 @@ import { createMageAbilityController } from './createMageAbilityController.js';
 import { createGoblinTowerAbilityController } from './createGoblinTowerAbilityController.js';
 
 export function createAbilityController(options) {
-  const { state, app, tile, half, units, relations, callbacks } = options;
+  const { state, app, tile, half, units, relations, battleAnimations, callbacks } = options;
   const currentRound = () => state.onlineState?.state.round ?? state.round;
   const currentTurnIndex = () => {
     const seat = state.onlineState?.state.activeSeat ?? state.activePlayer;
@@ -94,7 +94,7 @@ export function createAbilityController(options) {
     const ownTurn = (state.onlineState?.state.activeSeat ?? state.activePlayer) === selected?.userData.ownerSeat;
     const ability = CARD_BY_ID.tower.ability;
     const ready = (selected?.userData.abilityReadyTurn ?? 0) <= currentTurnIndex();
-    if (!tower || !owned || !ownTurn || selected.userData.actionUsed || !ready || Boolean(me && me.energy < ability.cost)) return;
+    if (tower?.userData.cardId !== 'tower' || !owned || !ownTurn || selected.userData.actionUsed || !ready || Boolean(me && me.energy < ability.cost)) return;
     if (state.onlineState) {
       callbacks.sendOnlineAction?.({ type: 'use_ability', unitId: selected.userData.serverUnitId });
       return;
@@ -103,6 +103,7 @@ export function createAbilityController(options) {
       x: Math.round((selected.position.x + half) / tile),
       z: Math.round((selected.position.z + half) / tile),
     };
+    battleAnimations.launchTowerVolley(selected.position, ability.range);
     for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
       const target = units.filter(unit => unit !== selected).map(unit => {
         const x = Math.round((unit.position.x + half) / tile);
@@ -146,15 +147,24 @@ export function createAbilityController(options) {
         && Math.round((unit.position.z + half) / tile) === z);
       if (destination.x < 0 || destination.x >= 15 || destination.z < 0 || destination.z >= 15
         || gridCellsBetween(origin, destination).some(cell => occupied(cell.x, cell.z))) return true;
-      units.filter(unit => unit !== selected).forEach(unit => {
+      const affected = units.filter(unit => unit !== selected).filter(unit => {
         const x = Math.round((unit.position.x + half) / tile);
         const z = Math.round((unit.position.z + half) / tile);
-        if (Math.max(Math.abs(x - destination.x), Math.abs(z - destination.z)) > card.ability.radius) return;
-        const targetCard = CARD_BY_ID[unit.userData.cardId];
-        const construction = ['construction', 'machine'].includes(targetCard?.type);
-        callbacks.damageLocalUnit?.(unit, construction ? card.ability.constructionDamage : card.ability.troopDamage);
+        return Math.max(Math.abs(x - destination.x), Math.abs(z - destination.z)) <= card.ability.radius;
       });
-      callbacks.damageLocalUnit?.(selected, selected.userData.hp);
+      selected.userData.actionUsed = true;
+      battleAnimations.chargeGoblin(
+        selected,
+        battleAnimations.worldPoint(destination.x, destination.z),
+        () => {
+          affected.forEach(unit => {
+            const targetCard = CARD_BY_ID[unit.userData.cardId];
+            const construction = ['construction', 'machine'].includes(targetCard?.type);
+            callbacks.damageLocalUnit?.(unit, construction ? card.ability.constructionDamage : card.ability.troopDamage);
+          });
+          callbacks.damageLocalUnit?.(selected, selected.userData.hp);
+        },
+      );
     } else selected.userData.actionUsed = true;
     return true;
   }

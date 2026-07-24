@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cardCostText, cardMarkup, cards } from './cardView.js';
+import { CARD_ICON_IDS, cardIconMarkup } from './cardIcon.js';
 import { canUsePhysicalDeck } from './createDeckController.js';
 import { createDevCardInstanceId } from './createDevCardGallery.js';
 
@@ -9,6 +10,25 @@ test('a carta exibe sua categoria logo abaixo do nome', () => {
   assert.match(markup, /class="game-card[^"].*category-goblin/);
   assert.match(markup, /class="card-category">GOBLIN<\/small>/);
   assert.match(markup, /Cada Goblin seu[^]*\nQualquer Goblin/);
+});
+
+test('cada carta possui uma ilustração vetorial própria', () => {
+  assert.equal(CARD_ICON_IDS.length, cards.length);
+  assert.equal(new Set(CARD_ICON_IDS).size, cards.length);
+  for (const card of cards) {
+    const icon = cardIconMarkup(card);
+    assert.match(icon, new RegExp(`data-card-icon="${card.id}"`));
+    assert.match(icon, /<(?:svg|span)/);
+  }
+});
+
+test('cartas escolhidas usam os novos desenhos licenciados do Game Icons', () => {
+  const cannonIcon = cardIconMarkup(cards.find(card => card.id === 'cannon'));
+  const goblinIcon = cardIconMarkup(cards.find(card => card.id === 'goblin'));
+  assert.match(cannonIcon, /game-icons\/lorc\/cannon\.svg/);
+  assert.match(goblinIcon, /game-icons\/caro-asercion\/goblin\.svg/);
+  assert.match(cannonIcon, /card-illustration--game-icon/);
+  assert.doesNotMatch(cannonIcon, /\sid=/);
 });
 
 test('todas as cartas usam tipografia mínima padronizada', () => {

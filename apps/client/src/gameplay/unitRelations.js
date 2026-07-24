@@ -9,13 +9,13 @@ export function createUnitRelations(units) {
     if (unit?.userData.cardId !== 'archer' || !unit.userData.mountedOnTowerId) return null;
     return units.find(candidate =>
       towerId(candidate) === unit.userData.mountedOnTowerId
-      && candidate.userData.cardId === 'tower'
+      && ['tower', 'royal_tower'].includes(candidate.userData.cardId)
       && !candidate.userData.underConstruction,
     ) ?? null;
   }
 
   function archerForTower(tower) {
-    if (tower?.userData.cardId !== 'tower') return null;
+    if (!['tower', 'royal_tower'].includes(tower?.userData.cardId)) return null;
     return units.find(candidate =>
       candidate.userData.cardId === 'archer'
       && candidate.userData.mountedOnTowerId === towerId(tower),

@@ -20,6 +20,19 @@ export function isGoblinTroop(cardId) {
   return card?.category === 'goblin' && !card.type;
 }
 
+export function royalRequirementError(cardId, seat, units = [], citizens = 0) {
+  const card = CARD_BY_ID[cardId];
+  if (!card?.requiredCitizens) return null;
+  if (citizens < card.requiredCitizens) {
+    return `${card.name} necessita de ${card.requiredCitizens} cidadãos.`;
+  }
+  if (card.forbidsMageAndGoblin && units.some(unit =>
+    unit.ownerSeat === seat && (isGoblinCard(unit.cardId) || isMageCard(unit.cardId)))) {
+    return `${card.name} não pode ser usado enquanto houver Magos ou Goblins seus na arena.`;
+  }
+  return null;
+}
+
 export function goblinSpawnHp(seat, x, z, units = [], cardId = 'goblin') {
   const towerNearby = units.some(unit => unit.ownerSeat === seat
     && unit.cardId === 'goblin_tower'

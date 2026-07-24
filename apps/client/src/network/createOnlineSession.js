@@ -3,6 +3,7 @@ import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { setArcherMountedState } from '../models/unitModels.js';
 import { isMountedArcher, setUnitOwnerFacing, setUnitTeamColor } from '../gameplay/unitState.js';
 import { cards } from '../ui/cardView.js';
+import { cardIconMarkup } from '../ui/cardIcon.js';
 import { setResource } from '../ui/resourceView.js';
 import { ensureAbilityBadge, updateHealthBadge } from '../ui/unitHealthBadge.js';
 import { GameSocketClient, SERVER_EVENTS } from './gameSocket.js';
@@ -195,7 +196,7 @@ export function createOnlineSession({
     }
     choices.innerHTML = (self.deckChoices ?? []).map(cardId => {
       const card = CARD_BY_ID[cardId];
-      return card ? `<button data-mage-altar-card="${card.id}" class="rarity-${card.rarityClass}"><b>${card.glyph}</b><span>${card.name}</span><small>${card.rarity}</small></button>` : '';
+      return card ? `<button data-mage-altar-card="${card.id}" class="rarity-${card.rarityClass}">${cardIconMarkup(card)}<span>${card.name}</span><small>${card.rarity}</small></button>` : '';
     }).join('');
   }
 

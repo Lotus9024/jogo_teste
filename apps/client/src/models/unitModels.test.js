@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { isMountedArcher, setUnitOwnerFacing } from '../gameplay/unitState.js';
 import { makeAcidCircle } from '../assets/models/acidEffectModel.js';
+import { makeOperator } from '../assets/models/operatorModel.js';
+import { makeRoad } from '../assets/models/roadModel.js';
 import { cards } from '../ui/cardView.js';
 import { UNIT_MODEL_SCALE } from './createCardUnit.js';
 import {
@@ -11,6 +13,7 @@ import {
   makeGoblinBomber,
   makeGoblinClone,
   makeGoblinHouse,
+  makeGoblin,
   makeGuard,
   makeHenry,
   makeMage,
@@ -45,6 +48,26 @@ test('construcoes apontam para o reino rival conforme o dono', () => {
   assert.equal(house.rotation.y, 0);
 });
 
+test('personagens sempre olham para o reino rival', () => {
+  for (const [cardId, factory] of [
+    ['warrior', makeWarrior],
+    ['guard', makeGuard],
+    ['goblin', makeGoblin],
+    ['operator', makeOperator],
+    ['archer', makeArcher],
+    ['mage', makeMage],
+  ]) {
+    const unit = factory();
+    const modelFrontZ = unit.userData.modelFrontZ ?? 1;
+    setUnitOwnerFacing(unit, cardId, 1);
+    const blueFacing = new THREE.Vector3(0, 0, modelFrontZ).applyQuaternion(unit.quaternion);
+    assert.ok(blueFacing.z < -0.99, `${cardId} azul ficou virado para trás`);
+    setUnitOwnerFacing(unit, cardId, 2);
+    const redFacing = new THREE.Vector3(0, 0, modelFrontZ).applyQuaternion(unit.quaternion);
+    assert.ok(redFacing.z > 0.99, `${cardId} vermelho ficou virado para trás`);
+  }
+});
+
 test('Casa Goblin encosta no chão sem plataforma e Clone possui modelo próprio', () => {
   const house = makeGoblinHouse();
   assert.ok(house.getObjectByName('rig'));
@@ -56,7 +79,7 @@ test('Casa Goblin encosta no chão sem plataforma e Clone possui modelo próprio
 });
 
 test('tropas mantêm rig, plataforma e silhueta dentro da casa', () => {
-  for (const factory of [makeWarrior, makeGuard, makeHenry, makeArcher, makeMage, makeTower, makeWoodBarrier, makeWoodenHouse]) {
+  for (const factory of [makeWarrior, makeGuard, makeGoblin, makeOperator, makeHenry, makeArcher, makeMage, makeTower, makeWoodBarrier, makeWoodenHouse]) {
     const unit = factory();
     const size = new THREE.Box3().setFromObject(unit).getSize(new THREE.Vector3());
     assert.ok(unit.getObjectByName('rig'));
@@ -100,7 +123,9 @@ test('guarda possui identidade própria e não usa elementos de mago', () => {
   const spear = guard.getObjectByName('guardSpear');
   assert.ok(spear);
   const spearShaft = guard.getObjectByName('guardSpearShaft');
-  assert.equal(spearShaft.geometry.parameters.height, 1.82);
+  assert.equal(spearShaft.geometry.parameters.height, 2.32);
+  assert.ok(guard.getObjectByName('guardShieldHand'));
+  assert.ok(guard.getObjectByName('guardSpearHand'));
 });
 
 test('arqueiro segura arco e flecha com as duas maos e perde a base ao montar', () => {
@@ -168,7 +193,48 @@ test('barreira alterna entre paliçada parcial e paliçada pronta', () => {
 test('guerreiro usa espada sem escudo', () => {
   const warrior = makeWarrior();
   assert.ok(warrior.getObjectByName('warriorSword'));
+  assert.ok(warrior.getObjectByName('warriorSwordHand'));
   assert.equal(warrior.getObjectByName('warriorShield'), undefined);
+});
+
+test('Goblin e Operador usam os modelos finais de peça', () => {
+  const goblin = makeGoblin();
+  const operator = makeOperator();
+  assert.ok(goblin.getObjectByName('goblinNose'));
+  assert.ok(goblin.getObjectByName('goblinLootSack'));
+  assert.ok(goblin.getObjectByName('goblinSackStrap'));
+  assert.ok(goblin.getObjectByName('goblinDaggerHand'));
+  assert.equal(operator.getObjectByName('operatorWrench'), undefined);
+  assert.ok(operator.getObjectByName('operatorCapBrim'));
+  for (const unit of [goblin, operator]) {
+    assert.ok(unit.getObjectByName('unitPedestal'));
+    assert.ok(unit.getObjectByName('teamPlatform'));
+    assert.ok(unit.getObjectByName('selectionRing'));
+  }
+});
+
+test('ruas usam uma superfície única e alcançam a borda das casas conectadas', () => {
+  const straight = makeRoad(
+    { north: true, south: true, east: false, west: false },
+    TILE_SIZE,
+    { cardId: 'road' },
+  );
+  const crossing = makeRoad(
+    { north: true, south: true, east: true, west: true },
+    TILE_SIZE,
+    { cardId: 'cobblestone_road' },
+  );
+  assert.equal(straight.getObjectByName('roadBuiltParts').children.length, 1);
+  assert.equal(crossing.getObjectByName('roadBuiltParts').children.length, 1);
+  assert.ok(straight.getObjectByName('dirtRoadSurface'));
+  assert.ok(crossing.getObjectByName('cobblestoneRoadSurface'));
+  assert.equal(crossing.getObjectByName('cobblestoneRoadStone1'), undefined);
+
+  const straightSize = new THREE.Box3().setFromObject(straight).getSize(new THREE.Vector3());
+  const crossingSize = new THREE.Box3().setFromObject(crossing).getSize(new THREE.Vector3());
+  assert.ok(straightSize.z > TILE_SIZE);
+  assert.ok(crossingSize.x > TILE_SIZE);
+  assert.ok(crossingSize.z > TILE_SIZE);
 });
 
 test('Cidadão e Goblin Bombardeiro possuem modelos próprios', () => {

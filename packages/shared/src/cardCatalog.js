@@ -138,6 +138,24 @@ export const CARD_DEFINITIONS = Object.freeze([
     hp: null, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 5, buildRounds: 1, type: 'terrain', road: true, movementBonus: 2, attackBonus: 0, movementCategory: 'basic', connectedHouseCitizenBonus: 2, indestructible: true, category: 'basic', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'TERRENO · ESTRADA', glyph: '▰',
     ability: Object.freeze({ name: 'Caminho pavimentado', cost: '—', description: 'Terreno permanente. Aumenta em 2 o movimento de cartas Básicas e conecta Casas ao castelo.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
+  }),
+  Object.freeze({
+    id: 'royal_warrior', name: 'Guerreiro Real', description: 'Todos os guerreiros do seu reino ganham +1 de vida.\nNecessita de 10 cidadãos e não pode ser conjurado enquanto houver Magos ou Goblins seus na arena.',
+    hp: 3, damage: 5, move: 2, movementType: 'straight', attackType: 'straight', minAttackRange: 1, attackRange: 2, cost: 8, requiredCitizens: 10, forbidsMageAndGoblin: true, royalWarriorBlessing: 1, category: 'basic', rarity: 'RARA', rarityClass: 'rare', info: 'HUMANO · GUERREIRO REAL', glyph: '♛',
+    ability: Object.freeze({ name: 'Sangue da coroa', cost: '—', description: 'Ao entrar na arena, todos os Guerreiros aliados, inclusive ele, recebem +1 de vida máxima e recuperam 1 de vida.', enabled: false }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
+  }),
+  Object.freeze({
+    id: 'royal_tower', name: 'Torre Real', description: 'Quando a construção termina, todas as construções do seu reino ganham +3 de vida.\nNecessita de 12 cidadãos e não pode ser construída enquanto houver Magos ou Goblins seus na arena.\nUm Arqueiro montado recebe +1 de alcance, +1 de dano e atira por cima de qualquer carta.',
+    hp: 7, damage: 5, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 9, buildRounds: 3, type: 'construction', requiredCitizens: 12, forbidsMageAndGoblin: true, royalConstructionBlessing: 3, archerRangeBonus: 1, archerDamageBonus: 1, category: 'basic', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · TORRE REAL', glyph: '♜',
+    ability: Object.freeze({ name: 'Fortificação real', cost: '—', description: 'Ao ser concluída, concede +3 de vida máxima e recupera 3 de vida de todas as construções aliadas.', enabled: false }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
+  }),
+  Object.freeze({
+    id: 'blizzard', name: 'Nevasca', description: 'Pode ser lançada em qualquer casa livre da arena.\nCausa 1 de dano e as tropas inimigas ao redor perdem 1 de movimento durante os próximos 2 turnos delas.',
+    hp: null, damage: 1, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 4, type: 'spell', radius: 1, movementPenalty: 1, durationOpponentTurns: 2, category: 'mage', family: 'mage', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'FEITIÇO · NEVASCA', glyph: '❄',
+    ability: Object.freeze({ name: 'Frio paralisante', cost: '—', description: 'Causa 1 de dano e reduz em 1 o movimento das tropas inimigas ao redor por 2 turnos delas.', enabled: false }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'O efeito acontece ao lançar a carta.', enabled: false })
   })
 ]);
 

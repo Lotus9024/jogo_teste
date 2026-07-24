@@ -1,4 +1,4 @@
-import { forwardDeltaForSeat, gridCellsBetween, roadAttackBonus } from '@tronos/shared/cards';
+import { CARD_BY_ID, forwardDeltaForSeat, gridCellsBetween, roadAttackBonus } from '@tronos/shared/cards';
 import { unitAt, unitsAt } from './gameQueries.js';
 
 export function cannonOperator(state, cannon) {
@@ -11,13 +11,20 @@ export function cannonOperator(state, cannon) {
 
 export function mountedTower(state, unit) {
   if (!unit.mountedOnTowerId) return null;
-  return state.units.find(item => item.id === unit.mountedOnTowerId && item.cardId === 'tower' && item.ownerSeat === unit.ownerSeat && !item.underConstruction) ?? null;
+  return state.units.find(item => item.id === unit.mountedOnTowerId
+    && ['tower', 'royal_tower'].includes(item.cardId)
+    && item.ownerSeat === unit.ownerSeat
+    && !item.underConstruction) ?? null;
 }
 
 export function attackCard(state, unit, card) {
-  const towerBonus = card.id === 'archer' && mountedTower(state, unit) ? 1 : 0;
+  const tower = card.id === 'archer' ? mountedTower(state, unit) : null;
+  const towerRangeBonus = tower ? (CARD_BY_ID[tower.cardId]?.archerRangeBonus ?? 1) : 0;
+  const towerDamageBonus = tower ? (CARD_BY_ID[tower.cardId]?.archerDamageBonus ?? 0) : 0;
   const roadBonus = roadAttackBonus(unit.x, unit.z, state.roads, card.id);
-  return towerBonus || roadBonus ? { ...card, attackRange: card.attackRange + towerBonus + roadBonus } : card;
+  return towerRangeBonus || towerDamageBonus || roadBonus
+    ? { ...card, attackRange: card.attackRange + towerRangeBonus + roadBonus, damage: card.damage + towerDamageBonus }
+    : card;
 }
 
 export function unitBlocksAttackLine(state, unit, target, card) {
@@ -33,7 +40,7 @@ export function damageUnit(state, target, damage) {
   target.hp -= damage - absorbed;
   if (target.hp > 0) return false;
   state.units.splice(state.units.indexOf(target), 1);
-  if (target.cardId === 'tower') {
+  if (['tower', 'royal_tower'].includes(target.cardId)) {
     for (let index = state.units.length - 1; index >= 0; index -= 1) {
       if (state.units[index].mountedOnTowerId === target.id) state.units.splice(index, 1);
     }
@@ -68,7 +75,8 @@ export function resolveEndingFires(state, endingSeat) {
 export function mountableTowerAt(state, player, card, x, z, movingUnitId = null) {
   if (card.id !== 'archer') return null;
   const occupants = unitsAt(state, x, z, movingUnitId);
-  const tower = occupants.find(unit => unit.cardId === 'tower' && unit.ownerSeat === player.seat && !unit.underConstruction);
+  const tower = occupants.find(unit => ['tower', 'royal_tower'].includes(unit.cardId)
+    && unit.ownerSeat === player.seat && !unit.underConstruction);
   const mountedArcher = occupants.some(unit => unit.cardId === 'archer' && unit.mountedOnTowerId === tower?.id);
   return tower && !mountedArcher && occupants.every(unit => unit.id === tower.id) ? tower : null;
 }

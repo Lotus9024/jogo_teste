@@ -13,4 +13,5 @@ export { makeCitizen } from '../assets/models/citizenModel.js';
 export { makeGoblinTower, setGoblinTowerConstructionState } from '../assets/models/goblinTowerModel.js';
 export { makeHenry } from '../assets/models/henryModel.js';
 export { makeBuilderArea, makeGoblinAltar, makeMageAltar, setSupportConstructionState } from '../assets/models/supportBuildingModels.js';
+export { makeRoyalTower, makeRoyalWarrior } from '../assets/models/royalModels.js';
 export { unitBase } from '../assets/models/unitModelKit.js';

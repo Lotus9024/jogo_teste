@@ -8,6 +8,7 @@ import { createBoardCoordinates } from '../gameplay/boardCoordinates.js';
 import { createBoardPresentation } from '../gameplay/createBoardPresentation.js';
 import { createDeploymentOverlay } from '../gameplay/createDeploymentOverlay.js';
 import { createMovementOverlay } from '../gameplay/createMovementOverlay.js';
+import { createBattleAnimationController } from '../gameplay/createBattleAnimationController.js';
 import { createUnitRelations } from '../gameplay/unitRelations.js';
 import { mountGameShell } from '../ui/gameShell.js';
 import { createWorld } from '../world/createWorld.js';
@@ -46,6 +47,13 @@ export function createGameRuntime() {
   const mageEffects = createMageEffects(scene, tile);
   const units = [];
   const hoverables = [];
+  const battleAnimations = createBattleAnimationController({
+    scene,
+    tile,
+    half,
+    units,
+    hoverables,
+  });
   const boardCoordinates = createBoardCoordinates({
     getUnits: () => units,
     getBaseLevel: seat => state.onlineState?.state.players.find(player => player.seat === seat)?.baseLevel ?? 1,
@@ -97,6 +105,7 @@ export function createGameRuntime() {
     cameraTransition,
     damageEffects,
     mageEffects,
+    battleAnimations,
     units,
     hoverables,
     boardCoordinates,

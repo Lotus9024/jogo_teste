@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
-import { isDeploymentCell, isRoadCard, isRoadPlacementCell } from '@tronos/shared/cards';
+import { citizensForSeat, isDeploymentCell, isRoadCard, isRoadPlacementCell, royalRequirementError } from '@tronos/shared/cards';
 import { createCardUnit } from '../models/createCardUnit.js';
 import { applyConstructionState as applyUnitConstructionState, setUnitOwnerFacing, setUnitTeamColor } from '../gameplay/unitState.js';
 import { cards } from './cardView.js';
@@ -23,13 +23,15 @@ export function createCardSummoningController({
     if (!cell || !Number.isInteger(cardIndex)) return null;
     const card = cards[cardIndex];
     const occupants = boardCoordinates.unitsAtCell(cell.x, cell.z);
-    const tower = occupants.find(unit => unit.userData.cardId === 'tower'
+    const tower = occupants.find(unit => ['tower', 'royal_tower'].includes(unit.userData.cardId)
       && unit.userData.ownerSeat === deploymentSeat() && !unit.userData.underConstruction);
     const mountable = card.id === 'archer' && tower && occupants.length === 1;
     const roadCard = isRoadCard(card.id);
     const roadBlocker = occupants.some(unit => ['construction', 'machine'].includes(unit.userData.cardType));
     const roadOccupied = roads.some(road => road.x === cell.x && road.z === cell.z);
-    const valid = roadCard
+    const valid = card.type === 'spell'
+      ? !boardCoordinates.baseSeatAtCell(cell.x, cell.z)
+      : roadCard
       ? !boardCoordinates.baseSeatAtCell(cell.x, cell.z) && !roadBlocker
         && isRoadPlacementCell(deploymentSeat(), cell.x, cell.z, roads, GAME_CONFIG.boardSize, deploymentLevel())
       : isDeploymentCell(deploymentSeat(), cell.x, cell.z, GAME_CONFIG.boardSize, deploymentLevel())
@@ -42,6 +44,16 @@ export function createCardSummoningController({
 
   function summonCard(cardIndex, x, z, mountableTower = null, level = state.devCardLevel) {
     const card = cards[cardIndex];
+    if (card.id === 'blizzard') {
+      callbacks.castLocalBlizzard?.({
+        ownerSeat: state.activePlayer,
+        x: Math.round((x + half) / tile),
+        z: Math.round((z + half) / tile),
+        card,
+      });
+      interaction.clearMovementGrid();
+      return;
+    }
     if (isRoadCard(card.id)) {
       boardPresentation.reconcileRoads([...roads, {
         id: `local-road-${roads.length + 1}`,
@@ -88,6 +100,9 @@ export function createCardSummoningController({
     }
     if (card.id === 'archer' && mountableTower) actions.mountArcherLocally(unit, mountableTower);
     else interaction.selectUnit(unit, { cinematic: false });
+    if (card.id === 'royal_warrior') callbacks.applyLocalRoyalWarriorBlessing?.(unit);
+    if (card.id === 'royal_tower' && state.devInstantBuild) callbacks.applyLocalRoyalTowerBlessing?.(unit);
+    if (card.id === 'goblin_clone') callbacks.spawnCloneEffect?.(unit);
     callbacks.syncDevKingdomHud?.();
     abilities.syncAbilityBadges();
   }
@@ -164,9 +179,27 @@ export function createCardSummoningController({
       return true;
     }
     const index = Number(cardNode.dataset.card);
+    const card = cards[index];
+    const localUnits = units.map(unit => ({
+      ownerSeat: unit.userData.ownerSeat,
+      cardId: unit.userData.cardId,
+      x: Math.round((unit.position.x + half) / tile),
+      z: Math.round((unit.position.z + half) / tile),
+      underConstruction: Boolean(unit.userData.underConstruction),
+    }));
+    const citizens = state.onlineState
+      ? state.onlineState.state.players.find(player => player.seat === state.selfSeat)?.citizens ?? 0
+      : citizensForSeat(state.activePlayer, localUnits, roads, GAME_CONFIG.boardSize, deploymentLevel());
+    const requirementError = royalRequirementError(card.id, deploymentSeat(), localUnits, citizens);
+    if (requirementError) {
+      callbacks.showGameError?.(requirementError);
+      return true;
+    }
     const tileInfo = cardTileAtPointer(event, index);
     if (!tileInfo?.valid) {
-      callbacks.showGameError?.(isRoadCard(cards[index].id)
+      callbacks.showGameError?.(card.type === 'spell'
+        ? 'Escolha uma casa da arena para lançar o feitiço.'
+        : isRoadCard(card.id)
         ? 'Coloque a estrada na área do reino e conecte-a ao castelo ou a outra Rua sua.'
         : 'Escolha uma casa livre a até 2 casas do seu reino.');
       return true;

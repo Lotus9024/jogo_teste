@@ -10,6 +10,7 @@ export function createRenderLoop({
   cameraTransition,
   damageEffects,
   mageEffects,
+  battleAnimations,
   units,
   fireMeshes,
   wisps,
@@ -56,6 +57,7 @@ export function createRenderLoop({
     cameraTransition.update();
     damageEffects.update(delta);
     mageEffects.update(delta);
+    battleAnimations.update(delta, time);
     animateAbilityBadges(units, time);
     if (time - lastStatusUpdate > (quality === 'low' ? 0.1 : 0.033)) {
       positionEnemyStatus();

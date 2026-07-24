@@ -23,7 +23,8 @@ test('canhão possui silhueta de cerco e estados de construção', () => {
 test('operador possui ferramenta e identidade próprias', () => {
   const operator = makeOperator();
   assert.equal(operator.userData.role, 'OPERADOR');
-  assert.ok(operator.getObjectByName('operatorWrench'));
+  assert.equal(operator.getObjectByName('operatorWrench'), undefined);
+  assert.ok(operator.getObjectByName('operatorCapBrim'));
 });
 
 test('Casa de madeira alterna entre obra e construção concluída', () => {
@@ -51,7 +52,8 @@ test('Casa de madeira alterna entre obra e construção concluída', () => {
 
 test('Rua desenha apenas o centro e as direções conectadas', () => {
   const road = makeRoad({ north: true, south: false, east: true, west: false });
-  assert.equal(road.getObjectByName('roadBuiltParts').children.length, 4);
+  assert.equal(road.getObjectByName('roadBuiltParts').children.length, 1);
+  assert.ok(road.getObjectByName('dirtRoadSurface'));
   assert.equal(road.getObjectByName('selectionRing'), undefined);
   setRoadConstructionState(road, true);
   assert.equal(road.getObjectByName('roadBuiltParts').visible, false);
@@ -68,7 +70,8 @@ test('Estrada de Pedregulhos possui modelo próprio sem a runa da Rua', () => {
   assert.equal(road.name, 'Estrada de Pedregulhos');
   assert.equal(road.userData.cardId, 'cobblestone_road');
   assert.equal(road.getObjectByName('roadRune'), undefined);
-  assert.ok(road.getObjectByName('cobblestoneRoadStone1'));
+  assert.equal(road.getObjectByName('cobblestoneRoadStone1'), undefined);
+  assert.ok(road.getObjectByName('cobblestoneRoadSurface'));
 });
 
 test('Rua estende o caminho até uma Casa de madeira adjacente', () => {
@@ -82,5 +85,6 @@ test('Rua estende o caminho até uma Casa de madeira adjacente', () => {
     baseCellsForSeat: () => [], getUnits: () => [house],
   });
   presentation.reconcileRoads([{ id: 'road-house', ownerSeat: 1, x: 0, z: 0, underConstruction: false }]);
-  assert.equal(presentation.roadMeshes[0].getObjectByName('roadBuiltParts').children.length, 3);
+  assert.equal(presentation.roadMeshes[0].getObjectByName('roadBuiltParts').children.length, 1);
+  assert.equal(presentation.roadMeshes[0].userData.connections.east, true);
 });

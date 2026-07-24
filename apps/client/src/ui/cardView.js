@@ -1,4 +1,5 @@
 import { CARD_CATEGORY_LABELS, CARD_DEFINITIONS } from '@tronos/shared/cards';
+import { cardIconMarkup } from './cardIcon.js';
 
 export const cards = CARD_DEFINITIONS.map(card => {
   const featuredAbility = card.instant.enabled
@@ -62,7 +63,7 @@ export function cardMarkup(card, index, { level = null } = {}) {
   const categoryLabel = card.categoryLabel ?? CARD_CATEGORY_LABELS[card.category];
   return `<button class="game-card rarity-${card.rarityClass} category-${card.category}${copyClass}${readableClass}" style="--desc-size:${descSize}px;--ability-size:${abilitySize}px" data-card="${index}"${levelAttribute} aria-label="Carta ${card.name}, categoria ${categoryLabel}, ${card.rarity}${level ? `, nível ${level}` : ''}">
     <span class="card-top"><span class="card-heading"><strong class="card-name">${card.name}</strong><small class="card-category">${categoryLabel}</small></span><span class="card-top-cost">${cardCostMarkup(card)}</span></span>
-    <span class="card-art"><span>${card.glyph}</span></span>
+    <span class="card-art">${cardIconMarkup(card)}</span>
     <span class="card-description">${card.description}</span>
     <span class="card-main-row"><span class="card-combat-stats">${combatStats(card)}</span></span>
     <span class="card-ability" aria-label="Habilidade ${card.ability}"><span><strong>${card.ability}</strong></span><b class="ability-cost">${card.abilityCost}</b><p>${card.abilityText}</p></span>
@@ -73,7 +74,7 @@ export function showDeckPreview(element, card) {
   element.className = `deck-preview rarity-${card.rarityClass}`;
   element.innerHTML = `
     <div class="preview-top"><b class="preview-cost">${card.cost}</b><span class="preview-heading"><strong>${card.name}</strong><small>${card.categoryLabel ?? CARD_CATEGORY_LABELS[card.category]}</small></span><i class="preview-gem"></i></div>
-    <div class="preview-art"><span>${card.glyph}</span></div><p class="preview-description">${card.description}</p>
+    <div class="preview-art">${cardIconMarkup(card)}</div><p class="preview-description">${card.description}</p>
     <div class="preview-stats">${combatStats(card)}</div>
     <div class="preview-ability" aria-label="Habilidade ${card.ability}"><strong>${card.ability}</strong><b class="preview-ability-cost">${card.abilityCost}</b><p>${card.abilityText}</p></div>`;
   element.classList.add('visible');

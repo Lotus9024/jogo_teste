@@ -61,7 +61,12 @@ export function createMovementOverlay({
 
     const originX = Math.round((unit.position.x + half) / tile);
     const originZ = Math.round((unit.position.z + half) / tile);
-    const range = unit.userData.move + roadMovementBonus(originX, originZ, getRoads(), unit.userData.cardId);
+    const range = Math.max(
+      0,
+      unit.userData.move
+        + roadMovementBonus(originX, originZ, getRoads(), unit.userData.cardId)
+        - (unit.userData.movementPenalty ?? 0),
+    );
     const movementAvailable = unit.userData.cardId !== 'henry' || !unit.userData.movedThisTurn || (unit.userData.bonusMoves ?? 0) > 0;
     const attackAvailable = unit.userData.cardId !== 'henry' || !unit.userData.attackedThisTurn;
     const attackStats = {
@@ -84,7 +89,7 @@ export function createMovementOverlay({
         const distance = movementDistance(unit.userData.movementType, { x: 0, z: 0 }, { x: dx, z: dz });
         const occupant = unitAtCell(x, z, unit);
         const mountableTower = unit.userData.cardId === 'archer'
-          && occupant?.userData.cardId === 'tower'
+          && ['tower', 'royal_tower'].includes(occupant?.userData.cardId)
           && occupant.userData.ownerSeat === unit.userData.ownerSeat
           && !occupant.userData.underConstruction;
         if (!distance || distance > range || x < 0 || x >= 15 || z < 0 || z >= 15 || baseSeatAtCell(x, z) || (occupant && !mountableTower) || lineBlocked({ x: originX, z: originZ }, { x, z }, unit)) continue;
