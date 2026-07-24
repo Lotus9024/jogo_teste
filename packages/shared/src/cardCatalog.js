@@ -152,7 +152,7 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'blizzard', name: 'Nevasca', description: 'Pode ser lançada em qualquer casa livre da arena.\nCausa 1 de dano e as tropas inimigas ao redor perdem 1 de movimento durante os próximos 2 turnos delas.',
+    id: 'blizzard', name: 'Nevasca', description: 'Pode ser lançada em qualquer casa da arena.\nCausa 1 de dano e as tropas inimigas ao redor perdem 1 de movimento durante os próximos 2 turnos delas.',
     hp: null, damage: 1, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 4, type: 'spell', radius: 1, movementPenalty: 1, durationOpponentTurns: 2, category: 'mage', family: 'mage', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'FEITIÇO · NEVASCA', glyph: '❄',
     ability: Object.freeze({ name: 'Frio paralisante', cost: '—', description: 'Causa 1 de dano e reduz em 1 o movimento das tropas inimigas ao redor por 2 turnos delas.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'O efeito acontece ao lançar a carta.', enabled: false })

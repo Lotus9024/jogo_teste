@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CARD_BY_ID, CARD_CATEGORY_LABELS, CARD_DEFINITIONS, baseCellsForSeat, citizensForSeat, completedRoadCount, connectedRoadKeys, deploymentDistance, effectiveCardCost, forwardDeltaForSeat, goblinSpawnHp, gridCellsBetween, isBasicCard, isCannonTargetValid, isDeploymentCell, isGoblinCard, isMageCard, isRoadCard, isRoadPlacementCell, roadAttackBonus, roadMovementBonus, validateDeckCardIds } from '../src/cards.js';
+import { CARD_BY_ID, CARD_CATEGORY_LABELS, CARD_DEFINITIONS, baseCellsForSeat, citizensForSeat, completedRoadCount, connectedRoadKeys, deploymentDistance, effectiveCardCost, forwardDeltaForSeat, goblinSpawnHp, gridCellsBetween, isBasicCard, isCannonTargetValid, isDeploymentCell, isGoblinCard, isMageCard, isRoadCard, isRoadPlacementCell, roadAttackBonus, roadMovementBonus, royalRequirementError, validateDeckCardIds } from '../src/cards.js';
 
 test('calcula as casas intermediarias de uma linha no tabuleiro', () => {
   assert.deepEqual(gridCellsBetween({ x: 2, z: 2 }, { x: 5, z: 2 }), [{ x: 3, z: 2 }, { x: 4, z: 2 }]);
@@ -197,4 +197,64 @@ test('Deck exige exatamente seis comuns, quatro incomuns e duas raras', () => {
   assert.deepEqual(validateDeckCardIds(validDeck), validDeck);
   assert.throws(() => validateDeckCardIds(validDeck.slice(0, -1)), /exatamente 6 cartas comuns, 4 incomuns e 2 raras/);
   assert.throws(() => validateDeckCardIds([...validDeck, 'road']), /exatamente 6 cartas comuns, 4 incomuns e 2 raras/);
+});
+
+test('cartas reais e Nevasca expõem os atributos e regras definidos', () => {
+  assert.deepEqual(
+    {
+      hp: CARD_BY_ID.royal_warrior.hp,
+      damage: CARD_BY_ID.royal_warrior.damage,
+      move: CARD_BY_ID.royal_warrior.move,
+      cost: CARD_BY_ID.royal_warrior.cost,
+      requiredCitizens: CARD_BY_ID.royal_warrior.requiredCitizens,
+    },
+    { hp: 3, damage: 5, move: 2, cost: 8, requiredCitizens: 10 },
+  );
+  assert.deepEqual(
+    {
+      resistance: CARD_BY_ID.royal_tower.hp,
+      damage: CARD_BY_ID.royal_tower.damage,
+      cost: CARD_BY_ID.royal_tower.cost,
+      buildRounds: CARD_BY_ID.royal_tower.buildRounds,
+      requiredCitizens: CARD_BY_ID.royal_tower.requiredCitizens,
+      archerRangeBonus: CARD_BY_ID.royal_tower.archerRangeBonus,
+      archerDamageBonus: CARD_BY_ID.royal_tower.archerDamageBonus,
+    },
+    {
+      resistance: 7,
+      damage: 5,
+      cost: 9,
+      buildRounds: 3,
+      requiredCitizens: 12,
+      archerRangeBonus: 1,
+      archerDamageBonus: 1,
+    },
+  );
+  assert.deepEqual(
+    {
+      damage: CARD_BY_ID.blizzard.damage,
+      cost: CARD_BY_ID.blizzard.cost,
+      radius: CARD_BY_ID.blizzard.radius,
+      movementPenalty: CARD_BY_ID.blizzard.movementPenalty,
+      duration: CARD_BY_ID.blizzard.durationOpponentTurns,
+    },
+    { damage: 1, cost: 4, radius: 1, movementPenalty: 1, duration: 2 },
+  );
+  assert.match(CARD_BY_ID.blizzard.description, /qualquer casa da arena/i);
+});
+
+test('cartas reais exigem cidadãos e recusam Magos ou Goblins aliados', () => {
+  assert.match(royalRequirementError('royal_warrior', 1, [], 9), /10 cidadãos/i);
+  assert.match(
+    royalRequirementError('royal_warrior', 1, [{ ownerSeat: 1, cardId: 'goblin' }], 10),
+    /Magos ou Goblins/i,
+  );
+  assert.match(
+    royalRequirementError('royal_tower', 1, [{ ownerSeat: 1, cardId: 'mage' }], 12),
+    /Magos ou Goblins/i,
+  );
+  assert.equal(
+    royalRequirementError('royal_tower', 1, [{ ownerSeat: 2, cardId: 'goblin' }], 12),
+    null,
+  );
 });

@@ -54,6 +54,15 @@ test('máquinas exibem vida como Resistência nas cartas', () => {
   assert.match(markup, /aria-label="Resistência"/);
 });
 
+test('Torre Real mostra dano e Nevasca não exibe atributos inexistentes', () => {
+  const towerMarkup = cardMarkup(cards.find(card => card.id === 'royal_tower'), 0);
+  assert.match(towerMarkup, /aria-label="Dano"[^]*<b>5<\/b>/);
+  const blizzardMarkup = cardMarkup(cards.find(card => card.id === 'blizzard'), 0);
+  assert.doesNotMatch(blizzardMarkup, />null</);
+  assert.match(blizzardMarkup, /aria-label="Vida"[^]*<b>—<\/b>/);
+  assert.match(blizzardMarkup, /aria-label="Alcance"[^]*<b>∞<\/b>/);
+});
+
 test('carta com buff exibe o custo efetivo e o desconto aplicado', () => {
   const goblin = cards.find(card => card.id === 'goblin');
   assert.equal(cardCostText({ ...goblin, baseCost: 2, effectiveCost: 1 }), '1 (-1)');

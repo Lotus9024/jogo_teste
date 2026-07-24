@@ -29,8 +29,11 @@ function combatStats(card) {
     const finalValue = card.buildRounds ? `${card.buildRounds}R` : '∞';
     return `<span aria-label="Vida"><small aria-hidden="true">♥</small><b>—</b></span><span aria-label="Dano"><small aria-hidden="true">⚔</small><b>—</b></span><span aria-label="${finalLabel}"><small aria-hidden="true">${finalIcon}</small><b>${finalValue}</b></span>`;
   }
+  if (card.type === 'spell') {
+    return `<span aria-label="Vida"><small aria-hidden="true">♥</small><b>—</b></span><span aria-label="Dano"><small aria-hidden="true">⚔</small><b>${card.damage}</b></span><span aria-label="Alcance"><small aria-hidden="true">✦</small><b>∞</b></span>`;
+  }
   const needsConstruction = Boolean(card.buildRounds);
-  const damage = card.type === 'construction' ? '—' : card.damage;
+  const damage = card.type === 'construction' && card.damage <= 0 ? '—' : card.damage;
   const lastLabel = needsConstruction ? 'Construção' : 'Movimento';
   const lastIcon = needsConstruction ? hourglassIcon : bootIcon;
   const lastValue = needsConstruction ? `${card.buildRounds}R` : card.move;
