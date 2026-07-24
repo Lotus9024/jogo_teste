@@ -1,7 +1,11 @@
 import { CARD_CATEGORY_LABELS, CARD_DEFINITIONS } from '@tronos/shared/cards';
 
 export const cards = CARD_DEFINITIONS.map(card => {
-  const featuredAbility = card.instant.enabled ? card.instant : card.ability;
+  const featuredAbility = card.instant.enabled
+    ? card.instant
+    : card.ability.enabled
+      ? card.ability
+      : { name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade acionável.', enabled: false };
   return {
     ...card,
     categoryLabel: CARD_CATEGORY_LABELS[card.category],

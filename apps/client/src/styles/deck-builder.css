@@ -1,44 +1,27 @@
 .deck-builder{position:fixed;z-index:80;inset:0;padding:24px;background:rgba(2,5,4,.88);backdrop-filter:blur(12px);overflow:auto;color:#d8cfbc}.deck-builder[hidden]{display:none}.deck-builder-panel{width:min(1180px,100%);margin:auto;padding:24px;border:1px solid #725b35;background:linear-gradient(145deg,#20251f,#080b09 70%);box-shadow:0 30px 90px #000}.deck-builder-heading{display:flex;justify-content:space-between;gap:20px;border-bottom:1px solid #4a412f;padding-bottom:16px}.deck-builder-heading small,.deck-library-card small{font:600 10px Cinzel;letter-spacing:.12em;color:#8f805f}.deck-builder-heading h2{margin:4px 0;font:600 28px Cinzel}.deck-builder-heading p,.deck-library p{margin:0;color:#989184;font-size:13px}.deck-builder-heading button{width:42px;height:42px;border:1px solid #685638;background:#171b16;color:#d8cfbc;font-size:24px}.deck-groups{display:grid;gap:14px;margin:20px 0}.deck-rarity-group header{display:flex;justify-content:space-between;align-items:center}.deck-rarity-group h3,.deck-library h3{margin:0 0 8px;font:600 15px Cinzel}.deck-slots{display:grid;grid-template-columns:repeat(9,minmax(64px,1fr));gap:7px}.deck-slot{height:84px;border:1px dashed #5f625c;background:rgba(255,255,255,.025);color:#777;display:grid;place-items:center}.deck-slot.filled{border-style:solid;border-color:var(--rarity);color:#d8cfbc;background:color-mix(in srgb,var(--rarity) 12%,#111)}.deck-slot b{font:26px Cinzel}.deck-slot span{max-width:100%;padding:0 4px;font:600 8px Cinzel;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.deck-library{border-top:1px solid #3d3d34;padding-top:18px}.deck-library-cards,#deck-library-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(116px,1fr));gap:9px;margin-top:14px}.deck-library-card{min-height:92px;border:1px solid var(--rarity);background:#101410;color:#d8cfbc;display:grid;place-items:center;gap:3px;padding:8px;opacity:.72}.deck-library-card.selected{opacity:1;box-shadow:inset 0 0 0 2px var(--rarity),0 0 18px color-mix(in srgb,var(--rarity) 30%,transparent)}.deck-library-card b{font:27px Cinzel}.deck-library-card span{font:600 10px Cinzel}.deck-builder footer{display:flex;justify-content:flex-end;align-items:center;gap:18px;margin-top:20px}.deck-builder footer output{color:#e27e6c;font-size:12px}.deck-menu-button{display:flex;justify-content:space-between!important}.deck-menu-button small{color:#998b6e}@media(max-width:760px){.deck-builder{padding:8px}.deck-builder-panel{padding:14px}.deck-slots{grid-template-columns:repeat(5,1fr)}.deck-slot{height:68px}}
 
-/* O catálogo usa a mesma carta completa exibida na mão durante a partida. */
-#deck-library-cards{
-  grid-template-columns:repeat(auto-fill,minmax(236px,1fr));
-  gap:18px;
-  align-items:start;
-}
-.deck-builder .deck-library-card.game-card{
+.deck-builder-card-preview{
+  position:fixed;
+  z-index:90;
   width:236px;
   height:400px;
-  min-height:0;
+  pointer-events:none;
+  filter:drop-shadow(0 24px 34px rgba(0,0,0,.78));
+}
+.deck-builder-card-preview[hidden]{display:none}
+.deck-builder-card-preview .game-card{
+  width:236px;
+  height:400px;
   margin:0;
-  justify-self:center;
-  display:block;
-  opacity:.62;
-  transform:none;
-  filter:saturate(.7);
-}
-.deck-builder .deck-library-card.game-card:hover,
-.deck-builder .deck-library-card.game-card:focus-visible{
-  z-index:2;
-  opacity:.9;
-  transform:translateY(-4px) scale(1.015);
-  filter:brightness(1.08);
-}
-.deck-builder .deck-library-card.game-card.selected{
-  opacity:1;
-  transform:none;
+  transform:none!important;
   filter:none;
-  box-shadow:inset 0 0 0 2px var(--rarity),0 0 24px color-mix(in srgb,var(--rarity) 38%,transparent);
+  pointer-events:none;
 }
-.deck-builder .deck-library-card .card-top-cost b{font:700 20px/1 Cinzel}
-.deck-builder .deck-library-card .card-combat-stats b{font:600 14px Cinzel}
-.deck-builder .deck-library-card .ability-cost{font:700 18px Cinzel}
 .deck-builder footer button:disabled{
   cursor:not-allowed;
   opacity:.38;
   filter:grayscale(1);
 }
 @media(max-width:760px){
-  #deck-library-cards{grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:12px}
-  .deck-builder .deck-library-card.game-card{width:196px;height:372px}
+  .deck-builder-card-preview,.deck-builder-card-preview .game-card{width:196px;height:372px}
 }

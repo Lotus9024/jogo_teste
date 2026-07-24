@@ -32,6 +32,15 @@ test('carta com buff exibe o custo efetivo e o desconto aplicado', () => {
   assert.equal(cardCostText(goblin), '2');
 });
 
+test('somente poderes acionáveis aparecem como habilidade da carta', () => {
+  for (const cardId of ['goblin_house', 'goblin_tower', 'goblin_bomber', 'goblin_clone', 'mage', 'tower', 'goblin_altar', 'mage_altar']) {
+    assert.notEqual(cards.find(card => card.id === cardId).ability, 'Nenhuma');
+  }
+  for (const cardId of ['henry', 'goblin', 'goblin_swarm', 'wooden_house', 'road']) {
+    assert.equal(cards.find(card => card.id === cardId).ability, 'Nenhuma');
+  }
+});
+
 test('DEV MODE pode abrir a galeria por qualquer baralho físico', () => {
   const ownDeck = { userData: { ownerSeat: 1 } };
   const enemyDeck = { userData: { ownerSeat: 2 } };
