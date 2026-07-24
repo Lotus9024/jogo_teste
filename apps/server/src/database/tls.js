@@ -8,6 +8,34 @@ const CONNECTION_STRING_TLS_KEYS = Object.freeze([
   'uselibpqcompat'
 ]);
 
+function extractPemBlocks(pem, labelPattern) {
+  return pem.match(new RegExp(`-----BEGIN ${labelPattern}-----[\\s\\S]+?-----END ${labelPattern}-----`, 'gu')) ?? [];
+}
+
+function createTlsOptions(databaseCertificate) {
+  if (!databaseCertificate) return { rejectUnauthorized: true };
+
+  const certificates = extractPemBlocks(databaseCertificate, 'CERTIFICATE');
+  const privateKeys = extractPemBlocks(databaseCertificate, '(?:RSA |EC |ENCRYPTED )?PRIVATE KEY');
+  if (!privateKeys.length) {
+    return {
+      rejectUnauthorized: true,
+      ca: databaseCertificate
+    };
+  }
+  if (!certificates.length) {
+    throw new Error('O certificado de cliente do PostgreSQL não contém um bloco CERTIFICATE.');
+  }
+
+  const certificateChain = certificates.join('\n');
+  return {
+    rejectUnauthorized: true,
+    ca: certificateChain,
+    cert: certificateChain,
+    key: privateKeys[0]
+  };
+}
+
 export function createDatabaseConnectionOptions(connectionString, {
   databaseSsl,
   databaseCertificate
@@ -32,9 +60,6 @@ export function createDatabaseConnectionOptions(connectionString, {
   for (const key of CONNECTION_STRING_TLS_KEYS) url.searchParams.delete(key);
   return {
     connectionString: url.toString(),
-    ssl: {
-      rejectUnauthorized: true,
-      ...(databaseCertificate ? { ca: databaseCertificate } : {})
-    }
+    ssl: createTlsOptions(databaseCertificate)
   };
 }

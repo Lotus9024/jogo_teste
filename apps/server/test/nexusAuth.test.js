@@ -278,6 +278,24 @@ describe('TLS do PostgreSQL', () => {
     assert.equal(options.connectionString.includes('uselibpqcompat'), false);
     assert.equal(options.connectionString.includes('ssl='), false);
   });
+
+  test('configura certificado de cliente quando a Square fornece chave e certificado juntos', () => {
+    const privateKey = '-----BEGIN PRIVATE KEY-----\nCHAVE\n-----END PRIVATE KEY-----';
+    const certificate = '-----BEGIN CERTIFICATE-----\nCERTIFICADO\n-----END CERTIFICATE-----';
+    const options = createDatabaseConnectionOptions(
+      'postgresql://app:senha@db.example/nexus',
+      {
+        databaseSsl: true,
+        databaseCertificate: `${privateKey}\n${certificate}`
+      }
+    );
+    assert.deepEqual(options.ssl, {
+      rejectUnauthorized: true,
+      ca: certificate,
+      cert: certificate,
+      key: privateKey
+    });
+  });
 });
 
 describe('limpeza do repositório PostgreSQL', () => {
