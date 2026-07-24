@@ -1,30 +1,61 @@
 import { createCanvasBadge } from './createCanvasBadge.js';
 
+const BADGE_APPEARANCE = Object.freeze({
+  acid: { icon: '☣', tone: 'arcane' },
+  tower: { icon: '✦', tone: 'gold' },
+  goblin_tower: { icon: '♟', tone: 'goblin' },
+  goblin_clone: { icon: '✚', tone: 'goblin' },
+  goblin_house: { icon: '♟', tone: 'goblin' },
+  goblin_altar: { icon: '♨', tone: 'goblin' },
+  mage_altar: { icon: '✧', tone: 'arcane' },
+  goblin_bomber: { icon: '✹', tone: 'danger' },
+});
+
+const BADGE_NAME = Object.freeze({
+  acid: 'acidAbilityBadge',
+  tower: 'towerAbilityBadge',
+  goblin_tower: 'goblinTowerAbilityBadge',
+  goblin_clone: 'goblinCloneAbilityBadge',
+  goblin_house: 'goblinHouseAbilityBadge',
+  goblin_altar: 'goblinAltarAbilityBadge',
+  mage_altar: 'mageAltarAbilityBadge',
+  goblin_bomber: 'goblinBomberAbilityBadge',
+});
+
+function badgeColors(tone, loading, enabled) {
+  if (loading) return { fill: 'rgba(13, 17, 16, .9)', stroke: '#65706b', text: '#78817d' };
+  if (!enabled) return { fill: 'rgba(30, 31, 28, .94)', stroke: '#746f63', text: '#817d73' };
+  if (tone === 'arcane') return { fill: 'rgba(42, 27, 64, .95)', stroke: '#c09aff', text: '#e0c8ff' };
+  if (tone === 'danger') return { fill: 'rgba(66, 28, 18, .95)', stroke: '#ff9a65', text: '#ffd09c' };
+  if (tone === 'goblin') return { fill: 'rgba(28, 48, 28, .94)', stroke: '#84ef78', text: '#a7ff8d' };
+  return { fill: 'rgba(54, 39, 17, .94)', stroke: '#efc76d', text: '#ffe19a' };
+}
+
 function drawAbilityBadge(sprite, { remaining = 0, enabled = false } = {}) {
   const { canvas, context, texture, abilityTrigger } = sprite.userData;
   const loading = remaining > 0;
-  const acid = abilityTrigger === 'acid';
-  const goblin = abilityTrigger === 'goblin_tower';
-  const clone = abilityTrigger === 'goblin_clone';
-  const house = abilityTrigger === 'goblin_house';
+  const appearance = BADGE_APPEARANCE[abilityTrigger] ?? BADGE_APPEARANCE.tower;
+  const colors = badgeColors(appearance.tone, loading, enabled);
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.beginPath();
   context.arc(48, 48, 38, 0, Math.PI * 2);
-  context.fillStyle = loading ? 'rgba(13, 17, 16, .9)' : acid || goblin || clone || house ? 'rgba(28, 48, 28, .94)' : 'rgba(54, 39, 17, .94)';
+  context.fillStyle = colors.fill;
   context.fill();
   context.lineWidth = 5;
-  context.strokeStyle = loading ? '#65706b' : enabled ? (acid || goblin || clone || house ? '#84ef78' : '#efc76d') : '#746f63';
+  context.strokeStyle = colors.stroke;
   context.stroke();
   context.textAlign = 'center';
   context.textBaseline = 'middle';
-  context.font = acid ? 'bold 42px "Segoe UI Symbol", Arial' : 'bold 44px Georgia, serif';
-  context.fillStyle = loading ? '#78817d' : enabled ? (acid || goblin || clone || house ? '#a7ff8d' : '#ffe19a') : '#817d73';
-  context.fillText(acid ? '☣' : clone ? '✚' : house ? '♟' : goblin ? '♟' : '✦', 48, 49);
+  context.font = 'bold 42px "Segoe UI Symbol", Georgia, serif';
+  context.fillStyle = colors.text;
+  context.fillText(appearance.icon, 48, 49);
   if (loading) {
     context.beginPath();
     context.arc(48, 48, 43, -Math.PI / 2, -Math.PI / 2 + Math.PI * (3 / 2));
     context.lineWidth = 5;
-    context.strokeStyle = acid ? '#79c96d' : '#c89f4f';
+    context.strokeStyle = appearance.tone === 'arcane' ? '#9c78d7'
+      : appearance.tone === 'danger' ? '#d77d51'
+        : appearance.tone === 'goblin' ? '#79c96d' : '#c89f4f';
     context.stroke();
     context.font = 'bold 22px Arial';
     context.fillStyle = '#fff7df';
@@ -35,24 +66,26 @@ function drawAbilityBadge(sprite, { remaining = 0, enabled = false } = {}) {
   texture.needsUpdate = true;
 }
 
-export function ensureAbilityBadge(unit) {
-  const abilityTrigger = unit.userData.cardId === 'mage'
+export function abilityTriggerForUnit(unit) {
+  return unit.userData.cardId === 'mage'
     ? 'acid'
     : unit.userData.cardId === 'tower'
       ? 'tower'
       : unit.userData.cardId === 'goblin_tower'
         ? 'goblin_tower'
         : unit.userData.isGoblinClone
-          ? 'goblin_clone'
+            ? 'goblin_clone'
           : unit.userData.cardId === 'goblin_house'
             ? 'goblin_house'
-      : null;
+            : ['goblin_altar', 'mage_altar', 'goblin_bomber'].includes(unit.userData.cardId)
+              ? unit.userData.cardId
+              : null;
+}
+
+export function ensureAbilityBadge(unit) {
+  const abilityTrigger = abilityTriggerForUnit(unit);
   if (!abilityTrigger) return null;
-  const name = abilityTrigger === 'acid' ? 'acidAbilityBadge'
-    : abilityTrigger === 'goblin_tower' ? 'goblinTowerAbilityBadge'
-      : abilityTrigger === 'goblin_clone' ? 'goblinCloneAbilityBadge'
-        : abilityTrigger === 'goblin_house' ? 'goblinHouseAbilityBadge'
-          : 'towerAbilityBadge';
+  const name = BADGE_NAME[abilityTrigger];
   let badge = unit.getObjectByName(name);
   if (badge) return badge;
   badge = createCanvasBadge({
@@ -76,9 +109,7 @@ export function setAbilityBadgeState(unit, state) {
 }
 
 export function animateAbilityBadges(units, time) {
-  units.forEach(unit => ['acidAbilityBadge', 'towerAbilityBadge', 'goblinTowerAbilityBadge', 'goblinCloneAbilityBadge', 'goblinHouseAbilityBadge'].forEach(name => {
-    const badge = unit.getObjectByName(name);
-    if (!badge) return;
+  units.forEach(unit => unit.children.filter(child => child.userData.abilityTrigger).forEach(badge => {
     badge.material.opacity = badge.userData.loading ? 0.72 + Math.sin(time * 5) * 0.18 : 1;
   }));
 }

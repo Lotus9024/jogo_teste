@@ -11,6 +11,15 @@ test('a carta exibe sua categoria logo abaixo do nome', () => {
   assert.match(markup, /Cada Goblin seu[^]*\nQualquer Goblin/);
 });
 
+test('cartas com texto denso recebem o modo de leitura ampliada', () => {
+  for (const cardId of ['goblin_altar', 'mage', 'mage_altar', 'goblin_swarm', 'road', 'cannon', 'tower', 'henry']) {
+    const markup = cardMarkup(cards.find(card => card.id === cardId), 0);
+    assert.match(markup, /copy-readable/);
+    const size = Number(markup.match(/--desc-size:([\d.]+)px/)?.[1]);
+    assert.ok(size >= 7.5);
+  }
+});
+
 test('máquinas exibem vida como Resistência nas cartas', () => {
   const markup = cardMarkup(cards.find(card => card.id === 'cannon'), 0);
   assert.match(markup, /aria-label="Resistência"/);

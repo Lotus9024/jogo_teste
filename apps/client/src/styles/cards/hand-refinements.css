@@ -32,3 +32,13 @@
 .preview-description,.preview-ability p{white-space:pre-line}
 .card-top-cost{display:flex;align-items:center;justify-content:center;gap:3px}
 .card-top-cost .card-cost-discount{font:700 7px/1 Cinzel;letter-spacing:0;color:#82b26f}
+
+/* Cartas de regras densas preservam uma leitura confortável sem aumentar o HUD. */
+.game-card.copy-readable .card-art{height:86px}
+.game-card.copy-readable .card-description{height:82px}
+.game-card.copy-readable .card-ability p{line-height:1.42}
+@media(max-width:620px){
+  .game-card.copy-readable .card-art{height:72px}
+  .game-card.copy-readable .card-description{height:70px;font-size:7.5px}
+  .game-card.copy-readable .card-ability p{font-size:7px}
+}

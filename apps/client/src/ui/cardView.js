@@ -14,6 +14,17 @@ export const cards = CARD_DEFINITIONS.map(card => {
   };
 });
 
+const READABLE_COPY_CARD_IDS = new Set([
+  'goblin_altar',
+  'mage',
+  'mage_altar',
+  'goblin_swarm',
+  'road',
+  'cannon',
+  'tower',
+  'henry',
+]);
+
 const bootIcon = '<svg class="stat-boot" viewBox="0 0 24 24"><path d="M5 2h8v9.5c0 1.5 1.2 2.5 2.8 2.5H20c1.1 0 2 .9 2 2v4H9a6 6 0 0 1-6-6V9h2V2Z"/></svg>';
 const hourglassIcon = '<span aria-hidden="true">⌛</span>';
 
@@ -51,10 +62,12 @@ function cardCostMarkup(card) {
 export function cardMarkup(card, index, { level = null } = {}) {
   const levelAttribute = Number.isInteger(level) ? ` data-card-level="${level}"` : '';
   const copyClass = card.description.length > 180 || card.abilityText.length > 220 ? ' copy-very-long' : card.description.length > 115 || card.abilityText.length > 150 ? ' copy-long' : '';
-  const descSize = Math.max(5, Math.min(9, 1100 / card.description.length));
-  const abilitySize = Math.max(5, Math.min(8, 1050 / card.abilityText.length));
+  const readableCopy = READABLE_COPY_CARD_IDS.has(card.id);
+  const readableClass = readableCopy ? ' copy-readable' : '';
+  const descSize = Math.max(readableCopy ? 7.5 : 5, Math.min(9, 1100 / card.description.length));
+  const abilitySize = Math.max(readableCopy ? 7.5 : 5, Math.min(8, 1050 / card.abilityText.length));
   const categoryLabel = card.categoryLabel ?? CARD_CATEGORY_LABELS[card.category];
-  return `<button class="game-card rarity-${card.rarityClass} category-${card.category}${copyClass}" style="--desc-size:${descSize}px;--ability-size:${abilitySize}px" data-card="${index}"${levelAttribute} aria-label="Carta ${card.name}, categoria ${categoryLabel}, ${card.rarity}${level ? `, nível ${level}` : ''}">
+  return `<button class="game-card rarity-${card.rarityClass} category-${card.category}${copyClass}${readableClass}" style="--desc-size:${descSize}px;--ability-size:${abilitySize}px" data-card="${index}"${levelAttribute} aria-label="Carta ${card.name}, categoria ${categoryLabel}, ${card.rarity}${level ? `, nível ${level}` : ''}">
     <span class="card-top"><span class="card-heading"><strong class="card-name">${card.name}</strong><small class="card-category">${categoryLabel}</small></span><span class="card-top-cost">${cardCostMarkup(card)}</span></span>
     <span class="card-art"><span>${card.glyph}</span></span>
     <span class="card-description">${card.description}</span>

@@ -26,6 +26,9 @@ export function createUnitPointerHandlers({
       } else if (abilityHit.abilityTrigger === 'goblin_house') {
         if (state.selected !== abilityHit.unit) interaction.selectUnit(abilityHit.unit, { cinematic: false });
         abilities.activateSelectedAbility();
+      } else if (['goblin_altar', 'mage_altar', 'goblin_bomber'].includes(abilityHit.abilityTrigger)) {
+        if (state.selected !== abilityHit.unit) interaction.selectUnit(abilityHit.unit, { cinematic: false });
+        abilities.activateSelectedAbility();
       } else {
         const archer = relations.archerForTower(abilityHit.unit);
         if (archer) {

@@ -66,6 +66,16 @@ export function createAbilityController(options) {
             && (!me || me.energy >= CARD_BY_ID.goblin_house.ability.cost)),
         });
       }
+      if (['goblin_altar', 'mage_altar', 'goblin_bomber'].includes(unit.userData.cardId)) {
+        const card = CARD_BY_ID[unit.userData.cardId];
+        const ownTurn = (state.onlineState?.state.activeSeat ?? state.activePlayer) === unit.userData.ownerSeat;
+        const remaining = Math.max(0, (unit.userData.abilityReadyTurn ?? 0) - turn);
+        setAbilityBadgeState(unit, {
+          remaining,
+          enabled: Boolean(owned && ownTurn && !remaining && !unit.userData.actionUsed
+            && !unit.userData.underConstruction && (!me || me.energy >= card.ability.cost)),
+        });
+      }
     });
   }
 
