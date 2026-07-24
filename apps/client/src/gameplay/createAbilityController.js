@@ -12,7 +12,9 @@ export function createAbilityController(options) {
   };
 
   function syncInstantCommand() {
-    app.dataset.instantAvailable = String(Boolean(relations.towerForArcher(state.selected)));
+    app.dataset.instantAvailable = String(
+      relations.towerForArcher(state.selected)?.userData.cardId === 'tower',
+    );
   }
 
   function syncAbilityBadges() {

@@ -11,7 +11,14 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
   if (!Object.hasOwn(ACTION_HANDLERS, action.type)) fail('Ação não reconhecida.');
   const handler = ACTION_HANDLERS[action.type];
 
-  handler(state, player, opponent, action);
+  const previousEffects = state.effects ?? [];
+  state.effects = [];
+  try {
+    handler(state, player, opponent, action);
+  } catch (error) {
+    state.effects = previousEffects;
+    throw error;
+  }
   refreshKingdomProgress(state);
   state.version += 1;
   return state;
@@ -19,6 +26,7 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
 
 export function applyTurnTimeout(state) {
   if (state.phase !== 'playing' || !state.turnEndsAt || Date.now() < state.turnEndsAt) return false;
+  state.effects = [];
   endTurn(state);
   state.version += 1;
   return true;

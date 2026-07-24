@@ -38,10 +38,10 @@ function disposeGroup(group) {
 
 function createArrow() {
   const arrow = new THREE.Group();
-  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.72, 6), ARROW_MATERIAL);
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.72, 6), ARROW_MATERIAL.clone());
   shaft.position.y = 0.03;
   arrow.add(shaft);
-  const head = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.16, 6), ARROW_HEAD_MATERIAL);
+  const head = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.16, 6), ARROW_HEAD_MATERIAL.clone());
   head.position.y = 0.47;
   arrow.add(head);
   const feather = new THREE.Mesh(
@@ -199,7 +199,7 @@ export function createBattleAnimationController({
 
   function launchTowerVolley(origin, range = 3) {
     const start = origin.clone();
-    start.y += 1.22;
+    start.y += start.y > 0.5 ? 0.35 : 1.22;
     for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
       const end = start.clone().add(new THREE.Vector3(dx * tile * range, -0.7, dz * tile * range));
       const arrow = createArrow();
@@ -263,7 +263,11 @@ export function createBattleAnimationController({
       disposeGroup(group);
       stormGroups.delete(id);
     }
-    storms.forEach(addSnowstorm);
+    storms.forEach(storm => {
+      const existing = stormGroups.get(storm.id);
+      if (existing) existing.userData.storm = { ...storm };
+      else addSnowstorm(storm);
+    });
   }
 
   function createLocalSnowstorm({ ownerSeat, targetSeat, x, z, radius = 1, remainingTurns = 2 }) {

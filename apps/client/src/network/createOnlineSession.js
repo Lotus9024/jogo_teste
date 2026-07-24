@@ -22,6 +22,7 @@ export function createOnlineSession({
   units,
   hoverables,
   damageEffects,
+  battleAnimations,
   boardPresentation,
   relations,
   interaction,
@@ -46,12 +47,14 @@ export function createOnlineSession({
     }
   }
 
-  function onlineUnit(data) {
-    const index = cards.findIndex(card => card.id === data.cardId);
-    const unit = handController.makeSummonedUnit(index);
-    const card = cards[index];
+  function syncOnlineUnitData(unit, data, card, index) {
+    const motionState = {
+      isMoving: unit.userData.isMoving,
+      cloneAnimating: unit.userData.cloneAnimating,
+    };
     unit.userData = {
       ...unit.userData,
+      ...motionState,
       serverUnitId: data.id,
       ownerSeat: data.ownerSeat,
       cardId: data.cardId,
@@ -64,6 +67,8 @@ export function createOnlineSession({
       bonusMoves: data.bonusMoves ?? 0,
       bonusAttacks: data.bonusAttacks ?? 0,
       attackPenalty: data.attackPenalty ?? 0,
+      movementPenalty: data.movementPenalty ?? 0,
+      movementPenaltyTurns: data.movementPenaltyTurns ?? 0,
       abilityUsed: data.abilityUsed,
       abilityReadyTurn: data.abilityReadyTurn ?? 0,
       instantUsedRound: data.instantUsedRound,
@@ -73,41 +78,77 @@ export function createOnlineSession({
       cloneDamageBonus: data.cloneDamageBonus ?? 0,
       mountedOnTowerId: data.mountedOnTowerId,
       buildReadyRound: data.buildReadyRound,
-      attackRange: card.attackRange + (data.cardId === 'archer' && data.mountedOnTowerId ? 1 : 0),
+      attackRange: card.attackRange,
+      damage: card.damage,
     };
     ensureAbilityBadge(unit);
     updateHealthBadge(unit);
     setUnitTeamColor(unit, data.ownerSeat === 1 ? 0x168cff : 0xff352f);
     handController.applyConstructionState(unit, Boolean(data.underConstruction));
-    unit.position.set(data.x * tile - half, 0.06, data.z * tile - half);
     setUnitOwnerFacing(unit, data.cardId, data.ownerSeat);
+    return unit;
+  }
+
+  function onlineUnit(data) {
+    const index = cards.findIndex(card => card.id === data.cardId);
+    const unit = handController.makeSummonedUnit(index);
+    const card = cards[index];
+    syncOnlineUnitData(unit, data, card, index);
+    unit.position.set(data.x * tile - half, 0.06, data.z * tile - half);
     setArcherMountedState(unit, false);
     return unit;
   }
 
-  function reconcileOnlineUnits(serverUnits) {
+  function reconcileOnlineUnits(serverUnits, effects = []) {
     const nextById = new Map(serverUnits.map(data => [data.id, data]));
-    units.forEach(unit => {
+    const previousUnits = [...units];
+    const existingById = new Map(previousUnits.map(unit => [unit.userData.serverUnitId, unit]));
+    previousUnits.forEach(unit => {
       const next = nextById.get(unit.userData.serverUnitId);
       const lost = Math.max(0, unit.userData.hp - (next?.hp ?? 0));
       if (lost) damageEffects.show(unit.position, lost);
     });
     interaction.clearMovementGrid();
     abilities.clearMageTargets();
-    units.splice(0).forEach(unit => scene.remove(unit));
-    hoverables.splice(0);
     state.selected = null;
     abilities.syncInstantCommand();
     abilities.syncMageCommands();
+    const preserveFromEffects = battleAnimations.preserveIdsForEffects(effects);
+    const nextUnits = [];
     serverUnits.forEach(data => {
-      const unit = onlineUnit(data);
-      units.push(unit);
-      hoverables.push(unit);
-      scene.add(unit);
+      let unit = existingById.get(data.id);
+      const target = battleAnimations.worldPoint(data.x, data.z);
+      if (unit) {
+        const index = cards.findIndex(card => card.id === data.cardId);
+        syncOnlineUnitData(unit, data, cards[index], index);
+        setArcherMountedState(unit, false);
+        if (!data.mountedOnTowerId && unit.position.distanceToSquared(target) > 0.0001) {
+          battleAnimations.slideUnit(unit, target);
+        }
+      } else {
+        unit = onlineUnit(data);
+        scene.add(unit);
+      }
+      nextUnits.push(unit);
     });
+    previousUnits.forEach(unit => {
+      if (nextById.has(unit.userData.serverUnitId)) return;
+      const id = unit.userData.serverUnitId;
+      if (preserveFromEffects.has(id) || battleAnimations.isUnitProtected(id)) {
+        nextUnits.push(unit);
+        return;
+      }
+      scene.remove(unit);
+    });
+    units.splice(0, units.length, ...nextUnits);
+    hoverables.splice(0, hoverables.length, ...nextUnits.filter(unit => unit.userData.hoverable));
     units.filter(isMountedArcher).forEach(unit => {
       const tower = relations.towerForArcher(unit);
-      if (tower) relations.placeArcherOnTower(unit, tower);
+      if (!tower) return;
+      const towerCard = CARD_BY_ID[tower.userData.cardId];
+      unit.userData.attackRange = CARD_BY_ID.archer.attackRange + (towerCard.archerRangeBonus ?? 1);
+      unit.userData.damage = CARD_BY_ID.archer.damage + (towerCard.archerDamageBonus ?? 0);
+      relations.placeArcherOnTower(unit, tower);
     });
     abilities.syncAbilityBadges();
     app.dataset.onlineUnits = String(serverUnits.length);
@@ -153,7 +194,10 @@ export function createOnlineSession({
     if (!spectator && previous && currentHand.length > previousHand.length) handController.animateServerDraw();
     handController.renderOnlineHand(currentHand, payload.state.units);
     boardPresentation.reconcileFires(payload.state.fires ?? []);
-    reconcileOnlineUnits(payload.state.units);
+    const battleEffects = payload.state.effects ?? [];
+    reconcileOnlineUnits(payload.state.units, battleEffects);
+    battleAnimations.reconcileSnowstorms(payload.state.snowstorms ?? []);
+    battleAnimations.processServerEffects(battleEffects);
     boardPresentation.reconcileRoads(payload.state.roads ?? []);
     const me = payload.state.players.find(player => player.seat === state.selfSeat);
     const enemy = payload.state.players.find(player => player.seat !== state.selfSeat);

@@ -71,7 +71,7 @@ export function createUnitActionController(options) {
     const opponentBaseSeat = state.selfSeat === 1 ? 2 : 1;
     const baseTarget = state.onlineState && baseSeatAtCell(destination.x, destination.z) === opponentBaseSeat;
     const mountable = unit.userData.cardId === 'archer'
-      && target?.userData.cardId === 'tower'
+      && ['tower', 'royal_tower'].includes(target?.userData.cardId)
       && target.userData.ownerSeat === unit.userData.ownerSeat
       && !target.userData.underConstruction
       && occupants.every(item => item === target);
