@@ -36,9 +36,32 @@ export function createOnlineSession({
   const events = new EventTarget();
   const lobbyError = document.querySelector('#lobby-error');
   const gameError = document.querySelector('#game-error');
+  const leaveMatchButton = document.querySelector('#leave-match');
+  let leaveConfirmationTimer = null;
 
   function emit(type, detail = {}) {
     events.dispatchEvent(new CustomEvent(type, { detail }));
+  }
+
+  function resetLeaveConfirmation() {
+    clearTimeout(leaveConfirmationTimer);
+    leaveConfirmationTimer = null;
+    leaveMatchButton.classList.remove('confirming');
+    leaveMatchButton.disabled = false;
+    leaveMatchButton.innerHTML = 'SAIR <span>W.O.</span>';
+  }
+
+  function leaveMatch() {
+    if (!leaveMatchButton.classList.contains('confirming')) {
+      leaveMatchButton.classList.add('confirming');
+      leaveMatchButton.textContent = 'CONFIRMAR W.O.';
+      leaveConfirmationTimer = setTimeout(resetLeaveConfirmation, 4_000);
+      return;
+    }
+    clearTimeout(leaveConfirmationTimer);
+    leaveMatchButton.disabled = true;
+    leaveMatchButton.textContent = 'SAINDO...';
+    socket.leaveRoom();
   }
 
   function sendAction(action) {
@@ -178,6 +201,7 @@ export function createOnlineSession({
     document.querySelector('#match-state').hidden = false;
     syncMageAltarChoice(payload.self);
     if (payload.state.phase === 'waiting') {
+      leaveMatchButton.hidden = true;
       document.querySelector('#waiting-status').textContent = 'Aguardando o rei rival...';
       emit('waiting', { code: payload.code });
       return;
@@ -219,11 +243,17 @@ export function createOnlineSession({
     );
     const mine = !spectator && payload.state.activeSeat === state.selfSeat;
     const finished = payload.state.phase === 'finished';
+    const wonByForfeit = finished && payload.state.endReason === 'forfeit';
+    const enemyDisconnected = !finished && !enemy.connected && enemy.disconnectEndsAt;
+    leaveMatchButton.hidden = spectator || finished;
+    if (leaveMatchButton.hidden) resetLeaveConfirmation();
     document.querySelector('#turn-label').textContent = spectator
-      ? (finished ? `VITÓRIA ${payload.state.winnerSeat === 1 ? 'AZUL' : 'VERMELHA'}` : 'ESPECTANDO')
+      ? (finished ? `VITÓRIA ${payload.state.winnerSeat === 1 ? 'AZUL' : 'VERMELHA'}${wonByForfeit ? ' · W.O.' : ''}` : 'ESPECTANDO')
       : finished
-        ? (payload.state.winnerSeat === state.selfSeat ? 'VITÓRIA' : 'DERROTA')
-        : (mine ? 'SEU TURNO' : 'TURNO RIVAL');
+        ? `${payload.state.winnerSeat === state.selfSeat ? 'VITÓRIA' : 'DERROTA'}${wonByForfeit ? ' · W.O.' : ''}`
+        : enemyDisconnected
+          ? 'RIVAL DESCONECTADO'
+          : (mine ? 'SEU TURNO' : 'TURNO RIVAL');
     document.querySelector('#end-turn').disabled = !mine || finished;
     devController.syncTurnRoundStatus(payload.state.activeSeat, payload.state.round);
     abilities.syncAbilityBadges();
@@ -245,6 +275,7 @@ export function createOnlineSession({
   }
 
   function start() {
+    leaveMatchButton.addEventListener('click', leaveMatch);
     document.querySelector('#mage-altar-choice-cards').addEventListener('click', event => {
       const button = event.target.closest('[data-mage-altar-card]');
       if (button) sendAction({ type: 'choose_deck_card', cardId: button.dataset.mageAltarCard });
@@ -262,6 +293,14 @@ export function createOnlineSession({
       gameError.textContent = '';
       applyState(event.detail);
     });
+    socket.addEventListener(SERVER_EVENTS.ROOM_LEFT, () => {
+      state.onlineState = null;
+      leaveMatchButton.hidden = true;
+      resetLeaveConfirmation();
+      document.querySelector('#match-state').hidden = true;
+      document.querySelector('#online-lobby').classList.remove('closed');
+      emit('left');
+    });
     socket.addEventListener(SERVER_EVENTS.ERROR, event => {
       const message = String(event.detail.message ?? 'Erro na partida.');
       if (document.querySelector('#online-lobby').classList.contains('closed')) callbacks.showGameError?.(message);
@@ -269,8 +308,14 @@ export function createOnlineSession({
       emit('session-error', { message });
     });
     setInterval(() => {
-      if (!state.onlineState?.state.turnEndsAt) return;
-      const remaining = Math.max(0, state.onlineState.state.turnEndsAt - Date.now());
+      const onlineState = state.onlineState?.state;
+      if (!onlineState) return;
+      const enemy = onlineState.players?.find(player => player.seat !== state.selfSeat);
+      const deadline = (!enemy?.connected && enemy?.disconnectEndsAt)
+        ? enemy.disconnectEndsAt
+        : onlineState.turnEndsAt;
+      if (!deadline) return;
+      const remaining = Math.max(0, deadline - Date.now());
       const minutes = Math.floor(remaining / 60000);
       const seconds = Math.floor(remaining % 60000 / 1000);
       document.querySelector('#turn-clock').textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;

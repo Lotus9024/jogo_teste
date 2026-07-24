@@ -13,9 +13,10 @@ function roomCode() {
 }
 
 export class RoomManager {
-  constructor({ botDelayMs = 350 } = {}) {
+  constructor({ botDelayMs = 350, now = () => Date.now() } = {}) {
     this.rooms = new Map();
     this.botDelayMs = Math.max(0, Number(botDelayMs) || 0);
+    this.now = now;
   }
 
   /**
@@ -51,7 +52,7 @@ export class RoomManager {
       players: [player],
       spectators: [],
       state: createInitialState([player]),
-      updatedAt: Date.now(),
+      updatedAt: this.now(),
       botTurnReadyAt: null
     };
     this.rooms.set(code, room);
@@ -70,7 +71,7 @@ export class RoomManager {
     const player = participant(playerIdentity, 2, socket);
     room.players.push(player);
     room.state = createInitialState(room.players);
-    room.updatedAt = Date.now();
+    room.updatedAt = this.now();
     room.botTurnReadyAt = null;
     return { room, player };
   }
@@ -92,7 +93,7 @@ export class RoomManager {
       socket
     };
     room.spectators.push(spectator);
-    room.updatedAt = Date.now();
+    room.updatedAt = this.now();
     return { room, spectator };
   }
 
@@ -110,7 +111,7 @@ export class RoomManager {
 
     created.room.players.push(bot);
     created.room.state = createInitialState(created.room.players);
-    created.room.updatedAt = Date.now();
+    created.room.updatedAt = this.now();
     created.room.botTurnReadyAt = null;
     return { room: created.room, player: created.player, bot };
   }
@@ -127,9 +128,13 @@ export class RoomManager {
       if (!player) continue;
 
       player.socket = socket;
+      player.forfeitAt = null;
       const statePlayer = room.state.players.find(item => item.id === player.id);
-      if (statePlayer) statePlayer.connected = true;
-      room.updatedAt = Date.now();
+      if (statePlayer) {
+        statePlayer.connected = true;
+        statePlayer.disconnectEndsAt = null;
+      }
+      room.updatedAt = this.now();
       return { room, player };
     }
     return null;
@@ -166,7 +171,7 @@ export class RoomManager {
     if (!room || !player || player.isBot || !player.socket) throw new Error('Sessão inválida.');
 
     applyGameAction(room.state, playerId, action, expectedVersion);
-    room.updatedAt = Date.now();
+    room.updatedAt = this.now();
     this.#armBot(room);
     return room;
   }
@@ -176,7 +181,7 @@ export class RoomManager {
       const spectator = room.spectators.find(item => item.id === identityId);
       if (spectator) {
         room.spectators = room.spectators.filter(item => item.id !== identityId);
-        room.updatedAt = Date.now();
+        room.updatedAt = this.now();
         return room;
       }
 
@@ -184,17 +189,16 @@ export class RoomManager {
       if (!player) continue;
 
       if (room.state.phase === 'playing' && abandon) {
-        player.socket = null;
-        room.listed = false;
-        room.state.phase = 'finished';
-        room.state.winnerSeat = room.state.players.find(item => item.id !== identityId)?.seat ?? null;
-        room.state.version += 1;
-        const statePlayer = room.state.players.find(item => item.id === identityId);
-        if (statePlayer) statePlayer.connected = false;
+        this.#finishByForfeit(room, player, 'leave');
       } else if (room.state.phase === 'playing') {
+        const forfeitAt = this.now() + GAME_CONFIG.disconnectForfeitSeconds * 1000;
         player.socket = null;
+        player.forfeitAt = forfeitAt;
         const statePlayer = room.state.players.find(item => item.id === identityId);
-        if (statePlayer) statePlayer.connected = false;
+        if (statePlayer) {
+          statePlayer.connected = false;
+          statePlayer.disconnectEndsAt = forfeitAt;
+        }
       } else {
         room.players = room.players.filter(item => item.id !== identityId);
         if (!room.players.length) {
@@ -203,7 +207,7 @@ export class RoomManager {
         }
         room.state = createInitialState(room.players);
       }
-      room.updatedAt = Date.now();
+      room.updatedAt = this.now();
       return room;
     }
     return null;
@@ -211,12 +215,24 @@ export class RoomManager {
 
   tick() {
     const changed = [];
-    const now = Date.now();
+    const now = this.now();
     for (const [code, room] of this.rooms) {
       const hasLiveAudience = room.players.some(player => player.socket)
         || room.spectators.some(spectator => spectator.socket);
       if (!hasLiveAudience && now - room.updatedAt > 5 * 60 * 1000) {
         this.rooms.delete(code);
+        continue;
+      }
+
+      const disconnectedPlayer = room.players.find(player => (
+        !player.isBot
+        && !player.socket
+        && player.forfeitAt !== null
+        && player.forfeitAt <= now
+      ));
+      if (room.state.phase === 'playing' && disconnectedPlayer) {
+        this.#finishByForfeit(room, disconnectedPlayer, 'disconnect');
+        changed.push(room);
         continue;
       }
 
@@ -247,7 +263,26 @@ export class RoomManager {
   #armBot(room) {
     const activeStatePlayer = room.state.players.find(player => player.seat === room.state.activeSeat);
     const activeBot = room.players.find(player => player.id === activeStatePlayer?.id && player.isBot);
-    room.botTurnReadyAt = activeBot ? Date.now() + this.botDelayMs : null;
+    room.botTurnReadyAt = activeBot ? this.now() + this.botDelayMs : null;
+  }
+
+  #finishByForfeit(room, player, reason) {
+    player.socket = null;
+    player.forfeitAt = null;
+    room.listed = false;
+    room.state.phase = 'finished';
+    room.state.turnEndsAt = null;
+    room.state.winnerSeat = room.state.players.find(item => item.id !== player.id)?.seat ?? null;
+    room.state.endReason = 'forfeit';
+    room.state.forfeitReason = reason;
+    room.state.forfeitSeat = player.seat;
+    room.state.version += 1;
+    const statePlayer = room.state.players.find(item => item.id === player.id);
+    if (statePlayer) {
+      statePlayer.connected = false;
+      statePlayer.disconnectEndsAt = null;
+    }
+    room.updatedAt = this.now();
   }
 
   #assertConnectionAvailable(identityId) {
@@ -269,6 +304,7 @@ function participant(identity, seat, socket, isBot = false) {
     seat,
     socket,
     isBot,
+    forfeitAt: null,
     deckCardIds: [...identity.deckCardIds]
   };
 }

@@ -10,6 +10,7 @@ export function gameHudTemplate() {
       <aside id="hover-card" class="hover-card unit-card-preview" aria-hidden="true"></aside>
       <div id="match-state" class="match-state" hidden><span id="turn-label">SEU TURNO</span><time id="turn-clock">02:00</time></div>
       <button id="settings-toggle" class="settings-toggle" aria-haspopup="dialog" aria-controls="settings-modal" aria-label="Abrir configurações">⚙</button>
+      <button id="leave-match" class="leave-match" type="button" hidden>SAIR <span>W.O.</span></button>
       <output id="game-error" class="game-error" aria-live="polite"></output>
       <section id="mage-altar-choice" class="mage-altar-choice" role="dialog" aria-modal="true" aria-labelledby="mage-altar-choice-title" hidden>
         <div>

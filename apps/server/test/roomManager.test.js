@@ -123,6 +123,51 @@ test('reanexa jogador desconectado a partida em andamento', () => {
   assert.equal(room.state.players[0].connected, true);
 });
 
+test('encerra por W.O. imediatamente quando o jogador abandona a partida', () => {
+  const rooms = new RoomManager();
+  const blueIdentity = identity('azul-desistente', 'Rei Azul');
+  const { room } = rooms.createAuthenticated(blueIdentity, {}, {
+    visibility: 'private',
+    name: 'Duelo de desistência'
+  });
+  rooms.joinAuthenticated(room.code, identity('vermelho-vencedor', 'Rei Vermelho'), {});
+
+  rooms.leave(blueIdentity.playerId, { abandon: true });
+
+  assert.equal(room.state.phase, 'finished');
+  assert.equal(room.state.winnerSeat, 2);
+  assert.equal(room.state.endReason, 'forfeit');
+  assert.equal(room.state.forfeitReason, 'leave');
+  assert.equal(room.state.forfeitSeat, 1);
+  assert.equal(room.state.turnEndsAt, null);
+});
+
+test('aguarda quatro minutos antes do W.O. por desconexão', () => {
+  let now = 10_000;
+  const rooms = new RoomManager({ now: () => now });
+  const blueIdentity = identity('azul-offline', 'Rei Azul');
+  const { room } = rooms.createAuthenticated(blueIdentity, {}, {
+    visibility: 'private',
+    name: 'Duelo com reconexão'
+  });
+  rooms.joinAuthenticated(room.code, identity('vermelho-online', 'Rei Vermelho'), {});
+
+  rooms.leave(blueIdentity.playerId);
+  assert.equal(room.state.players[0].disconnectEndsAt, 250_000);
+
+  now = 249_999;
+  assert.equal(rooms.tick().includes(room), false);
+  assert.equal(room.state.phase, 'playing');
+
+  now = 250_000;
+  assert.equal(rooms.tick().includes(room), true);
+  assert.equal(room.state.phase, 'finished');
+  assert.equal(room.state.winnerSeat, 2);
+  assert.equal(room.state.endReason, 'forfeit');
+  assert.equal(room.state.forfeitReason, 'disconnect');
+  assert.equal(room.state.forfeitSeat, 1);
+});
+
 function identity(playerId, name) {
   return { playerId, name, deckCardIds: [...DEFAULT_DECK_CARD_IDS] };
 }

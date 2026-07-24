@@ -10,6 +10,7 @@ export const GAME_CONFIG = Object.freeze({
   level2RoadRequirement: 1,
   energyPerTurn: 3,
   turnDurationSeconds: 120,
+  disconnectForfeitSeconds: 240,
   cardsDrawnPerTurn: 1,
   startingHandSize: 7,
   maxHandSize: 7,

@@ -267,6 +267,11 @@ export function createNexusLobbyController({
     onlineSession.addEventListener('match-started', () => {
       lobby.classList.add('closed');
     });
+    onlineSession.addEventListener('left', () => {
+      pendingRoomCancelled = false;
+      showScreen('hub');
+      onlineSession.requestRooms();
+    });
     onlineSession.addEventListener('session-error', event => {
       const message = event.detail?.message ?? 'Não foi possível acessar a sala.';
       if (!lobby.classList.contains('closed')) showScreen(account ? 'hub' : 'entry');
