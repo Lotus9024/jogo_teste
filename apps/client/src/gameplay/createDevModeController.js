@@ -6,7 +6,7 @@ import { createDevToolsController } from './createDevToolsController.js';
 export function createDevModeController(options) {
   const {
     state, app, scene, tile, half, units, hoverables, roads, boardPresentation,
-    interaction, actions, abilities, handController, cameraTransition, deckBuilder, callbacks,
+    interaction, actions, abilities, handController, cameraTransition, deckBuilder, callbacks, localCardEffects,
   } = options;
   const toolCallbacks = {
     ...callbacks,
@@ -70,9 +70,12 @@ export function createDevModeController(options) {
   }
 
   function finishTurnShared() {
-    units.filter(unit => unit.userData.underConstruction && unit.userData.ownerSeat === state.activePlayer
-      && (state.devInstantBuild || unit.userData.buildReadyRound <= state.round))
-      .forEach(unit => handController.applyConstructionState(unit, false));
+    const completedUnits = units.filter(unit => unit.userData.underConstruction && unit.userData.ownerSeat === state.activePlayer
+      && (state.devInstantBuild || unit.userData.buildReadyRound <= state.round));
+    completedUnits.forEach(unit => {
+      handController.applyConstructionState(unit, false);
+      if (unit.userData.cardId === 'royal_tower') localCardEffects.applyRoyalTowerBlessing(unit);
+    });
     finishLocalRoadsForSeat(state.activePlayer);
     units.filter(unit => unit.userData.ownerSeat === state.activePlayer).forEach(unit => {
       unit.userData.actionUsed = false;
@@ -91,6 +94,7 @@ export function createDevModeController(options) {
   function endTurn(dev = false) {
     if (!dev && state.onlineState) return callbacks.sendOnlineAction?.({ type: 'end_turn' });
     actions.resolveLocalFires(state.activePlayer);
+    localCardEffects.finishSnowstormTurn(state.activePlayer);
     if (dev) interaction.clearUnitSelection();
     state.activePlayer = state.activePlayer === 1 ? 2 : 1;
     if (state.activePlayer === 1) state.round += 1;
@@ -122,6 +126,7 @@ export function createDevModeController(options) {
     hoverables.splice(0);
     boardPresentation.reconcileRoads([]);
     boardPresentation.reconcileFires([]);
+    callbacks.clearSnowstorms?.();
     tools.keepForSeat(1).scale.setScalar(1);
     tools.keepForSeat(2).scale.setScalar(1);
     callbacks.setOnlinePerspective?.();

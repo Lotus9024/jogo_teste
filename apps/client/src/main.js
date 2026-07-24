@@ -4,6 +4,7 @@ import { createAbilityController } from './gameplay/createAbilityController.js';
 import { createDevModeController } from './gameplay/createDevModeController.js';
 import { createUnitActionController } from './gameplay/createUnitActionController.js';
 import { createUnitInteractionController } from './gameplay/createUnitInteractionController.js';
+import { createLocalCardEffects } from './gameplay/createLocalCardEffects.js';
 import { NexusApi } from './network/nexusApi.js';
 import { createOnlineSession } from './network/createOnlineSession.js';
 import { createHandController } from './ui/createHandController.js';
@@ -95,6 +96,20 @@ Object.assign(callbacks, {
   syncAbilityBadges: abilities.syncAbilityBadges,
   activatePreferredGraphics,
 });
+const localCardEffects = createLocalCardEffects({
+  units,
+  tile,
+  half,
+  battleAnimations,
+  callbacks,
+});
+Object.assign(callbacks, {
+  applyLocalRoyalWarriorBlessing: localCardEffects.applyRoyalWarriorBlessing,
+  applyLocalRoyalTowerBlessing: localCardEffects.applyRoyalTowerBlessing,
+  castLocalBlizzard: localCardEffects.castBlizzard,
+  spawnCloneEffect: battleAnimations.spawnClone,
+  clearSnowstorms: () => battleAnimations.reconcileSnowstorms([]),
+});
 
 // Keep the settings Escape listener ahead of gallery listeners, matching the
 // original overlay closing order when both surfaces are reached by keyboard.
@@ -155,6 +170,7 @@ const devController = createDevModeController({
   cameraTransition,
   deckBuilder,
   callbacks,
+  localCardEffects,
 });
 Object.assign(callbacks, {
   syncDevSettings: devController.syncDevSettings,
