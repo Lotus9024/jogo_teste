@@ -53,6 +53,7 @@ export function createMovementOverlay({
     clear();
     const { onlineState, selfSeat, devMode } = getMatchContext();
     const onlineAllowed = onlineState
+      && !onlineState.self?.spectator
       && unit.userData.ownerSeat === selfSeat
       && onlineState.state.activeSeat === selfSeat
       && (!unit.userData.actionUsed || (isGoblinTroop(unit.userData.cardId)

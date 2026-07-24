@@ -12,8 +12,13 @@ export function createUnitPointerHandlers({
       state.justDragged = false;
       return;
     }
+    const spectator = Boolean(state.onlineState?.self?.spectator);
     const abilityHit = interaction.abilityTriggerAtPointer(event);
     if (abilityHit) {
+      if (spectator) {
+        interaction.selectUnit(abilityHit.unit, { cinematic: false });
+        return;
+      }
       if (abilityHit.abilityTrigger === 'acid') {
         if (state.selected !== abilityHit.unit) interaction.selectUnit(abilityHit.unit, { cinematic: false });
         abilities.activateMageAcid();
@@ -41,6 +46,7 @@ export function createUnitPointerHandlers({
     const fireMage = interaction.mageFireTriggerAtPointer(event);
     if (fireMage) {
       if (state.selected !== fireMage) interaction.selectUnit(fireMage, { cinematic: false });
+      if (spectator) return;
       abilities.activateMageFire();
       return;
     }
@@ -86,6 +92,7 @@ export function createUnitPointerHandlers({
 
   function startDrag(event) {
     if (event.button !== 0) return;
+    if (state.onlineState?.self?.spectator) return;
     if (interaction.abilityTriggerAtPointer(event) || interaction.mageFireTriggerAtPointer(event)) {
       event.preventDefault();
       event.stopPropagation();

@@ -96,6 +96,7 @@ export function createMageAbilityController({
   }
 
   function activateFire() {
+    if (state.onlineState?.self?.spectator) return;
     const selected = state.selected;
     const owned = state.devMode
       ? selected?.userData.ownerSeat === state.activePlayer
@@ -120,6 +121,7 @@ export function createMageAbilityController({
   }
 
   function activateAcid() {
+    if (state.onlineState?.self?.spectator) return;
     const selected = state.selected;
     const owned = state.devMode
       ? selected?.userData.ownerSeat === state.activePlayer

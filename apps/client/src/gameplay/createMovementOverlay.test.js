@@ -140,3 +140,31 @@ test('Henry esconde somente a ação que já utilizou', () => {
   assert.ok(Number(app.dataset.movementTiles) > 0);
   assert.equal(app.dataset.attackTiles, '0');
 });
+
+test('espectador não recebe casas interativas para mover ou atacar', () => {
+  const scene = new THREE.Scene();
+  const app = { dataset: {} };
+  const source = unit('source', 1, 5, 5);
+  const enemy = unit('enemy', 2, 5, 3);
+  const units = [source, enemy];
+  const overlay = createMovementOverlay({
+    scene, app, units, tile: 1, half: 0,
+    unitAtCell: (x, z, excluded) => units.find(candidate => candidate !== excluded
+      && candidate.position.x === x && candidate.position.z === z),
+    baseSeatAtCell: () => null,
+    baseCellsForSeat: () => [],
+    getRoads: () => [],
+    getMatchContext: () => ({
+      onlineState: { self: { spectator: true }, state: { activeSeat: 1 } },
+      selfSeat: 1,
+      devMode: false,
+    }),
+  });
+
+  overlay.show(source);
+
+  assert.equal(app.dataset.movementTiles, '0');
+  assert.equal(app.dataset.attackTiles, '0');
+  assert.equal(overlay.isInteractiveCell(5, 4), false);
+  assert.equal(overlay.isInteractiveCell(5, 3), false);
+});

@@ -39,6 +39,7 @@ export function createGoblinTowerAbilityController({
   }
 
   function available() {
+    if (state.onlineState?.self?.spectator) return false;
     const tower = state.selected;
     const ownTurn = (state.onlineState?.state.activeSeat ?? state.activePlayer) === tower?.userData.ownerSeat;
     const owned = state.devMode ? tower?.userData.ownerSeat === state.activePlayer : tower?.userData.ownerSeat === state.selfSeat;

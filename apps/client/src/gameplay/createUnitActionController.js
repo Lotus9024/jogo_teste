@@ -27,6 +27,7 @@ export function createUnitActionController(options) {
     return Boolean(unit && !unit.userData.isMoving && (state.devMode
       ? unit.userData.ownerSeat === state.activePlayer
       : state.onlineState
+        && !state.onlineState.self?.spectator
         && unit.userData.ownerSeat === state.selfSeat
         && state.onlineState.state.activeSeat === state.selfSeat
         && (!unit.userData.actionUsed || unit.userData.bonusMoves > 0)));

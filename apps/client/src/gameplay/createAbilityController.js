@@ -19,10 +19,11 @@ export function createAbilityController(options) {
 
   function syncAbilityBadges() {
     const turn = currentTurnIndex();
+    const spectator = Boolean(state.onlineState?.self?.spectator);
     const me = state.onlineState?.state.players.find(player => player.seat === state.selfSeat);
     units.forEach(unit => {
       const owned = state.onlineState
-        ? unit.userData.ownerSeat === state.selfSeat
+        ? !spectator && unit.userData.ownerSeat === state.selfSeat
         : unit.userData.ownerSeat === state.activePlayer;
       if (unit.userData.cardId === 'mage') {
         const remaining = Math.max(0, (unit.userData.instantReadyTurn ?? 0) - turn);
@@ -190,6 +191,7 @@ export function createAbilityController(options) {
   function mount() {
     addEventListener('keydown', event => {
       if (event.key.toLowerCase() !== 'f' || event.repeat || event.target.closest?.('input,textarea')) return;
+      if (state.onlineState?.self?.spectator) return;
       event.preventDefault();
       if (state.selected?.userData.isGoblinClone) activateCloneInstant();
       else if (state.selected?.userData.cardId === 'mage') mage.activateAcid();
