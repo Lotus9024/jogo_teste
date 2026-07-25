@@ -216,7 +216,11 @@ export function createOnlineSession({
     const currentHand = payload.self?.hand ?? [];
     const previousHand = previous?.self?.hand ?? [];
     if (!spectator && previous && currentHand.length > previousHand.length) handController.animateServerDraw();
-    handController.renderOnlineHand(currentHand, payload.state.units);
+    handController.renderOnlineHand(
+      currentHand,
+      payload.state.units,
+      payload.self?.lastPlayedGoblinTroopCardId ?? null,
+    );
     boardPresentation.reconcileFires(payload.state.fires ?? []);
     const battleEffects = payload.state.effects ?? [];
     reconcileOnlineUnits(payload.state.units, battleEffects);

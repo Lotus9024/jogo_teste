@@ -93,8 +93,10 @@ test('Clone Goblin copia a última tropa lançada e pode se fortalecer', () => {
   player.energy = 10;
   rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: 'clone-card', x: 8, z: 10 }, room.state.version);
   const clone = room.state.units.find(unit => unit.isGoblinClone);
+  assert.equal(player.energy, 10 - CARD_BY_ID.henry.cost - CARD_BY_ID.goblin_clone.cloneCostExtra);
   assert.deepEqual({ cardId: clone.cardId, copied: clone.clonedFromCardId, actionUsed: clone.actionUsed }, { cardId: 'henry', copied: 'henry', actionUsed: true });
   rooms.action(room.code, first.id, { type: 'use_instant', unitId: clone.id }, room.state.version);
+  assert.equal(player.energy, 10 - CARD_BY_ID.henry.cost - CARD_BY_ID.goblin_clone.cloneCostExtra - CARD_BY_ID.goblin_clone.instant.cost);
   assert.deepEqual({ hp: clone.hp, maxHp: clone.maxHp, damage: clone.cloneDamageBonus }, { hp: 2, maxHp: 2, damage: 1 });
 });
 

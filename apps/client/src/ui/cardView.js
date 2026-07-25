@@ -42,6 +42,7 @@ function combatStats(card) {
 }
 
 export function cardCostText(card) {
+  if (card.dynamicCost && !Number.isFinite(card.effectiveCost)) return '—';
   const baseCost = Number.isFinite(card.baseCost) ? card.baseCost : card.cost;
   const effectiveCost = Number.isFinite(card.effectiveCost) ? card.effectiveCost : card.cost;
   const discount = Math.max(0, baseCost - effectiveCost);
@@ -76,7 +77,7 @@ export function cardMarkup(card, index, { level = null } = {}) {
 export function showDeckPreview(element, card) {
   element.className = `deck-preview rarity-${card.rarityClass}`;
   element.innerHTML = `
-    <div class="preview-top"><b class="preview-cost">${card.cost}</b><span class="preview-heading"><strong>${card.name}</strong><small>${card.categoryLabel ?? CARD_CATEGORY_LABELS[card.category]}</small></span><i class="preview-gem"></i></div>
+    <div class="preview-top"><b class="preview-cost">${card.dynamicCost ? '—' : card.cost}</b><span class="preview-heading"><strong>${card.name}</strong><small>${card.categoryLabel ?? CARD_CATEGORY_LABELS[card.category]}</small></span><i class="preview-gem"></i></div>
     <div class="preview-art">${cardIconMarkup(card)}</div><p class="preview-description">${card.description}</p>
     <div class="preview-stats">${combatStats(card)}</div>
     <div class="preview-ability" aria-label="Habilidade ${card.ability}"><strong>${card.ability}</strong><b class="preview-ability-cost">${card.abilityCost}</b><p>${card.abilityText}</p></div>`;

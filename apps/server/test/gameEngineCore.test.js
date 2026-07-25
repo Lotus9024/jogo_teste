@@ -68,7 +68,7 @@ test('cartas usam os atributos definidos', () => {
       goblin: { hp: 1, damage: 1, move: 1, movementType: 'any', cost: 2 },
       goblin_swarm: { hp: 1, damage: 1, move: 1, movementType: 'any', cost: 4 },
       goblin_bomber: { hp: 1, damage: 1, move: 1, movementType: 'straight', cost: 4 },
-      goblin_clone: { hp: 1, damage: 1, move: 1, movementType: 'straight', cost: 4 },
+      goblin_clone: { hp: 1, damage: 1, move: 1, movementType: 'straight', cost: 0 },
       goblin_tower: { hp: 5, damage: 0, move: 0, movementType: 'none', cost: 8 },
       mage: { hp: 2, damage: 2, move: 1, movementType: 'any', cost: 6 },
       goblin_altar: { hp: 1, damage: 0, move: 0, movementType: 'none', cost: 5 },

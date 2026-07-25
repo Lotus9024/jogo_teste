@@ -156,6 +156,16 @@ test('Torre Goblin reduz o custo e fortalece Goblins adjacentes', () => {
   );
 });
 
+test('Clone Goblin custa a tropa copiada mais dois', () => {
+  assert.equal(effectiveCardCost('goblin_clone', 1, [], {
+    lastPlayedGoblinTroopCardId: 'goblin',
+  }), CARD_BY_ID.goblin.cost + 2);
+  assert.equal(effectiveCardCost('goblin_clone', 1, [], {
+    lastPlayedGoblinTroopCardId: 'goblin_bomber',
+  }), CARD_BY_ID.goblin_bomber.cost + 2);
+  assert.equal(effectiveCardCost('goblin_clone', 1, []), Number.POSITIVE_INFINITY);
+});
+
 test('Henry participa das sinergias Goblin e também nasce fortalecido pela Torre', () => {
   const units = [
     { ownerSeat: 1, cardId: 'henry', x: 4, z: 4 },

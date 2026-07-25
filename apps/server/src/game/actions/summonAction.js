@@ -50,7 +50,9 @@ export function summonAction(state, player, _opponent, action) {
     }
     if (swarmCells.length < card.summonCount) fail('Não há espaço para o Enxame Goblin.');
   }
-  const cost = effectiveCardCost(card.id, player.seat, state.units);
+  const cost = effectiveCardCost(card.id, player.seat, state.units, {
+    lastPlayedGoblinTroopCardId: player.lastPlayedGoblinTroopCardId
+  });
   if (player.energy < cost) fail('Energia insuficiente.');
   player.energy -= cost;
   player.hand.splice(index, 1);

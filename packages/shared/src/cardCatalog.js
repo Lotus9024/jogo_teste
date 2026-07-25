@@ -98,8 +98,8 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'goblin_clone', name: 'Clone Goblin', description: 'Coloca em campo uma cópia da última tropa Goblin que você lançou.\nA cópia mantém as características impressas da tropa e entra sem poder agir.',
-    hp: 1, damage: 1, move: 1, movementType: 'straight', minAttackRange: 1, attackRange: 1, cost: 4, type: 'summon', category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'MAGIA · CLONE GOBLIN', glyph: '♟',
+    id: 'goblin_clone', name: 'Clone Goblin', description: 'Coloca em campo uma cópia da última tropa Goblin que você lançou.\nA cópia mantém as características impressas da tropa e entra sem poder agir.\nCusta o valor impresso da tropa copiada + 2.',
+    hp: 1, damage: 1, move: 1, movementType: 'straight', minAttackRange: 1, attackRange: 1, cost: 0, cloneCostExtra: 2, dynamicCost: true, type: 'summon', category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'FEITIÇO · CLONE GOBLIN', glyph: '♟',
     ability: Object.freeze({ name: 'Clone', cost: '—', description: 'Copia a última tropa Goblin lançada. Não copia Enxame, construções nem altares.', enabled: false }),
     instant: Object.freeze({ name: 'Fortalecer Clone (Instantâneo)', cost: 2, cooldownTurns: 2, description: 'A cópia recebe +1 de vida máxima, recupera 1 de vida e ganha +1 de dano.', enabled: true })
   }),

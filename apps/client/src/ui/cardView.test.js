@@ -68,6 +68,9 @@ test('carta com buff exibe o custo efetivo e o desconto aplicado', () => {
   assert.equal(cardCostText({ ...goblin, baseCost: 2, effectiveCost: 1 }), '1 (-1)');
   assert.match(cardMarkup({ ...goblin, baseCost: 2, effectiveCost: 1 }, 0), /<b>1<\/b><small class="card-cost-discount">\(-1\)<\/small>/);
   assert.equal(cardCostText(goblin), '2');
+  const clone = cards.find(card => card.id === 'goblin_clone');
+  assert.equal(cardCostText(clone), '—');
+  assert.equal(cardCostText({ ...clone, baseCost: 6, effectiveCost: 6 }), '6');
 });
 
 test('somente poderes acionáveis aparecem como habilidade da carta', () => {

@@ -36,15 +36,17 @@ export function createHandController(options) {
     return summoning.playSelectedCardAtPointer(event, selectedCardElement());
   }
 
-  function renderOnlineHand(instances, serverUnits = []) {
+  function renderOnlineHand(instances, serverUnits = [], lastPlayedGoblinTroopCardId = null) {
     hand.replaceChildren();
     for (const instance of instances) {
       const index = cards.findIndex(card => card.id === instance.cardId);
       if (index < 0 || !/^[-0-9a-f]{36}$/i.test(instance.instanceId)) continue;
       const holder = document.createElement('div');
       const card = cards[index];
-      const cost = effectiveCardCost(card.id, state.selfSeat, serverUnits);
-      holder.innerHTML = cardMarkup({ ...card, baseCost: card.cost, effectiveCost: cost }, index);
+      const clonedCard = card.id === 'goblin_clone' ? cards.find(item => item.id === lastPlayedGoblinTroopCardId) : null;
+      const baseCost = clonedCard ? clonedCard.cost + card.cloneCostExtra : card.cost;
+      const cost = effectiveCardCost(card.id, state.selfSeat, serverUnits, { lastPlayedGoblinTroopCardId });
+      holder.innerHTML = cardMarkup({ ...card, baseCost, effectiveCost: cost }, index);
       const node = holder.firstElementChild;
       node.dataset.instance = instance.instanceId;
       hand.appendChild(node);

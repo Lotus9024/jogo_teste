@@ -1,15 +1,20 @@
 import { CARD_BY_ID } from './cardCatalog.js';
 
-export function effectiveCardCost(cardId, seat, units = []) {
+export function effectiveCardCost(cardId, seat, units = [], {
+  lastPlayedGoblinTroopCardId = null
+} = {}) {
   const card = CARD_BY_ID[cardId];
   if (!card) return Number.POSITIVE_INFINITY;
+  const clonedCard = card.id === 'goblin_clone' ? CARD_BY_ID[lastPlayedGoblinTroopCardId] : null;
+  if (card.id === 'goblin_clone' && !isGoblinTroop(clonedCard?.id)) return Number.POSITIVE_INFINITY;
   const completedAllied = units.filter(unit => unit.ownerSeat === seat && !unit.underConstruction);
   const goblinTroops = completedAllied.filter(unit => isGoblinTroop(unit.cardId)).length;
   const goblinAltars = completedAllied.filter(unit => unit.cardId === 'goblin_altar').length;
   const mageAltars = completedAllied.filter(unit => unit.cardId === 'mage_altar').length;
   const towerDiscount = card.id === 'goblin_tower' ? goblinTroops * (card.goblinDiscount ?? 1) : 0;
   const familyDiscount = card.category === 'goblin' ? goblinAltars : card.category === 'mage' ? mageAltars : 0;
-  return Math.max(card.minimumCost ?? 1, card.cost - towerDiscount - familyDiscount);
+  const baseCost = clonedCard ? clonedCard.cost + (card.cloneCostExtra ?? 2) : card.cost;
+  return Math.max(card.minimumCost ?? 1, baseCost - towerDiscount - familyDiscount);
 }
 
 export function isBasicCard(cardId) { return CARD_BY_ID[cardId]?.category === 'basic'; }
