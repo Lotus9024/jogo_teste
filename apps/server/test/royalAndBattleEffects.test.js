@@ -157,7 +157,7 @@ test('Bombardeiro e Torre publicam os eventos usados pelas animações', () => {
     {
       id: 'archer', ownerSeat: 1, cardId: 'archer', x: 7, z: 10,
       hp: 2, maxHp: 2, actionUsed: false, underConstruction: false, mountedOnTowerId: 'tower',
-      abilityReadyTurn: 0,
+      instantReadyTurn: 0,
     },
     {
       id: 'enemy', ownerSeat: 2, cardId: 'guard', x: 7, z: 7,
@@ -165,7 +165,7 @@ test('Bombardeiro e Torre publicam os eventos usados pelas animações', () => {
     },
   );
   towerMatch.rooms.action(towerMatch.room.code, towerMatch.first.id, {
-    type: 'use_ability', unitId: 'archer',
+    type: 'use_instant', unitId: 'archer',
   }, towerMatch.room.state.version);
   assert.equal(towerMatch.room.state.effects[0].type, 'tower_arrow_volley');
   assert.equal(towerMatch.room.state.units.find(unit => unit.id === 'enemy').hp, 1);

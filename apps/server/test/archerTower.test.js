@@ -105,6 +105,20 @@ test('arqueiro pode subir na torre e recebe mais um de alcance', () => {
   assert.equal(room.state.units.find(unit => unit.id === 'range-five').hp, 3);
 });
 
+test('Torre Real concede um de alcance aos Arqueiros aliados ao redor', () => {
+  const { rooms, room, first } = match();
+  room.state.units.push(
+    { id: 'royal-tower', ownerSeat: 1, cardId: 'royal_tower', x: 8, z: 8, hp: 7, shield: 0, actionUsed: false, underConstruction: false },
+    { id: 'adjacent-archer', ownerSeat: 1, cardId: 'archer', x: 7, z: 8, hp: 2, shield: 0, actionUsed: false },
+    { id: 'range-five-target', ownerSeat: 2, cardId: 'guard', x: 7, z: 3, hp: 3, shield: 0, actionUsed: false },
+  );
+
+  rooms.action(room.code, first.id, {
+    type: 'attack', unitId: 'adjacent-archer', targetUnitId: 'range-five-target',
+  }, room.state.version);
+  assert.equal(room.state.units.find(unit => unit.id === 'range-five-target').hp, 2);
+});
+
 test('destruir a Torre também destrói o arqueiro montado', () => {
   const { rooms, room, first } = match();
   room.state.units.push(
@@ -117,26 +131,24 @@ test('destruir a Torre também destrói o arqueiro montado', () => {
   assert.equal(room.state.units.some(unit => unit.id === 'doomed-archer'), false);
 });
 
-test('rajada da torre funciona no próprio turno e recarrega após uma rodada', () => {
+test('rajada instantânea da torre funciona em qualquer turno e recarrega após uma rodada', () => {
   const { rooms, room, first, second } = match();
   room.state.units.push(
     { id: 'tower-seat-2', ownerSeat: 2, cardId: 'tower', x: 7, z: 4, hp: 5, shield: 0, actionUsed: false, underConstruction: false },
-    { id: 'archer-seat-2', ownerSeat: 2, cardId: 'archer', x: 7, z: 4, hp: 2, shield: 0, actionUsed: false, abilityReadyTurn: 0, mountedOnTowerId: 'tower-seat-2' },
+    { id: 'archer-seat-2', ownerSeat: 2, cardId: 'archer', x: 7, z: 4, hp: 2, shield: 0, actionUsed: false, instantReadyTurn: 0, mountedOnTowerId: 'tower-seat-2' },
     { id: 'east', ownerSeat: 1, cardId: 'guard', x: 9, z: 4, hp: 4, shield: 0 },
     { id: 'west', ownerSeat: 1, cardId: 'guard', x: 5, z: 4, hp: 4, shield: 0 },
     { id: 'south', ownerSeat: 1, cardId: 'guard', x: 7, z: 6, hp: 4, shield: 0 },
     { id: 'north', ownerSeat: 1, cardId: 'guard', x: 7, z: 2, hp: 4, shield: 0 }
   );
-  assert.throws(() => rooms.action(room.code, second.id, { type: 'use_ability', unitId: 'archer-seat-2' }, room.state.version), /turno/);
-  rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
-  rooms.action(room.code, second.id, { type: 'use_ability', unitId: 'archer-seat-2' }, room.state.version);
+  rooms.action(room.code, second.id, { type: 'use_instant', unitId: 'archer-seat-2' }, room.state.version);
   for (const id of ['east', 'west', 'south', 'north']) assert.equal(room.state.units.find(unit => unit.id === id).hp, 2);
   assert.equal(room.state.players[1].energy, 8);
-  assert.equal(room.state.units.find(unit => unit.id === 'archer-seat-2').abilityReadyTurn, 3);
-  assert.throws(() => rooms.action(room.code, second.id, { type: 'use_ability', unitId: 'archer-seat-2' }, room.state.version), /indisponível/);
-  rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
-  assert.throws(() => rooms.action(room.code, second.id, { type: 'use_ability', unitId: 'archer-seat-2' }, room.state.version), /turno/);
+  assert.equal(room.state.units.find(unit => unit.id === 'archer-seat-2').instantReadyTurn, 2);
+  assert.throws(() => rooms.action(room.code, second.id, { type: 'use_instant', unitId: 'archer-seat-2' }, room.state.version), /indisponível/);
   rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version);
-  rooms.action(room.code, second.id, { type: 'use_ability', unitId: 'archer-seat-2' }, room.state.version);
+  assert.throws(() => rooms.action(room.code, second.id, { type: 'use_instant', unitId: 'archer-seat-2' }, room.state.version), /indisponível/);
+  rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
+  rooms.action(room.code, second.id, { type: 'use_instant', unitId: 'archer-seat-2' }, room.state.version);
   assert.equal(room.state.units.some(unit => ['east', 'west', 'south', 'north'].includes(unit.id)), false);
 });

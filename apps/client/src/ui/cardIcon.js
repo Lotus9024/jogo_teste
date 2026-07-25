@@ -55,6 +55,9 @@ const CUSTOM_ICON_PATHS = Object.freeze({
     <path d="M32 25v12m-6-6h12"/>`,
   blizzard: `
     <path d="M32 5v54M8 19l48 26M8 45l48-26M32 5l-6 7m6-7 6 7M32 59l-6-7m6 7 6-7M8 19l9 1m-9-1 4 8M56 45l-9-1m9 1-4-8M8 45l9-1m-9 1 4-8M56 19l-9 1m9-1-4 8"/>`,
+  goblin_spanking: `
+    <path class="card-icon-fill" d="M11 34c0-5 4-9 9-9h4V13c0-3 2-5 5-5s5 2 5 5v8-11c0-3 2-5 5-5s5 2 5 5v12-8c0-3 2-5 5-5s5 2 5 5v19c0 15-9 25-23 25-12 0-20-8-20-20v-4Z"/>
+    <path d="M11 34c0-5 4-9 9-9h4V13c0-3 2-5 5-5s5 2 5 5v8-11c0-3 2-5 5-5s5 2 5 5v12-8c0-3 2-5 5-5s5 2 5 5v19c0 15-9 25-23 25-12 0-20-8-20-20v-4Zm13-9v12m10-16v16m10-15v15"/>`,
 });
 
 export const CARD_ICON_IDS = Object.freeze([
@@ -74,6 +77,7 @@ export const CARD_ICON_IDS = Object.freeze([
   'goblin_swarm',
   'goblin_bomber',
   'goblin_clone',
+  'goblin_spanking',
   'goblin_tower',
   'mage',
   'goblin_altar',

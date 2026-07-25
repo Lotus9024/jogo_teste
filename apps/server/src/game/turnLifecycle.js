@@ -17,6 +17,7 @@ export function endTurn(state) {
   if (endingPlayer?.hand.length > GAME_CONFIG.maxHandSize) fail(`Jogue ou descarte até ficar com no máximo ${GAME_CONFIG.maxHandSize} cartas.`);
   resolveEndingFires(state, state.activeSeat);
   finishSnowstormTurn(state, state.activeSeat);
+  if (endingPlayer) endingPlayer.goblinSpankingTurn = null;
   state.activeSeat = state.activeSeat === 1 ? 2 : 1;
   if (state.activeSeat === 1) state.round += 1;
   let completedMageAltars = 0;

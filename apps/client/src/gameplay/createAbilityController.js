@@ -44,12 +44,11 @@ export function createAbilityController(options) {
       }
       if (unit.userData.cardId === 'tower') {
         const archer = relations.archerForTower(unit);
-        const remaining = Math.max(0, (archer?.userData.abilityReadyTurn ?? 0) - turn);
-        const ownTurn = (state.onlineState?.state.activeSeat ?? state.activePlayer) === unit.userData.ownerSeat;
+        const remaining = Math.max(0, (archer?.userData.instantReadyTurn ?? 0) - turn);
         setAbilityBadgeState(unit, {
           remaining,
-          enabled: Boolean(archer && owned && ownTurn && !remaining && !archer.userData.actionUsed
-            && !unit.userData.underConstruction && (!me || me.energy >= CARD_BY_ID.tower.ability.cost)),
+          enabled: Boolean(archer && owned && !remaining
+            && !unit.userData.underConstruction && (!me || me.energy >= CARD_BY_ID.tower.instant.cost)),
         });
       }
       if (unit.userData.cardId === 'goblin_tower') {
@@ -94,33 +93,31 @@ export function createAbilityController(options) {
       ? selected?.userData.ownerSeat === state.activePlayer
       : selected?.userData.ownerSeat === state.selfSeat;
     const me = state.onlineState?.state.players.find(player => player.seat === state.selfSeat);
-    const ownTurn = (state.onlineState?.state.activeSeat ?? state.activePlayer) === selected?.userData.ownerSeat;
-    const ability = CARD_BY_ID.tower.ability;
-    const ready = (selected?.userData.abilityReadyTurn ?? 0) <= currentTurnIndex();
-    if (tower?.userData.cardId !== 'tower' || !owned || !ownTurn || selected.userData.actionUsed || !ready || Boolean(me && me.energy < ability.cost)) return;
+    const instant = CARD_BY_ID.tower.instant;
+    const ready = (selected?.userData.instantReadyTurn ?? 0) <= currentTurnIndex();
+    if (tower?.userData.cardId !== 'tower' || !owned || !ready || Boolean(me && me.energy < instant.cost)) return;
     if (state.onlineState) {
-      callbacks.sendOnlineAction?.({ type: 'use_ability', unitId: selected.userData.serverUnitId });
+      callbacks.sendOnlineAction?.({ type: 'use_instant', unitId: selected.userData.serverUnitId });
       return;
     }
     const origin = {
       x: Math.round((selected.position.x + half) / tile),
       z: Math.round((selected.position.z + half) / tile),
     };
-    battleAnimations.launchTowerVolley(selected.position, ability.range);
+    battleAnimations.launchTowerVolley(selected.position, instant.range);
     for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
       const target = units.filter(unit => unit !== selected).map(unit => {
         const x = Math.round((unit.position.x + half) / tile);
         const z = Math.round((unit.position.z + half) / tile);
         const step = dx ? (x - origin.x) / dx : (z - origin.z) / dz;
         return { unit, x, z, step };
-      }).filter(item => item.step >= 1 && item.step <= ability.range
+      }).filter(item => item.step >= 1 && item.step <= instant.range
         && item.x === origin.x + dx * item.step && item.z === origin.z + dz * item.step)
         .sort((a, b) => a.step - b.step)[0]?.unit;
-      if (target && target.userData.ownerSeat !== selected.userData.ownerSeat) callbacks.damageLocalUnit?.(target, ability.damage);
+      if (target && target.userData.ownerSeat !== selected.userData.ownerSeat) callbacks.damageLocalUnit?.(target, instant.damage);
     }
-    selected.userData.actionUsed = true;
-    selected.userData.abilityUsed = true;
-    selected.userData.abilityReadyTurn = currentTurnIndex() + (ability.cooldownTurns ?? 2);
+    selected.userData.instantUsedRound = currentRound();
+    selected.userData.instantReadyTurn = currentTurnIndex() + (instant.cooldownTurns ?? 2);
     syncInstantCommand();
     syncAbilityBadges();
   }

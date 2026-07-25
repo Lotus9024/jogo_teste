@@ -10,21 +10,9 @@ export function useAbilityAction(state, player, _opponent, action) {
   const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
   const card = CARD_BY_ID[unit.cardId];
   if (card.id === 'goblin_tower') fail('Escolha a casa onde o Goblin será invocado.');
-  const tower = mountedTower(state, unit);
-  const ability = card.id === 'archer' && tower?.cardId === 'tower' ? CARD_BY_ID.tower.ability : card.ability;
+  const ability = card.ability;
   if (!ability?.enabled || (unit.abilityReadyTurn ?? 0) > turnIndex(state) || player.energy < ability.cost) fail('Habilidade indisponível.');
   if (unit.actionUsed || unit.underConstruction) fail('Esta unidade já agiu neste turno.');
-  if (card.id === 'archer' && tower?.cardId === 'tower') {
-    fireTowerVolley(state, player, unit, ability);
-    pushBattleEffect(state, {
-      type: 'tower_arrow_volley',
-      unitId: unit.id,
-      ownerSeat: player.seat,
-      x: unit.x,
-      z: unit.z,
-      range: ability.range,
-    });
-  }
   if (card.id === 'goblin_altar') {
     state.units.filter(item => item.ownerSeat === player.seat
       && isGoblinTroop(item.cardId)
@@ -93,8 +81,21 @@ export function useInstantAction(state, player, _opponent, action) {
   if (state.phase !== 'playing') fail('A partida ainda não começou.');
   const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
   const card = CARD_BY_ID[unit.cardId];
-  const instant = unit.isGoblinClone ? CARD_BY_ID.goblin_clone.instant : card.instant;
+  const tower = mountedTower(state, unit);
+  const towerInstant = card.id === 'archer' && tower?.cardId === 'tower' ? CARD_BY_ID.tower.instant : null;
+  const instant = unit.isGoblinClone ? CARD_BY_ID.goblin_clone.instant : towerInstant ?? card.instant;
   if (!instant?.enabled || (unit.instantReadyTurn ?? 0) > turnIndex(state) || player.energy < instant.cost) fail('Habilidade instantânea indisponível.');
+  if (towerInstant) {
+    fireTowerVolley(state, player, unit, instant);
+    pushBattleEffect(state, {
+      type: 'tower_arrow_volley',
+      unitId: unit.id,
+      ownerSeat: player.seat,
+      x: unit.x,
+      z: unit.z,
+      range: instant.range,
+    });
+  }
   if (card.id === 'mage') {
     [...state.units]
       .filter(item => item.id !== unit.id && Math.max(Math.abs(item.x - unit.x), Math.abs(item.z - unit.z)) <= instant.radius)

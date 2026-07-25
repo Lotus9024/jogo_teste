@@ -38,8 +38,8 @@ export const CARD_DEFINITIONS = Object.freeze([
   Object.freeze({
     id: 'tower', name: 'Torre', description: 'Você pode colocar um arqueiro em cima da torre.\nEsse arqueiro ganha +1 de distância de ataque e consegue atirar por cima de qualquer carta.\nCaso a torre seja destruída, o arqueiro também é.',
     hp: 5, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 7, buildRounds: 2, type: 'construction', category: 'basic', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'CONSTRUÇÃO · TORRE', glyph: '♜',
-    ability: Object.freeze({ name: 'Rajada cardinal', cost: 2, cooldownTurns: 2, range: 3, damage: 2, description: 'Atira uma flecha em todas as 4 direções retas, com no máximo 3 blocos de distância e 2 de dano.', enabled: true }),
-    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
+    ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade normal.', enabled: false }),
+    instant: Object.freeze({ name: 'Rajada cardinal (Instantânea)', cost: 2, cooldownTurns: 2, range: 3, damage: 2, description: 'Atira uma flecha em todas as 4 direções retas, com no máximo 3 blocos de distância e 2 de dano.', enabled: true })
   }),
   Object.freeze({
     id: 'operator', name: 'Operador', description: 'Esse operador pode operar tudo! Ou quase tudo. Coloque ele atrás de alguma máquina e ele opera.\nEnquanto estiver na arena, ele conta como 1 cidadão.',
@@ -104,8 +104,14 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Fortalecer Clone (Instantâneo)', cost: 2, cooldownTurns: 2, description: 'A cópia recebe +1 de vida máxima, recupera 1 de vida e ganha +1 de dano.', enabled: true })
   }),
   Object.freeze({
-    id: 'goblin_tower', name: 'Torre Goblin', description: 'Cada Goblin seu deixa o custo da torre mais barato.\nQualquer Goblin que nasce ao lado da torre nasce com 1 de vida extra.',
-    hp: 5, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 8, minimumCost: 1, goblinDiscount: 1, buildRounds: 1, type: 'construction', category: 'goblin', family: 'goblin', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · GOBLIN', glyph: '♜',
+    id: 'goblin_spanking', name: 'Espanquem', description: 'Todos os seus Goblins podem agir e atacar novamente neste turno.\nGoblins lançados depois deste feitiço entram prontos para agir.',
+    hp: null, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 5, type: 'spell', category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'FEITIÇO · GOBLIN', glyph: '✺',
+    ability: Object.freeze({ name: 'Espanquem', cost: '—', description: 'Ao ser lançado, concede uma ação e um ataque adicionais aos seus Goblins até o fim do turno.', enabled: false }),
+    instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'O efeito acontece ao lançar a carta.', enabled: false })
+  }),
+  Object.freeze({
+    id: 'goblin_tower', name: 'Torre Goblin', description: 'Necessita de 2 Goblins seus na arena.\nCada Goblin seu deixa o custo da torre mais barato, até o mínimo de 5.\nQualquer Goblin que nasce ao lado da torre nasce com 1 de vida extra.',
+    hp: 5, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 10, minimumCost: 5, requiredGoblinTroops: 2, goblinDiscount: 1, buildRounds: 1, type: 'construction', category: 'goblin', family: 'goblin', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · GOBLIN', glyph: '♜',
     ability: Object.freeze({ name: 'Reforço Goblin', cost: 2, description: 'Consome um Goblin do seu baralho e o invoca em qualquer casa livre da arena. Ele nasce sem poder agir neste turno.', enabled: true }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
@@ -146,8 +152,8 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'royal_tower', name: 'Torre Real', description: 'Quando a construção termina, todas as construções do seu reino ganham +3 de vida.\nNecessita de 12 cidadãos e não pode ser construída enquanto houver Magos ou Goblins seus na arena.\nUm Arqueiro montado recebe +1 de alcance, +1 de dano e atira por cima de qualquer carta.',
-    hp: 7, damage: 5, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 9, buildRounds: 3, type: 'construction', requiredCitizens: 12, forbidsMageAndGoblin: true, royalConstructionBlessing: 3, archerRangeBonus: 1, archerDamageBonus: 1, category: 'basic', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · TORRE REAL', glyph: '♜',
+    id: 'royal_tower', name: 'Torre Real', description: 'Quando a construção termina, todas as construções do seu reino ganham +3 de vida.\nNecessita de 12 cidadãos e não pode ser construída enquanto houver Magos ou Goblins seus na arena.\nArqueiros ao redor recebem +1 de alcance. Um Arqueiro montado recebe +1 de alcance, +1 de dano e atira por cima de qualquer carta.',
+    hp: 7, damage: 5, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 9, buildRounds: 3, type: 'construction', requiredCitizens: 12, forbidsMageAndGoblin: true, royalConstructionBlessing: 3, adjacentArcherRangeBonus: 1, archerRangeBonus: 1, archerDamageBonus: 1, category: 'basic', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · TORRE REAL', glyph: '♜',
     ability: Object.freeze({ name: 'Fortificação real', cost: '—', description: 'Ao ser concluída, concede +3 de vida máxima e recupera 3 de vida de todas as construções aliadas.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),

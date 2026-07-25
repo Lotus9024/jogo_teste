@@ -49,6 +49,18 @@ export function createMovementOverlay({
     });
   }
 
+  function adjacentRoyalTowerRangeBonus(unit, origin) {
+    if (unit.userData.cardId !== 'archer' || isMountedArcher(unit)) return 0;
+    const adjacent = units.some(candidate => candidate.userData.ownerSeat === unit.userData.ownerSeat
+      && candidate.userData.cardId === 'royal_tower'
+      && !candidate.userData.underConstruction
+      && Math.max(
+        Math.abs(Math.round((candidate.position.x + half) / tile) - origin.x),
+        Math.abs(Math.round((candidate.position.z + half) / tile) - origin.z),
+      ) === 1);
+    return adjacent ? CARD_BY_ID.royal_tower.adjacentArcherRangeBonus : 0;
+  }
+
   function show(unit) {
     clear();
     const { onlineState, selfSeat, devMode } = getMatchContext();
@@ -72,7 +84,9 @@ export function createMovementOverlay({
     const attackAvailable = unit.userData.cardId !== 'henry' || !unit.userData.attackedThisTurn;
     const attackStats = {
       ...unit.userData,
-      attackRange: unit.userData.attackRange + roadAttackBonus(originX, originZ, getRoads(), unit.userData.cardId),
+      attackRange: unit.userData.attackRange
+        + adjacentRoyalTowerRangeBonus(unit, { x: originX, z: originZ })
+        + roadAttackBonus(originX, originZ, getRoads(), unit.userData.cardId),
     };
     if (unit.userData.cardId === 'cannon') {
       const forward = forwardDeltaForSeat(unit.userData.ownerSeat);

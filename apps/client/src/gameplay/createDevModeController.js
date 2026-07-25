@@ -95,6 +95,7 @@ export function createDevModeController(options) {
     if (!dev && state.onlineState) return callbacks.sendOnlineAction?.({ type: 'end_turn' });
     actions.resolveLocalFires(state.activePlayer);
     localCardEffects.finishSnowstormTurn(state.activePlayer);
+    state.localGoblinSpankingSeat = null;
     if (dev) interaction.clearUnitSelection();
     state.activePlayer = state.activePlayer === 1 ? 2 : 1;
     if (state.activePlayer === 1) state.round += 1;

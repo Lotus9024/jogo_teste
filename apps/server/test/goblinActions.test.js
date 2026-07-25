@@ -8,8 +8,13 @@ test('Goblins na arena reduzem o custo da Torre Goblin', () => {
   player.energy = 10;
   player.hand.push({ instanceId: 'goblin-tower-card', cardId: 'goblin_tower' });
   room.state.units.push({ id: 'goblin-one', ownerSeat: 1, cardId: 'goblin', x: 6, z: 10, hp: 1, actionUsed: false });
+  assert.throws(
+    () => rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: 'goblin-tower-card', x: 8, z: 10 }, room.state.version),
+    /2 Goblins/,
+  );
+  room.state.units.push({ id: 'goblin-two', ownerSeat: 1, cardId: 'goblin', x: 7, z: 10, hp: 1, actionUsed: false });
   rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: 'goblin-tower-card', x: 8, z: 10 }, room.state.version);
-  assert.equal(player.energy, 3);
+  assert.equal(player.energy, 2);
   const tower = room.state.units.find(unit => unit.cardId === 'goblin_tower');
   assert.equal(tower.underConstruction, true);
   assert.equal(tower.buildReadyRound, 2);
@@ -39,4 +44,34 @@ test('Torre Goblin exige um Goblin no baralho e uma casa livre', () => {
   player.deck = ['guard'];
   room.state.units.push({ id: 'tower', ownerSeat: 1, cardId: 'goblin_tower', x: 7, z: 7, hp: 5, actionUsed: false, underConstruction: false });
   assert.throws(() => rooms.action(room.code, first.id, { type: 'summon_goblin', unitId: 'tower', x: 5, z: 5 }, room.state.version), /Goblin no baralho/);
+});
+
+test('Espanquem libera os Goblins existentes e os novos durante o turno', () => {
+  const { rooms, room, first } = match();
+  const player = room.state.players[0];
+  player.energy = 10;
+  player.hand = [
+    { instanceId: 'spanking-card', cardId: 'goblin_spanking' },
+    { instanceId: 'goblin-card', cardId: 'goblin' },
+  ];
+  room.state.units.push({
+    id: 'spent-goblin', ownerSeat: 1, cardId: 'goblin', x: 7, z: 9,
+    hp: 1, maxHp: 1, actionUsed: true, bonusMoves: 0, bonusAttacks: 0,
+  });
+
+  rooms.action(room.code, first.id, {
+    type: 'summon', cardInstanceId: 'spanking-card', x: 7, z: 7,
+  }, room.state.version);
+  const existing = room.state.units.find(unit => unit.id === 'spent-goblin');
+  assert.deepEqual(
+    { bonusMoves: existing.bonusMoves, bonusAttacks: existing.bonusAttacks },
+    { bonusMoves: 1, bonusAttacks: 1 },
+  );
+  assert.equal(player.energy, 5);
+
+  rooms.action(room.code, first.id, {
+    type: 'summon', cardInstanceId: 'goblin-card', x: 6, z: 10,
+  }, room.state.version);
+  const summoned = room.state.units.find(unit => unit.id !== 'spent-goblin' && unit.cardId === 'goblin');
+  assert.equal(summoned.actionUsed, false);
 });

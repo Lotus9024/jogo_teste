@@ -1,9 +1,9 @@
 import { randomInt, randomUUID } from 'node:crypto';
-import { CARD_BY_ID, effectiveCardCost, goblinSpawnHp, isGoblinTroop, isRoadCard, isRoadPlacementCell, royalRequirementError } from '@tronos/shared/cards';
+import { CARD_BY_ID, effectiveCardCost, goblinSpawnHp, goblinTowerRequirementError, isGoblinTroop, isRoadCard, isRoadPlacementCell, royalRequirementError } from '@tronos/shared/cards';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { mountableTowerAt } from '../combat.js';
 import { applyRoyalWarriorBlessing, castBlizzard, pushBattleEffect } from '../battleEffects.js';
-import { deploymentCell, fail, inBase, integer, unitAt, unitsAt, validCell } from '../gameQueries.js';
+import { deploymentCell, fail, inBase, integer, turnIndex, unitAt, unitsAt, validCell } from '../gameQueries.js';
 import { goblinTroopsInBaseArea } from '../kingdomEffects.js';
 import { requireTurn } from '../turnLifecycle.js';
 
@@ -34,6 +34,8 @@ export function summonAction(state, player, _opponent, action) {
   })) fail('A Casa Goblin não pode ficar ao lado de outra casa Básica.');
   if (card.id === 'goblin_altar' && goblinTroopsInBaseArea(state, player.seat).length < 2) fail('O Altar Goblin exige duas tropas Goblin na área da sua base.');
   if (card.id === 'mage_altar' && state.units.some(unit => unit.ownerSeat === player.seat && isGoblinTroop(unit.cardId))) fail('O Altar Mago não pode ser usado enquanto você controlar um Goblin na arena.');
+  const goblinTowerError = goblinTowerRequirementError(card.id, player.seat, state.units);
+  if (goblinTowerError) fail(goblinTowerError);
   const requirementError = royalRequirementError(card.id, player.seat, state.units, player.citizens ?? 0);
   if (requirementError) fail(requirementError);
   const clonedCardId = card.id === 'goblin_clone' ? player.lastPlayedGoblinTroopCardId : null;
@@ -57,17 +59,26 @@ export function summonAction(state, player, _opponent, action) {
   player.energy -= cost;
   player.hand.splice(index, 1);
   player.discard.push(instance.cardId);
+  if (card.id === 'goblin_spanking') {
+    player.goblinSpankingTurn = turnIndex(state);
+    state.units.filter(unit => unit.ownerSeat === player.seat && isGoblinTroop(unit.cardId)).forEach(unit => {
+      unit.bonusMoves = (unit.bonusMoves ?? 0) + 1;
+      unit.bonusAttacks = (unit.bonusAttacks ?? 0) + 1;
+    });
+    return;
+  }
   if (card.id === 'blizzard') {
     castBlizzard(state, player, card, x, z);
     return;
   }
   if (card.id === 'goblin_swarm') {
+    const entersReady = player.goblinSpankingTurn === turnIndex(state);
     for (let count = 0; count < card.summonCount; count += 1) {
       const selected = swarmCells.splice(randomInt(swarmCells.length), 1)[0];
       const hp = goblinSpawnHp(player.seat, selected.x, selected.z, state.units, card.summonsCardId);
       state.units.push({
         id: randomUUID(), ownerSeat: player.seat, cardId: card.summonsCardId, ...selected, hp, maxHp: hp, shield: 0,
-        actionUsed: true, movedThisTurn: false, attackedThisTurn: false,
+        actionUsed: !entersReady, movedThisTurn: false, attackedThisTurn: false,
         abilityUsed: false, abilityReadyTurn: 0, instantUsedRound: 0, instantReadyTurn: 0,
         empowered: false, mountedOnTowerId: null, bonusMoves: 0, bonusAttacks: 0,
         attackPenalty: 0, attackPenaltyUntilTurn: 0, underConstruction: false, buildReadyRound: null
@@ -81,9 +92,10 @@ export function summonAction(state, player, _opponent, action) {
   }
   const summonedCard = clonedCard ?? card;
   const hp = isGoblinTroop(summonedCard.id) ? goblinSpawnHp(player.seat, x, z, state.units, summonedCard.id) : summonedCard.hp;
+  const goblinEntersReady = isGoblinTroop(summonedCard.id) && player.goblinSpankingTurn === turnIndex(state);
   const summonedUnit = {
     id: randomUUID(), ownerSeat: player.seat, cardId: summonedCard.id, x, z, hp, maxHp: hp, shield: 0,
-    actionUsed: clonedCard ? true : card.id !== 'henry', movedThisTurn: false, attackedThisTurn: false,
+    actionUsed: goblinEntersReady ? false : clonedCard ? true : card.id !== 'henry', movedThisTurn: false, attackedThisTurn: false,
     abilityUsed: false, abilityReadyTurn: 0, instantUsedRound: 0, instantReadyTurn: 0, empowered: false, mountedOnTowerId: tower?.id ?? null,
     bonusMoves: 0, bonusAttacks: 0, attackPenalty: 0, attackPenaltyUntilTurn: 0, isGoblinClone: Boolean(clonedCard), clonedFromCardId: clonedCardId, cloneDamageBonus: 0,
     movementPenalty: 0, movementPenaltyTurns: 0,

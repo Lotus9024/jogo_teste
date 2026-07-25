@@ -30,6 +30,7 @@ export function createGameRuntime() {
     selfSeat: null,
     devMode: false,
     activePlayer: 1,
+    localGoblinSpankingSeat: null,
     round: 1,
     devCardLevel: 1,
     devInstantBuild: false,

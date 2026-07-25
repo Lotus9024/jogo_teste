@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
-import { citizensForSeat, isDeploymentCell, isRoadCard, isRoadPlacementCell, royalRequirementError } from '@tronos/shared/cards';
+import { citizensForSeat, goblinTowerRequirementError, isDeploymentCell, isGoblinTroop, isRoadCard, isRoadPlacementCell, royalRequirementError } from '@tronos/shared/cards';
 import { createCardUnit } from '../models/createCardUnit.js';
 import { applyConstructionState as applyUnitConstructionState, setUnitOwnerFacing, setUnitTeamColor } from '../gameplay/unitState.js';
 import { cards } from './cardView.js';
@@ -44,6 +44,16 @@ export function createCardSummoningController({
 
   function summonCard(cardIndex, x, z, mountableTower = null, level = state.devCardLevel) {
     const card = cards[cardIndex];
+    if (card.id === 'goblin_spanking') {
+      state.localGoblinSpankingSeat = state.activePlayer;
+      units.filter(unit => unit.userData.ownerSeat === state.activePlayer && isGoblinTroop(unit.userData.cardId))
+        .forEach(unit => {
+          unit.userData.bonusMoves = (unit.userData.bonusMoves ?? 0) + 1;
+          unit.userData.bonusAttacks = (unit.userData.bonusAttacks ?? 0) + 1;
+        });
+      interaction.clearMovementGrid();
+      return;
+    }
     if (card.id === 'blizzard') {
       callbacks.castLocalBlizzard?.({
         ownerSeat: state.activePlayer,
@@ -193,6 +203,11 @@ export function createCardSummoningController({
     const requirementError = royalRequirementError(card.id, deploymentSeat(), localUnits, citizens);
     if (requirementError) {
       callbacks.showGameError?.(requirementError);
+      return true;
+    }
+    const goblinTowerError = goblinTowerRequirementError(card.id, deploymentSeat(), localUnits);
+    if (goblinTowerError) {
+      callbacks.showGameError?.(goblinTowerError);
       return true;
     }
     const tileInfo = cardTileAtPointer(event, index);

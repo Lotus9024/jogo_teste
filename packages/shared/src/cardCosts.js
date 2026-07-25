@@ -38,6 +38,17 @@ export function royalRequirementError(cardId, seat, units = [], citizens = 0) {
   return null;
 }
 
+export function goblinTowerRequirementError(cardId, seat, units = []) {
+  const card = CARD_BY_ID[cardId];
+  if (card?.id !== 'goblin_tower') return null;
+  const goblinTroops = units.filter(unit =>
+    unit.ownerSeat === seat && !unit.underConstruction && isGoblinTroop(unit.cardId)).length;
+  if (goblinTroops < card.requiredGoblinTroops) {
+    return `Torre Goblin necessita de ${card.requiredGoblinTroops} Goblins seus na arena.`;
+  }
+  return null;
+}
+
 export function goblinSpawnHp(seat, x, z, units = [], cardId = 'goblin') {
   const towerNearby = units.some(unit => unit.ownerSeat === seat
     && unit.cardId === 'goblin_tower'

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CARD_BY_ID, CARD_CATEGORY_LABELS, CARD_DEFINITIONS, baseCellsForSeat, citizensForSeat, completedRoadCount, connectedRoadKeys, deploymentDistance, effectiveCardCost, forwardDeltaForSeat, goblinSpawnHp, gridCellsBetween, isBasicCard, isCannonTargetValid, isDeploymentCell, isGoblinCard, isMageCard, isRoadCard, isRoadPlacementCell, roadAttackBonus, roadMovementBonus, royalRequirementError, validateDeckCardIds } from '../src/cards.js';
+import { CARD_BY_ID, CARD_CATEGORY_LABELS, CARD_DEFINITIONS, baseCellsForSeat, citizensForSeat, completedRoadCount, connectedRoadKeys, deploymentDistance, effectiveCardCost, forwardDeltaForSeat, goblinSpawnHp, goblinTowerRequirementError, gridCellsBetween, isBasicCard, isCannonTargetValid, isDeploymentCell, isGoblinCard, isMageCard, isRoadCard, isRoadPlacementCell, roadAttackBonus, roadMovementBonus, royalRequirementError, validateDeckCardIds } from '../src/cards.js';
 
 test('calcula as casas intermediarias de uma linha no tabuleiro', () => {
   assert.deepEqual(gridCellsBetween({ x: 2, z: 2 }, { x: 5, z: 2 }), [{ x: 3, z: 2 }, { x: 4, z: 2 }]);
@@ -31,15 +31,16 @@ test('zona de lançamento ocupa somente as duas casas ao redor do reino', () => 
   assert.equal(deploymentDistance(2, { x: 8, z: 5 }), 3);
 });
 
-test('torre expõe construção e rajada cardinal', () => {
+test('torre expõe construção e rajada cardinal instantânea', () => {
   assert.equal(CARD_BY_ID.tower.hp, 5);
   assert.equal(CARD_BY_ID.tower.cost, 7);
   assert.equal(CARD_BY_ID.tower.buildRounds, 2);
   assert.deepEqual(
-    { cost: CARD_BY_ID.tower.ability.cost, range: CARD_BY_ID.tower.ability.range, damage: CARD_BY_ID.tower.ability.damage, cooldown: CARD_BY_ID.tower.ability.cooldownTurns },
+    { cost: CARD_BY_ID.tower.instant.cost, range: CARD_BY_ID.tower.instant.range, damage: CARD_BY_ID.tower.instant.damage, cooldown: CARD_BY_ID.tower.instant.cooldownTurns },
     { cost: 2, range: 3, damage: 2, cooldown: 2 }
   );
-  assert.equal(CARD_BY_ID.tower.instant.enabled, false);
+  assert.equal(CARD_BY_ID.tower.ability.enabled, false);
+  assert.equal(CARD_BY_ID.tower.instant.enabled, true);
 });
 
 test('canhão usa frente relativa ao dono e alcance de três a seis casas', () => {
@@ -146,14 +147,16 @@ test('Torre Goblin reduz o custo e fortalece Goblins adjacentes', () => {
     { ownerSeat: 2, cardId: 'goblin', x: 6, z: 4 },
     { ownerSeat: 1, cardId: 'goblin_tower', x: 7, z: 7, underConstruction: false },
   ];
-  assert.equal(effectiveCardCost('goblin_tower', 1, units), 6);
-  assert.equal(effectiveCardCost('goblin_tower', 2, units), 7);
+  assert.equal(effectiveCardCost('goblin_tower', 1, units), 8);
+  assert.equal(effectiveCardCost('goblin_tower', 2, units), 9);
   assert.equal(goblinSpawnHp(1, 7, 6, units), 2);
   assert.equal(goblinSpawnHp(1, 5, 5, units), 1);
   assert.deepEqual(
     { hp: CARD_BY_ID.goblin_tower.hp, cost: CARD_BY_ID.goblin_tower.cost, buildRounds: CARD_BY_ID.goblin_tower.buildRounds, rarity: CARD_BY_ID.goblin_tower.rarityClass },
-    { hp: 5, cost: 8, buildRounds: 1, rarity: 'rare' },
+    { hp: 5, cost: 10, buildRounds: 1, rarity: 'rare' },
   );
+  assert.match(goblinTowerRequirementError('goblin_tower', 1, units.slice(0, 1)), /2 Goblins/i);
+  assert.equal(goblinTowerRequirementError('goblin_tower', 1, units), null);
 });
 
 test('Clone Goblin custa a tropa copiada mais dois', () => {
@@ -171,7 +174,7 @@ test('Henry participa das sinergias Goblin e também nasce fortalecido pela Torr
     { ownerSeat: 1, cardId: 'henry', x: 4, z: 4 },
     { ownerSeat: 1, cardId: 'goblin_tower', x: 7, z: 7, underConstruction: false },
   ];
-  assert.equal(effectiveCardCost('goblin_tower', 1, units), 7);
+  assert.equal(effectiveCardCost('goblin_tower', 1, units), 9);
   assert.equal(goblinSpawnHp(1, 7, 6, units, 'henry'), 2);
 });
 
@@ -190,6 +193,18 @@ test('categorias abrangem tropas e construções de cada família', () => {
   assert.equal(isMageCard('mage'), true);
   assert.equal(isMageCard('mage_altar'), true);
   assert.equal(isGoblinCard('warrior'), false);
+});
+
+test('Espanquem é um feitiço Goblin incomum de custo cinco', () => {
+  assert.deepEqual(
+    {
+      type: CARD_BY_ID.goblin_spanking.type,
+      category: CARD_BY_ID.goblin_spanking.category,
+      rarity: CARD_BY_ID.goblin_spanking.rarityClass,
+      cost: CARD_BY_ID.goblin_spanking.cost,
+    },
+    { type: 'spell', category: 'goblin', rarity: 'uncommon', cost: 5 },
+  );
 });
 
 test('castelo nível dois acrescenta três quadrados em cada lateral', () => {
@@ -227,6 +242,7 @@ test('cartas reais e Nevasca expõem os atributos e regras definidos', () => {
       cost: CARD_BY_ID.royal_tower.cost,
       buildRounds: CARD_BY_ID.royal_tower.buildRounds,
       requiredCitizens: CARD_BY_ID.royal_tower.requiredCitizens,
+      adjacentArcherRangeBonus: CARD_BY_ID.royal_tower.adjacentArcherRangeBonus,
       archerRangeBonus: CARD_BY_ID.royal_tower.archerRangeBonus,
       archerDamageBonus: CARD_BY_ID.royal_tower.archerDamageBonus,
     },
@@ -236,6 +252,7 @@ test('cartas reais e Nevasca expõem os atributos e regras definidos', () => {
       cost: 9,
       buildRounds: 3,
       requiredCitizens: 12,
+      adjacentArcherRangeBonus: 1,
       archerRangeBonus: 1,
       archerDamageBonus: 1,
     },

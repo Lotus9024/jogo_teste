@@ -21,9 +21,16 @@ export function attackCard(state, unit, card) {
   const tower = card.id === 'archer' ? mountedTower(state, unit) : null;
   const towerRangeBonus = tower ? (CARD_BY_ID[tower.cardId]?.archerRangeBonus ?? 1) : 0;
   const towerDamageBonus = tower ? (CARD_BY_ID[tower.cardId]?.archerDamageBonus ?? 0) : 0;
+  const adjacentRoyalRangeBonus = card.id === 'archer' && !tower && state.units.some(candidate =>
+    candidate.ownerSeat === unit.ownerSeat
+    && candidate.cardId === 'royal_tower'
+    && !candidate.underConstruction
+    && Math.max(Math.abs(candidate.x - unit.x), Math.abs(candidate.z - unit.z)) === 1)
+    ? CARD_BY_ID.royal_tower.adjacentArcherRangeBonus
+    : 0;
   const roadBonus = roadAttackBonus(unit.x, unit.z, state.roads, card.id);
-  return towerRangeBonus || towerDamageBonus || roadBonus
-    ? { ...card, attackRange: card.attackRange + towerRangeBonus + roadBonus, damage: card.damage + towerDamageBonus }
+  return towerRangeBonus || towerDamageBonus || adjacentRoyalRangeBonus || roadBonus
+    ? { ...card, attackRange: card.attackRange + towerRangeBonus + adjacentRoyalRangeBonus + roadBonus, damage: card.damage + towerDamageBonus }
     : card;
 }
 

@@ -43,6 +43,20 @@ export function createUnitActionController(options) {
     callbacks.syncAbilityBadges?.();
   }
 
+  function effectiveAttackStats(unit, origin) {
+    if (unit.userData.cardId !== 'archer' || isMountedArcher(unit)) return unit.userData;
+    const adjacentRoyalTower = units.some(candidate => candidate.userData.ownerSeat === unit.userData.ownerSeat
+      && candidate.userData.cardId === 'royal_tower'
+      && !candidate.userData.underConstruction
+      && Math.max(
+        Math.abs(Math.round((candidate.position.x + half) / tile) - origin.x),
+        Math.abs(Math.round((candidate.position.z + half) / tile) - origin.z),
+      ) === 1);
+    return adjacentRoyalTower
+      ? { ...unit.userData, attackRange: unit.userData.attackRange + CARD_BY_ID.royal_tower.adjacentArcherRangeBonus }
+      : unit.userData;
+  }
+
   function sendOnlineMoveOrAttack(unit, destination, target, origin, context) {
     unit.position.copy(context.originPosition);
     if (context.mountable || context.cannonMove) {
@@ -52,7 +66,7 @@ export function createUnitActionController(options) {
     if (target && (target.userData.ownerSeat !== state.selfSeat || context.cannonTarget)) {
       const valid = unit.userData.cardId === 'cannon'
         ? context.cannonTarget
-        : isAttackTargetValid(unit.userData, origin, destination);
+        : isAttackTargetValid(effectiveAttackStats(unit, origin), origin, destination);
       if (valid) callbacks.sendOnlineAction?.({ type: 'attack', unitId: unit.userData.serverUnitId, targetUnitId: target.userData.serverUnitId });
       else callbacks.showGameError?.('Alvo fora de alcance.');
     } else if (target) callbacks.showGameError?.('Esta casa já está ocupada.');
@@ -117,7 +131,8 @@ export function createUnitActionController(options) {
     } else if (cannonMove) local.moveCannon(unit, destination, target, origin, originPosition, forward);
     else if (unit.userData.cardId === 'cannon' && cannonTarget) local.fireCannon(unit, destination, origin, originPosition, forward);
     else if (target) {
-      if (local.attackTarget(unit, target, destination, origin, originPosition, cannonTarget || isAttackTargetValid(unit.userData, origin, destination))) {
+      if (local.attackTarget(unit, target, destination, origin, originPosition,
+        cannonTarget || isAttackTargetValid(effectiveAttackStats(unit, origin), origin, destination))) {
         markHenryAction(unit, 'attack');
       }
     } else if (moveDistance > unit.userData.move) {
