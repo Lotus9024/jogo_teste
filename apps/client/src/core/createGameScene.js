@@ -27,7 +27,7 @@ export function createGameScene(app, { quality = 'high' } = {}) {
   camera.position.set(3.1, 14.8, 10.2);
   camera.lookAt(0, 0.32, 0);
   scene.add(camera);
-  const magicSky = createMagicSky(scene, renderer, app, { quality, camera });
+  const magicSky = createMagicSky(scene, renderer, app, { quality });
 
   const controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;

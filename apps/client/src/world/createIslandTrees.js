@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 const BOARD_SCENERY_CLEARANCE = 12;
-const TREE_COUNT = 12;
+const TREE_COUNT = 9;
 const BRANCHES_PER_TREE = 6;
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -16,17 +16,23 @@ function seededRandom(seed) {
 function createPlacements() {
   const random = seededRandom(6412);
   const placements = [];
-  const minDistanceSq = 25;
+  const minDistanceSq = 12.25;
+  let attempts = 0;
 
-  while (placements.length < TREE_COUNT) {
-    const angle = random() * Math.PI * 2;
-    const radial = 0.82 + random() * 0.16;
+  while (placements.length < TREE_COUNT && attempts < 600) {
+    attempts += 1;
     const candidate = {
-      x: Math.cos(angle) * 16.8 * radial,
-      z: Math.sin(angle) * 14.25 * radial,
+      x: (random() * 2 - 1) * 15.8,
+      z: (random() * 2 - 1) * 13.35,
       rotation: random() * Math.PI * 2,
-      scale: 0.85 + random() * 0.25
+      scale: 0.82 + random() * 0.32,
+      height: 0.9 + random() * 0.24,
+      girth: 0.54 + random() * 0.34,
+      leanX: (random() - 0.5) * 0.34,
+      leanZ: (random() - 0.5) * 0.34,
+      branchCount: 4 + Math.floor(random() * 3)
     };
+    const normalizedRadius = (candidate.x / 16.8) ** 2 + (candidate.z / 14.25) ** 2;
     const overlapsBoard = Math.abs(candidate.x) < BOARD_SCENERY_CLEARANCE
       && Math.abs(candidate.z) < BOARD_SCENERY_CLEARANCE;
     const tooClose = placements.some(tree => {
@@ -34,6 +40,7 @@ function createPlacements() {
       const dz = tree.z - candidate.z;
       return dx * dx + dz * dz < minDistanceSq;
     });
+    if (normalizedRadius < 0.55 || normalizedRadius > 0.94) continue;
     if (!overlapsBoard && !tooClose) placements.push(candidate);
   }
 
@@ -79,7 +86,11 @@ function createTreeInstances() {
 
   createPlacements().forEach((spec, treeIndex) => {
     treeRotation.setFromAxisAngle(UP, spec.rotation);
-    treeScale.setScalar(spec.scale);
+    treeScale.set(
+      spec.scale * spec.girth,
+      spec.scale * spec.height,
+      spec.scale * spec.girth
+    );
     treePosition.set(spec.x, -0.54, spec.z);
     placementMatrix.compose(treePosition, treeRotation, treeScale);
 
@@ -87,7 +98,7 @@ function createTreeInstances() {
       treeIndex,
       createSegmentMatrix(
         new THREE.Vector3(0, 0, 0),
-        new THREE.Vector3(0.08, 2.85, -0.03),
+        new THREE.Vector3(spec.leanX, 2.85, spec.leanZ),
         1,
         placementMatrix
       )
@@ -101,19 +112,26 @@ function createTreeInstances() {
       [[0.07, 2.18, -0.03], [0.67, 2.78, -0.24], 0.66],
       [[0.08, 2.28, -0.03], [-0.48, 2.9, -0.3], 0.62]
     ];
-    branchSpecs.forEach(([start, end, thickness]) => {
+    const branchRandom = seededRandom(8100 + treeIndex * 97);
+    branchSpecs.slice(0, spec.branchCount).forEach(([start, end, thickness]) => {
+      const variedEnd = [
+        end[0] * (0.84 + branchRandom() * 0.34),
+        end[1] * (0.94 + branchRandom() * 0.1),
+        end[2] * (0.84 + branchRandom() * 0.34)
+      ];
       branches.setMatrixAt(
         branchIndex,
         createSegmentMatrix(
           new THREE.Vector3(...start),
-          new THREE.Vector3(...end),
-          thickness,
+          new THREE.Vector3(...variedEnd),
+          thickness * (0.72 + branchRandom() * 0.24),
           placementMatrix
         )
       );
       branchIndex += 1;
     });
   });
+  branches.count = branchIndex;
 
   [trunks, branches].forEach(mesh => {
     mesh.castShadow = true;

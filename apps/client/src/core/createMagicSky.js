@@ -77,25 +77,6 @@ function drawMoon(context, width, height, x, y, radius) {
     context.fill();
   }
 
-  // A dark offset disc leaves a narrow, natural crescent without adding any
-  // figurative element to the requested moon-and-stars composition.
-  const shadowX = x - radius * 0.39;
-  const shadowY = y + radius * 0.03;
-  const shadow = context.createRadialGradient(
-    shadowX - radius * 0.24,
-    shadowY,
-    radius * 0.1,
-    shadowX,
-    shadowY,
-    radius * 1.03
-  );
-  shadow.addColorStop(0, 'rgba(2, 1, 9, 0.99)');
-  shadow.addColorStop(0.82, 'rgba(4, 2, 13, 0.985)');
-  shadow.addColorStop(1, 'rgba(23, 10, 42, 0.9)');
-  context.fillStyle = shadow;
-  context.beginPath();
-  context.arc(shadowX, shadowY, radius * 0.96, 0, Math.PI * 2);
-  context.fill();
   context.restore();
 }
 
@@ -168,7 +149,7 @@ function createMoonTexture(size) {
   return texture;
 }
 
-export function createMagicSky(scene, renderer, app, { quality = 'high', camera } = {}) {
+export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) {
   scene.background = new THREE.Color(0x010107);
   scene.environment = null;
   scene.environmentIntensity = 0;
@@ -212,11 +193,11 @@ export function createMagicSky(scene, renderer, app, { quality = 'high', camera 
     toneMapped: false
   });
   const moon = new THREE.Sprite(moonMaterial);
-  moon.name = 'Mystic textured crescent moon';
-  moon.position.set(-15.5, 6, -80);
-  moon.scale.setScalar(6);
+  moon.name = 'Fixed mystical full moon';
+  moon.position.set(-17.3, -34.4, -19.5);
+  moon.scale.setScalar(4.3);
   moon.renderOrder = -999;
-  camera.add(moon);
+  scene.add(moon);
 
   function setQuality(nextQuality) {
     sky.geometry = skyGeometries[nextQuality];

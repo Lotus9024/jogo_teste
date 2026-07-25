@@ -3,6 +3,7 @@ import { M, add } from '../core/scenePrimitives.js';
 import { createIslandRocks } from './createIslandRocks.js';
 import { createIslandTrees } from './createIslandTrees.js';
 import { createMagicTerrain } from './createMagicTerrain.js';
+import { createDistantIslands } from './createDistantIslands.js';
 
 function createRuinMaterials() {
   const stones = [0x5a5361, 0x47414f, 0x6a626d, 0x38333f].map((color, index) => {
@@ -189,7 +190,8 @@ export function createWorldEnvironment(scene, renderer, { quality, fireLights, f
   } = createMagicTerrain(renderer, { quality });
   const islandRocks = createIslandRocks(renderer, { autoLoad: quality === 'high' });
   const islandTrees = createIslandTrees({ autoLoad: quality === 'high' });
-  environment.add(terrain, islandRocks, magicDust, islandTrees);
+  const distantIslands = createDistantIslands();
+  environment.add(terrain, islandRocks, magicDust, islandTrees, distantIslands.group);
 
   const ruinMaterials = createRuinMaterials();
   [
@@ -221,7 +223,10 @@ export function createWorldEnvironment(scene, renderer, { quality, fireLights, f
   const wisps = addMist(environment);
   scene.add(environment);
 
-  const updateTerrain = elapsed => updateMagicTerrain(elapsed);
+  const updateTerrain = elapsed => {
+    updateMagicTerrain(elapsed);
+    distantIslands.update(elapsed);
+  };
   let highFidelityScheduled = false;
   function scheduleHighFidelityAssets() {
     if (highFidelityScheduled) return;
