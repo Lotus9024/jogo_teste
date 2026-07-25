@@ -9,7 +9,7 @@ test('a carta exibe sua categoria logo abaixo do nome', () => {
   const markup = cardMarkup(cards.find(card => card.id === 'goblin_tower'), 0);
   assert.match(markup, /class="game-card[^"].*category-goblin/);
   assert.match(markup, /class="card-category">GOBLIN<\/small>/);
-  assert.match(markup, /Cada Goblin seu[^]*\nQualquer Goblin/);
+  assert.match(markup, /Goblins que nascem ao lado[^]*\nNecessita de 2 Goblins/);
 });
 
 test('cada carta possui uma ilustração vetorial própria', () => {
@@ -41,11 +41,11 @@ test('todas as cartas usam tipografia mínima padronizada', () => {
   }
 });
 
-test('cartas com texto denso recebem automaticamente o modo de leitura ampliada', () => {
-  for (const cardId of ['goblin_altar', 'mage', 'mage_altar', 'goblin_swarm', 'road', 'cobblestone_road', 'cannon', 'tower', 'henry']) {
-    const card = cards.find(candidate => candidate.id === cardId);
-    if (!card) continue;
-    assert.match(cardMarkup(card, 0), /copy-readable/);
+test('somente cartas com texto denso recebem automaticamente o modo de leitura ampliada', () => {
+  for (const card of cards) {
+    const dense = card.description.length > 115 || card.abilityText.length > 150;
+    if (dense) assert.match(cardMarkup(card, 0), /copy-readable/, `${card.id} deveria ampliar a leitura`);
+    else assert.doesNotMatch(cardMarkup(card, 0), /copy-readable/, `${card.id} não precisa ampliar a leitura`);
   }
 });
 
