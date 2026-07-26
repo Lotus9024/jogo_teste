@@ -11,8 +11,8 @@ function deckPosition(half, seat) {
   // Each ruler faces the center. Seat 1 faces -Z, so its left is -X;
   // seat 2 faces +Z, so its left is +X.
   return seat === 1
-    ? [-half - 1.9, -0.34, half - 1.15]
-    : [half + 1.9, -0.34, -half + 1.15];
+    ? [-half - 2.18, -0.34, half - 1.15]
+    : [half + 2.18, -0.34, -half + 1.15];
 }
 
 export function createPhysicalDeck(scene, half, seat = 1) {

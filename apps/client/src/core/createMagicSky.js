@@ -46,15 +46,37 @@ function drawMoon(context, width, height, x, y, radius) {
     y,
     radius * 1.18
   );
-  surface.addColorStop(0, '#eeeaff');
-  surface.addColorStop(0.47, '#c9c4dc');
-  surface.addColorStop(0.82, '#847b9c');
-  surface.addColorStop(1, '#332b43');
+  surface.addColorStop(0, '#f3f1f8');
+  surface.addColorStop(0.38, '#d7d3df');
+  surface.addColorStop(0.78, '#9992a7');
+  surface.addColorStop(1, '#4c4559');
   context.fillStyle = surface;
   context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
 
+  const mariaRandom = seededRandom(3207);
+  for (let index = 0; index < 17; index += 1) {
+    const angle = mariaRandom() * Math.PI * 2;
+    const distance = Math.sqrt(mariaRandom()) * radius * 0.64;
+    const mariaX = x + Math.cos(angle) * distance;
+    const mariaY = y + Math.sin(angle) * distance;
+    const mariaWidth = radius * (0.09 + mariaRandom() * 0.2);
+    const mariaHeight = mariaWidth * (0.45 + mariaRandom() * 0.5);
+    context.save();
+    context.translate(mariaX, mariaY);
+    context.rotate(mariaRandom() * Math.PI);
+    const maria = context.createRadialGradient(0, 0, 0, 0, 0, mariaWidth);
+    maria.addColorStop(0, 'rgba(65, 59, 78, 0.2)');
+    maria.addColorStop(0.65, 'rgba(80, 72, 94, 0.12)');
+    maria.addColorStop(1, 'rgba(70, 62, 84, 0)');
+    context.fillStyle = maria;
+    context.beginPath();
+    context.ellipse(0, 0, mariaWidth, mariaHeight, 0, 0, Math.PI * 2);
+    context.fill();
+    context.restore();
+  }
+
   const random = seededRandom(9024);
-  for (let index = 0; index < 48; index += 1) {
+  for (let index = 0; index < 96; index += 1) {
     const angle = random() * Math.PI * 2;
     const distance = Math.sqrt(random()) * radius * 0.88;
     const craterRadius = radius * (0.012 + random() * 0.075);
@@ -69,7 +91,8 @@ function drawMoon(context, width, height, x, y, radius) {
       craterRadius
     );
     crater.addColorStop(0, 'rgba(255, 255, 255, 0.12)');
-    crater.addColorStop(0.52, 'rgba(70, 60, 91, 0.2)');
+    crater.addColorStop(0.42, 'rgba(255, 255, 255, 0.05)');
+    crater.addColorStop(0.58, 'rgba(62, 56, 73, 0.24)');
     crater.addColorStop(1, 'rgba(25, 18, 39, 0)');
     context.fillStyle = crater;
     context.beginPath();
@@ -78,6 +101,50 @@ function drawMoon(context, width, height, x, y, radius) {
   }
 
   context.restore();
+}
+
+function createStarLayer({ count, radius, seed, size, opacity }) {
+  const random = seededRandom(seed);
+  const positions = [];
+  const colors = [];
+  const violet = new THREE.Color(0xa557ff);
+  const pale = new THREE.Color(0xeee7ff);
+  const color = new THREE.Color();
+
+  for (let index = 0; index < count; index += 1) {
+    const longitude = random() * Math.PI * 2;
+    const vertical = random() * 2 - 1;
+    const horizontal = Math.sqrt(1 - vertical * vertical);
+    const distance = radius - random() * 3;
+    positions.push(
+      Math.cos(longitude) * horizontal * distance,
+      vertical * distance,
+      Math.sin(longitude) * horizontal * distance
+    );
+    color.lerpColors(violet, pale, random() * 0.72);
+    color.offsetHSL((random() - 0.5) * 0.025, 0, (random() - 0.5) * 0.12);
+    colors.push(color.r, color.g, color.b);
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  const material = new THREE.PointsMaterial({
+    size,
+    vertexColors: true,
+    transparent: true,
+    opacity,
+    depthWrite: false,
+    depthTest: true,
+    fog: false,
+    toneMapped: false,
+    sizeAttenuation: false
+  });
+  const stars = new THREE.Points(geometry, material);
+  stars.frustumCulled = false;
+  stars.renderOrder = -999;
+  stars.rotation.y = SKY_ROTATION;
+  return stars;
 }
 
 function createDarkFantasyTexture(size) {
@@ -183,9 +250,24 @@ export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) 
   sky.renderOrder = -1000;
   sky.frustumCulled = false;
   scene.add(sky);
+  const fineStars = createStarLayer({
+    count: quality === 'low' ? 230 : 720,
+    radius: 61,
+    seed: 7137,
+    size: quality === 'low' ? 0.8 : 1.05,
+    opacity: 0.78
+  });
+  const brightStars = createStarLayer({
+    count: quality === 'low' ? 34 : 92,
+    radius: 59,
+    seed: 12821,
+    size: quality === 'low' ? 1.35 : 1.8,
+    opacity: 0.92
+  });
+  scene.add(fineStars, brightStars);
 
   const moonMaterial = new THREE.SpriteMaterial({
-    map: createMoonTexture(512),
+    map: createMoonTexture(1024),
     transparent: true,
     depthTest: true,
     depthWrite: false,
@@ -203,6 +285,8 @@ export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) 
     sky.geometry = skyGeometries[nextQuality];
     skyMaterial.map = textures[nextQuality];
     skyMaterial.needsUpdate = true;
+    fineStars.visible = true;
+    brightStars.visible = nextQuality === 'high';
     app.dataset.skybox = `dark-fantasy-moon-${nextQuality}`;
   }
 

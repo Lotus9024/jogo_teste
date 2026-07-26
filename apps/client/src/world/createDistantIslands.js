@@ -134,29 +134,42 @@ export function createDistantIslands() {
   };
 
   const specs = [
-    { position: [-17.2, -21, -11.2], radiusX: 2.8, radiusZ: 1.8, depth: 3.4, lobes: 3, phase: 0.5, seed: 401 },
-    { position: [16.2, -30.6, -4.1], radiusX: 2.35, radiusZ: 3, depth: 4, lobes: 5, phase: 1.7, seed: 733 },
-    { position: [6.7, -26, -29.8], radiusX: 2.6, radiusZ: 1.4, depth: 2.8, lobes: 4, phase: 2.8, seed: 991 }
+    { position: [-17.2, -21, -11.2], radiusX: 2.8, radiusZ: 1.8, depth: 3.4, lobes: 3, phase: 0.5, seed: 401, light: 0.96, tilt: [0.04, 0.03] },
+    { position: [16.2, -30.6, -4.1], radiusX: 2.35, radiusZ: 3, depth: 4, lobes: 5, phase: 1.7, seed: 733, light: 0.82, tilt: [-0.08, 0.05] },
+    { position: [6.7, -26, -29.8], radiusX: 2.6, radiusZ: 1.4, depth: 2.8, lobes: 4, phase: 2.8, seed: 991, light: 0.68, tilt: [0.1, -0.04] },
+    { position: [-20, -29, -25], radiusX: 1.55, radiusZ: 1.05, depth: 2.35, lobes: 6, phase: 3.9, seed: 1241, light: 0.56, tilt: [-0.14, 0.1] },
+    { position: [-2, -38, -45], radiusX: 1.2, radiusZ: 1.75, depth: 2.7, lobes: 4, phase: 5.1, seed: 1607, light: 0.48, tilt: [0.12, -0.12] }
   ];
 
   specs.forEach((spec, index) => {
     const island = new THREE.Group();
     island.name = `Ilha flutuante distante ${index + 1}`;
     island.position.set(...spec.position);
+    island.rotation.x = spec.tilt[0];
     island.rotation.y = spec.phase * 0.48;
+    island.rotation.z = spec.tilt[1];
     island.userData = {
       baseY: spec.position[1],
       phase: spec.phase,
       amplitude: 0.08 + index * 0.025
     };
+    const islandMaterials = Object.fromEntries(
+      Object.entries(materials).map(([name, material]) => {
+        const clone = material.clone();
+        clone.color.multiplyScalar(spec.light);
+        if (clone.emissive) clone.emissive.multiplyScalar(0.7 + spec.light * 0.3);
+        if ('emissiveIntensity' in clone) clone.emissiveIntensity *= 0.72 + spec.light * 0.28;
+        return [name, clone];
+      })
+    );
     const body = new THREE.Mesh(
       createIslandGeometry(spec),
-      [materials.surface, materials.cliff]
+      [islandMaterials.surface, islandMaterials.cliff]
     );
     body.castShadow = true;
     body.receiveShadow = true;
     island.add(body);
-    addSurfaceDetails(island, spec.radiusX, spec.radiusZ, spec.seed + 20, materials);
+    addSurfaceDetails(island, spec.radiusX, spec.radiusZ, spec.seed + 20, islandMaterials);
     group.add(island);
   });
 

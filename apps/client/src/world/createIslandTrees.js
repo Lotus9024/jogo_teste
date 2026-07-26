@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 const BOARD_SCENERY_CLEARANCE = 12;
-const TREE_COUNT = 9;
+const TREE_COUNT = 8;
 const BRANCHES_PER_TREE = 6;
 const UP = new THREE.Vector3(0, 1, 0);
 
@@ -26,11 +26,11 @@ function createPlacements() {
       z: (random() * 2 - 1) * 13.35,
       rotation: random() * Math.PI * 2,
       scale: 0.82 + random() * 0.32,
-      height: 0.9 + random() * 0.24,
-      girth: 0.54 + random() * 0.34,
+      height: 0.86 + random() * 0.34,
+      girth: 0.42 + random() * 0.4,
       leanX: (random() - 0.5) * 0.34,
       leanZ: (random() - 0.5) * 0.34,
-      branchCount: 4 + Math.floor(random() * 3)
+      branchCount: 3 + Math.floor(random() * 4)
     };
     const normalizedRadius = (candidate.x / 16.8) ** 2 + (candidate.z / 14.25) ** 2;
     const overlapsBoard = Math.abs(candidate.x) < BOARD_SCENERY_CLEARANCE

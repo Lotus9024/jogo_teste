@@ -107,6 +107,118 @@ const timberMaterial = new THREE.MeshStandardMaterial({
   flatShading: true,
 });
 
+const rutMaterial = new THREE.MeshBasicMaterial({
+  color: 0x241611,
+  transparent: true,
+  opacity: 0.48,
+  depthWrite: false,
+  toneMapped: false,
+});
+
+const roadRuneMaterial = new THREE.MeshBasicMaterial({
+  color: 0x8e51c7,
+  transparent: true,
+  opacity: 0.46,
+  depthWrite: false,
+  toneMapped: false,
+});
+
+const cobbleReliefMaterial = new THREE.MeshStandardMaterial({
+  color: 0x776d70,
+  emissive: 0x190d22,
+  emissiveIntensity: 0.34,
+  roughness: 0.96,
+  flatShading: true,
+});
+
+function addTrack(parent, horizontal, along, across, width, length, height) {
+  const track = new THREE.Mesh(
+    new THREE.BoxGeometry(horizontal ? length : width, horizontal ? width : length, height),
+    rutMaterial,
+  );
+  track.position.set(horizontal ? along : across, horizontal ? across : along, 0.058);
+  parent.add(track);
+}
+
+function addDirtDetails(surface, connections, tile, width) {
+  const rune = new THREE.Mesh(
+    new THREE.TorusGeometry(tile * 0.13, tile * 0.012, 6, 24),
+    roadRuneMaterial,
+  );
+  rune.name = 'roadRune';
+  rune.position.z = 0.061;
+  surface.add(rune);
+
+  const rutOffset = width * 0.24;
+  const runLength = tile * 0.42;
+  if (connections.north) {
+    addTrack(surface, false, -tile * 0.3, -rutOffset, tile * 0.035, runLength, 0.007);
+    addTrack(surface, false, -tile * 0.3, rutOffset, tile * 0.035, runLength, 0.007);
+  }
+  if (connections.south) {
+    addTrack(surface, false, tile * 0.3, -rutOffset, tile * 0.035, runLength, 0.007);
+    addTrack(surface, false, tile * 0.3, rutOffset, tile * 0.035, runLength, 0.007);
+  }
+  if (connections.east) {
+    addTrack(surface, true, tile * 0.3, -rutOffset, tile * 0.035, runLength, 0.007);
+    addTrack(surface, true, tile * 0.3, rutOffset, tile * 0.035, runLength, 0.007);
+  }
+  if (connections.west) {
+    addTrack(surface, true, -tile * 0.3, -rutOffset, tile * 0.035, runLength, 0.007);
+    addTrack(surface, true, -tile * 0.3, rutOffset, tile * 0.035, runLength, 0.007);
+  }
+
+  const shardGeometry = new THREE.OctahedronGeometry(tile * 0.028, 0);
+  [[-0.18, -0.18], [0.19, -0.13], [-0.12, 0.2], [0.2, 0.17]].forEach(([x, y], index) => {
+    const shard = new THREE.Mesh(shardGeometry, cobbleReliefMaterial);
+    shard.name = `roadArcaneShard${index + 1}`;
+    shard.position.set(x * tile, y * tile, 0.073);
+    shard.rotation.z = index * 0.83;
+    shard.scale.set(0.7, 1.1 + index * 0.08, 0.55);
+    surface.add(shard);
+  });
+}
+
+function addCobblestoneDetails(surface, connections, tile, width) {
+  const stoneGeometry = new THREE.DodecahedronGeometry(tile * 0.038, 0);
+  const placements = [
+    [-0.19, -0.18, 0.9, 0.7], [0.03, -0.2, 1.15, 0.82], [0.21, -0.14, 0.86, 1],
+    [-0.22, 0.04, 1.08, 0.75], [0.02, 0.02, 0.9, 1.08], [0.22, 0.08, 1.18, 0.72],
+    [-0.17, 0.21, 0.82, 1.06], [0.08, 0.2, 1.12, 0.78],
+  ];
+  placements.forEach(([x, y, scaleX, scaleY], index) => {
+    const stone = new THREE.Mesh(stoneGeometry, cobbleReliefMaterial);
+    stone.name = `cobbleRelief${index + 1}`;
+    stone.position.set(x * tile, y * tile, 0.071 + (index % 3) * 0.003);
+    stone.rotation.z = index * 0.71;
+    stone.scale.set(scaleX, scaleY, 0.38 + (index % 2) * 0.1);
+    surface.add(stone);
+  });
+
+  const edgeOffset = width * 0.46;
+  const edgeLength = tile * 0.38;
+  if (connections.north || connections.south) {
+    for (const x of [-edgeOffset, edgeOffset]) {
+      const curb = new THREE.Mesh(
+        new THREE.BoxGeometry(tile * 0.055, edgeLength, tile * 0.045),
+        stoneEdgeMaterial,
+      );
+      curb.position.set(x, connections.north && !connections.south ? -tile * 0.3 : tile * 0.3, 0.072);
+      surface.add(curb);
+    }
+  }
+  if (connections.east || connections.west) {
+    for (const y of [-edgeOffset, edgeOffset]) {
+      const curb = new THREE.Mesh(
+        new THREE.BoxGeometry(edgeLength, tile * 0.055, tile * 0.045),
+        stoneEdgeMaterial,
+      );
+      curb.position.set(connections.west && !connections.east ? -tile * 0.3 : tile * 0.3, y, 0.072);
+      surface.add(curb);
+    }
+  }
+}
+
 function connectedRoadShape(connections, tile, width) {
   const halfWidth = width * 0.5;
   const edge = tile * 0.51;
@@ -180,14 +292,17 @@ export function makeRoad(connections, tile = 1.08, { underConstruction = false, 
   const width = tile * (cobblestoneRoad ? 0.52 : 0.46);
   const built = new THREE.Group();
   built.name = 'roadBuiltParts';
-  built.add(connectedSurface(
+  const roadSurface = connectedSurface(
     connections,
     tile,
     width,
     cobblestoneRoad ? cobblestoneMaterial : dirtMaterial,
     cobblestoneRoad ? stoneEdgeMaterial : dirtEdgeMaterial,
     cobblestoneRoad ? 'cobblestoneRoadSurface' : 'dirtRoadSurface',
-  ));
+  );
+  if (cobblestoneRoad) addCobblestoneDetails(roadSurface, connections, tile, width);
+  else addDirtDetails(roadSurface, connections, tile, width);
+  built.add(roadSurface);
   root.add(built);
 
   const construction = new THREE.Group();
