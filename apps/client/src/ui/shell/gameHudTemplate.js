@@ -12,6 +12,28 @@ export function gameHudTemplate() {
       <button id="settings-toggle" class="settings-toggle" aria-haspopup="dialog" aria-controls="settings-modal" aria-label="Abrir configurações">⚙</button>
       <button id="leave-match" class="leave-match" type="button" hidden>SAIR <span>W.O.</span></button>
       <output id="game-error" class="game-error" aria-live="polite"></output>
+      <section id="victory-presentation" class="victory-presentation" role="status" aria-live="assertive" hidden>
+        <div class="victory-veil" aria-hidden="true"></div>
+        <div class="victory-arcane-stage" aria-hidden="true">
+          <i class="victory-orbit victory-orbit-outer"></i>
+          <i class="victory-orbit victory-orbit-inner"></i>
+          <i class="victory-sigil">✦</i>
+          <span class="victory-rune victory-rune-north">ᚱ</span>
+          <span class="victory-rune victory-rune-east">ᛉ</span>
+          <span class="victory-rune victory-rune-south">ᛏ</span>
+          <span class="victory-rune victory-rune-west">ᛃ</span>
+        </div>
+        <div class="victory-shards" aria-hidden="true">
+          ${Array.from({ length: 14 }, (_, index) => `<i style="--shard:${index}"></i>`).join('')}
+        </div>
+        <div class="victory-copy">
+          <span id="victory-eyebrow">O DESTINO FOI SELADO</span>
+          <h2 id="victory-title">VITÓRIA</h2>
+          <i class="victory-divider" aria-hidden="true"><b></b><em>✦</em><b></b></i>
+          <p id="victory-subtitle">O trono reconhece seu reinado</p>
+          <small id="victory-detail"></small>
+        </div>
+      </section>
       <section id="mage-altar-choice" class="mage-altar-choice" role="dialog" aria-modal="true" aria-labelledby="mage-altar-choice-title" hidden>
         <div>
           <small>ALTAR MAGO</small>

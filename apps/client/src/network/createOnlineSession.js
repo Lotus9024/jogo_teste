@@ -202,6 +202,7 @@ export function createOnlineSession({
     document.querySelector('#match-state').hidden = false;
     syncMageAltarChoice(payload.self);
     if (payload.state.phase === 'waiting') {
+      callbacks.hideMatchResult?.();
       leaveMatchButton.hidden = true;
       document.querySelector('#waiting-status').textContent = 'Aguardando o rei rival...';
       emit('waiting', { code: payload.code });
@@ -260,6 +261,18 @@ export function createOnlineSession({
           ? 'RIVAL DESCONECTADO'
           : (mine ? 'SEU TURNO' : 'TURNO RIVAL');
     document.querySelector('#end-turn').disabled = !mine || finished;
+    if (!finished) {
+      callbacks.hideMatchResult?.();
+    } else if (previous?.state.phase !== 'finished') {
+      const outcome = spectator
+        ? 'spectator'
+        : payload.state.winnerSeat === state.selfSeat ? 'victory' : 'defeat';
+      callbacks.showMatchResult?.({
+        outcome,
+        winnerSeat: payload.state.winnerSeat,
+        wonByForfeit,
+      });
+    }
     devController.syncTurnRoundStatus(payload.state.activeSeat, payload.state.round);
     abilities.syncAbilityBadges();
   }
@@ -300,6 +313,7 @@ export function createOnlineSession({
     });
     socket.addEventListener(SERVER_EVENTS.ROOM_LEFT, () => {
       state.onlineState = null;
+      callbacks.hideMatchResult?.();
       leaveMatchButton.hidden = true;
       resetLeaveConfirmation();
       document.querySelector('#match-state').hidden = true;

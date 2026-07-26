@@ -11,6 +11,7 @@ import { createHandController } from './ui/createHandController.js';
 import { createSettingsController } from './ui/createSettingsController.js';
 import { createDeckBuilderController } from './ui/createDeckBuilderController.js';
 import { createNexusLobbyController } from './ui/createNexusLobbyController.js';
+import { createVictoryPresentation } from './ui/createVictoryPresentation.js';
 import './style.css';
 
 const {
@@ -24,6 +25,15 @@ const {
 const { roads, fires, fireMeshes } = boardPresentation;
 
 const callbacks = {};
+const victoryPresentation = createVictoryPresentation();
+Object.assign(callbacks, {
+  showMatchResult: victoryPresentation.show,
+  hideMatchResult: victoryPresentation.hide,
+});
+if (import.meta.env.DEV && new URLSearchParams(globalThis.location.search).has('victory-preview')) {
+  document.querySelector('#online-lobby')?.classList.add('closed');
+  victoryPresentation.show({ outcome: 'victory' });
+}
 const deckBuilder = createDeckBuilderController();
 const gameError = document.querySelector('#game-error');
 let gameErrorTimer;

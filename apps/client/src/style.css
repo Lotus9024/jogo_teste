@@ -3,6 +3,7 @@
 @import './styles/game-ui.css';
 @import './styles/game-ui/card-discard.css';
 @import './styles/game-ui/match-exit.css';
+@import './styles/game-ui/victory-presentation.css';
 @import './styles/cards.css';
 @import './styles/lobby.css';
 @import './styles/deck-builder.css';
