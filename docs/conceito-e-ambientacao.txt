@@ -1,0 +1,337 @@
+1. Conceito e Ambientação
+
+Temática: O jogo apresenta um visual com tema medieval sombrio, seguindo o estilo de dark fantasy.
+
+Objetivo: Os jogadores assumem o papel de reis que buscam expandir seus territórios e derrubar reinos rivais. A vitória é alcançada ao eliminar os reis oponentes (a base/castelo rival). O universo é habitado por criaturas místicas, incluindo dragões, goblins e humanos.
+
+
+2. Interface e Elementos Visuais
+
+Descrição Gráfica: O jogo utiliza gráficos 3D com interface (HUD) em 2D. O tabuleiro 20 x 20, as tropas, as criaturas e as construções são apresentados de forma isométrica e em 3D.
+
+Status das Criaturas: Ao clicar em uma criatura/unidade, a carta correspondente é apresentada (com as informações necessárias). Ao passar o mouse sobre objetos ou criaturas no tabuleiro, uma tabela de status com estética dark fantasy medieval é revelada.
+
+Layout da Tela: O tabuleiro ocupa o centro. Abaixo dele, encontra-se o botão “Passar Turno”. No rodapé, o HP do jogador fica à direita; ao lado, o cidadão; a ENERGIA, à esquerda; e, ao lado, o lvl. Jogadores inimigos têm seus indicadores de HP e energia próximos às suas respectivas bases. Ao lado da vida, caso haja cidadãos em seu reino, aparece uma contagem 3 e um ícone de uma pessoa feliz, parecido com o emoji.
+
+Área: A área em que as cartas podem ser lançadas fica azul ou vermelha, dependendo de sua cor, em volta do castelo, e é definida com base no lvl da base.
+
+Bandeja de Cartas: Centralizada na parte inferior, a bandeja mostra as cartas parcialmente recolhidas. Ao passar o mouse, a carta sobe e revela informações; ao clicar, ela é selecionada para uso. A bandeja permite navegação horizontal e possui uma animação de compra, na qual a carta entra pelo lado esquerdo e o baralho se reorganiza. Quando a carta é conjurada — o que acontece ao clicar na carta e arrastá-la até o quadrado desejado —, ela sai da mão (bandeja de cartas do jogador), é lançada no tabuleiro, ganha a forma “física” e aparece da forma orientada. Já as cartas pegas no baralho de compra saem dele e vão para a mão.
+
+Menu de Baralho: Há um baralho para cada jogador. Cada um se localiza à esquerda do lado do tabuleiro de seu respectivo jogador. Os jogadores poderão personalizar seu próprio deck (baralho) antes da partida.
+
+No menu do jogo, há uma opção “Deck”, na qual você clica e vai para o seu seletor de baralho. Lá, haverá uma silhueta de carta para adicionar 9 comuns, 7 incomuns, 5 raras, 3 lendárias e 1 místico. Embaixo das silhuetas, haverá todas as cartas do jogo para você arrastar e colocar no seu deck. É necessário ter exatamente essas quantidades de cartas de cada categoria. Elas são as que podem ser pegas no baralho do jogo.
+
+Elementos do Cenário: As bases são castelos temáticos.
+
+Quando as unidades se movimentam, deve-se mostrar a peça se arrastando para o quadrado demarcado, simulando o xadrez.
+
+
+3. Regras
+
+Dinâmica:
+A partida ocorre em turnos alternados (turno é a vez de cada jogador, e rodada é quando todos os competidores jogam).
+O jogador ativo pode jogar cartas, movimentar unidades e evoluir.
+Cada turno tem um limite de 2 minutos, com transição automática após o tempo expirar.
+
+Condição de Vitória:
+Deve-se derrotar os oponentes destruindo suas bases. A destruição da própria base resulta em derrota.
+
+Movimentação e Ataque:
+Ao clicar em uma unidade, o grid de movimento aparece conforme a orientação da carta.
+Para atacar, o alvo deve estar no alcance de movimento ou cumprir o requisito dito pela descrição. Cada unidade pode realizar apenas uma ação por turno: ou se movimenta, ou ataca, exceto algumas.
+
+Gestão de Cartas:
+A mão inicial contém 7 cartas, com limite máximo de 7 (salvo efeitos especiais).
+Uma carta é comprada compulsoriamente no início de cada turno, a menos que a mão esteja cheia.
+Caso passe do limite de 7 cartas, o jogo obriga a jogar ou descartar uma carta. Há um lixo no canto inferior direito, onde você pode jogar cartas fora.
+
+Baralho:
+Cada jogador pode ter um baralho, montando a própria estratégia.
+O jogador tem que ter 6 comuns, 4 incomuns, 2 raras, 0 lendários e 0 místico (não há ainda lendário nem místico).
+
+Combate:
+Tropas não podem atacar tropas que estão atrás de certas construções ou tropas. Também não podem se movimentar caso uma tropa esteja na frente.
+Tropas de ataque físico, ao matar uma construção ou tropa, substituem o lugar dela.
+Cartas que foram lançadas no turno não podem se movimentar ou atacar, apenas no próximo turno, exceto descrições que ditam o contrário.
+
+Sistema de Energia:
+A partida começa com 10 pontos de energia para cada competidor. A energia é o recurso necessário para conjurar e evoluir cartas.
+A cada novo turno, somam-se +3 pontos ao total, respeitando o limite máximo de 10 pontos do nível 1.
+
+Área:
+Construções podem ser postas na área do reino (a 2 blocos de distância dele). Elas demoram rodadas para serem construídas.
+A velocidade pode ser maior, dependendo do progresso.
+Tropas também podem ser colocadas apenas a 2 blocos de distância do reino no nível 1.
+
+Habilidades:
+Cada carta pode ter uma habilidade ou uma habilidade instantânea.
+A habilidade normal pode ser usada apenas no próprio turno e tem um custo específico.
+
+Habilidade Instantânea:
+Pode ser usada mesmo sem ser o próprio turno, 1 vez por rodada. Para recarregar, necessita voltar para o próprio turno (passar 1 rodada).
+
+Chances e Raridades:
+No início do jogo, as cartas que o jogador pode pegar do baralho são apenas comuns e incomuns. A chance é de 66% de vir uma comum e 33% de vir uma incomum.
+
+
+4. Mecânicas Extras
+
+Altar:
+Você pode ter apenas um altar no deck.
+Caso já tenha recebido um altar na sua mão, você não ganhará outro. Caso você tenha perdido um altar, ele poderá vir novamente à sua mão.
+
+Chances:
+Dependendo de sua mão, há chances diferentes de virem cartas.
+Caso você já tenha um operador, a chance de ele vir na próxima mão é 10% menor. Caso tenha dois, a chance é 30% menor.
+
+Evolução de Base e Efeitos:
+O nível 1 da base tem 10 de limite de energia, 66% comum e 33% incomum.
+A base tem 4 níveis de evolução.
+Cada nível requer uma quantidade específica de cidadãos. Cidadãos são ganhos por meio de casas e ruas.
+
+Nível 2:
+Requisito: Requer 8 cidadãos e 1 rua.
+Benefícios: Adiciona cartas raras ao baralho. Construções ganham 1 de vida a cada 2 rodadas. Adiciona o limite de 12 de energia. Ir para o nível 2 dá a você 2 de energia instantaneamente. A área (em que se podem lançar as unidades) expande mais 1 de raio para as laterais.
+Chances no nível 2: 50% comum, 30% incomum e 20% rara.
+
+
+5. Estrutura da Base e Energia
+
+Detalhes da Base: Cada jogador possui uma base centralizada em seu lado do campo. As bases iniciam no nível 1, possuem 10 pontos de HP e ocupam 3 x 3 quadrados na extremidade centralizada do respectivo jogador no tabuleiro.
+
+
+6. Definição das Cartas e Chances
+
+Os termos “carta básica”, “carta goblin” e “carta mágica”, em descrições, englobam tropas e construções dessa categoria, ou seja, carta básica significa todas as cartas básicas.
+
+Alquimista
+
+Builds:
+Básica
+Mago
+Goblin
+
+Tipos de Cartas:
+Tropa
+Construção
+Terreno
+Feitiço
+
+Definições:
+Carta: Engloba tropas, construções e feitiços dessa categoria, ou seja, carta básica significa todas as cartas básicas.
+Destruidor: Retira 1 de resistência de construções ao entrar e ao estar ao lado de construções básicas.
+
+
+Cartas Comuns:
+
+Guerreiro (Carta básica - Tropa)
+Um guerreiro comum que luta pelo seu reino com unhas e dentes, sem recuar.
+Vida: 2
+Dano: 2
+Movimento: 2 (Reto)
+Custo: 5
+
+Guarda (Carta básica - Tropa)
+Um defensor simples, recém-treinado, que defende o seu reino com corpo e alma.
+Vida: 3
+Dano: 1
+Movimento: 1 (Qualquer lado)
+Custo: 5
+
+Goblin (Carta goblin - Tropa)
+Benefício: Um goblin frágil, mas que tem coragem de roubar ouro.
+Malefício: Contém destruidor ao entrar.
+Vida: 1
+Dano: 1
+Movimento: 1 (Qualquer lado)
+Custo: 2
+
+Operador (Carta básica - Tropa)
+Benefício: Pode operar quase qualquer máquina. Estar na arena conta como um cidadão para você.
+Malefício: Nenhum.
+Vida: 1
+Movimento: 1 (Qualquer lado)
+Custo: 3
+
+Barreira de Madeira (Carta básica - Construção)
+Benefício: Uma barreira simples para defesa terrestre.
+Malefício: Não defende de projéteis aéreos.
+Resistência: 3
+Custo: 2
+Velocidade de construção: 1
+
+Casa de Madeira (Carta básica - Construção)
+Benefício: Uma casa de madeira simples e frágil. Essa casa hospeda 3 cidadãos.
+Resistência: 1
+Custo: 3
+Velocidade de construção: 1
+
+Rua (Carta básica - Terreno)
+Requisito: Precisa estar conectada a um castelo ou a outra rua.
+Benefício: Aumenta o alcance de movimento em 1 quadrado para quem está por cima. Casas conectadas ganham +1 de limite de cidadão.
+Malefício: Nenhum.
+Custo: 1
+Velocidade de construção: 1
+
+Cidadão (Carta básica - Tropa)
+Ele, apenas por estar na arena, conta como um cidadão para você.
+Vida: 1
+Dano: 1
+Movimento: 1 (Qualquer lado)
+Custo: 2
+
+
+Cartas Incomuns:
+
+Casa Goblin (Carta básica - Construção)
+Requisito: Não pode ser colocada ao lado de outra casa básica.
+Benefício: Hospeda 2 cidadãos. Goblins não retiram resistência dela.
+Malefício: Nenhum.
+Resistência: 1
+Custo: 4
+Velocidade de construção: 0
+Habilidade instantânea: Gera um Goblin na casa à frente. A casa precisa estar livre, e o Goblin nasce sem poder agir neste turno. (Custo: 3)
+
+Torre (Carta básica - Construção)
+Requisito: Nenhum.
+Benefício: Permite posicionar um arqueiro com +1 de distância de ataque e visão livre.
+Malefício: Caso a torre seja destruída, o arqueiro também é.
+Resistência: 5
+Custo: 7
+Velocidade de construção: 2
+Habilidade instantânea: Atira uma flecha em todas as 4 direções retas, com, no máximo, 3 blocos de distância e 2 de dano. (Custo: 2)
+
+Canhão (Carta básica - Construção)
+Requisito: Exige um Operador posicionado exatamente atrás para se mover ou disparar.
+Benefício: Dano central 3 e em área 1.
+Malefício: Atinge apenas de 3 a 6 blocos de distância.
+Resistência: 1
+Dano: 3 (Em área: 1)
+Movimento: 1 (Frente)
+Custo: 7
+Velocidade de construção: 2
+
+Enxame de Goblins (Carta Goblin - Tropa)
+Benefício: Três Goblins surgem em posições aleatórias da sua área de lançamento.
+Malefício: Contém destruidor no próximo turno.
+Vida: 1
+Dano: 1
+Movimento: 1 (Qualquer lado)
+Custo: 6
+
+Arqueiro (Carta básica - Tropa)
+Requisito: Nenhum.
+Benefício: Pode atacar por cima de barreiras.
+Malefício: Ataca apenas a 3 e 4 quadrados de distância. Não ataca por cima de tropas ou construções grandes.
+Vida: 2
+Dano: 1
+Movimento: 1 (Qualquer lado)
+Custo: 6
+
+Henry (Carta goblin - Tropa)
+Requisito: Nenhum.
+Benefício: Entra podendo agir. Pode se movimentar e atacar (ou vice-versa) no mesmo turno.
+Malefício: Contém destruidor ao entrar.
+Vida: 1
+Dano: 1
+Movimento: 1 (Qualquer lado)
+Custo: 4
+
+Área de Construtor (Carta básica - Construção)
+Requisito: Não ter carta de goblin ou mago na sua área de base.
+Benefício: +1 de energia por turno e +1 de resistência em construções.
+Malefício: Efeito anulado se houver goblins ou magos na sua base.
+Resistência: 1
+Custo: 5
+Velocidade de construção: 1
+
+Estrada de Pedregulhos (Carta básica - Terreno)
+Requisito: Precisa estar conectada a um castelo ou a outra rua.
+Benefício: +2 de movimento para cartas básicas e +2 de cidadãos para casas conectadas.
+Malefício: Nenhum.
+Custo: 5
+Velocidade de construção: 1
+
+Goblin Bombardeio (Carta Goblin - Tropa)
+Malefício: Contém destruidor ao entrar.
+Vida: 1
+Dano: 1
+Movimento: 1 (Apenas reto)
+Custo: 4
+Habilidade: Ele corre 4 blocos para a frente e causa 3 de dano em tropas básicas e 4 de dano em construções (até ruas), afetando o quadrado central e todos em volta. O goblin morre. (Custo: 2)
+
+Clone Goblin (Carta goblin - Feitiço)
+Benefício: Coloca em campo uma cópia da última tropa Goblin que você lançou. A cópia mantém as características impressas da tropa e entra sem poder agir.
+Custa a carta clonada + 2 de custo.
+Vida: 1
+Dano: 1
+Movimento: 1 (Apenas reto)
+Custo: 0
+Habilidade instantânea: A cópia recebe +1 de vida máxima, recupera 1 de vida e ganha +1 de dano. (Custo: 2)
+
+Espanquem (Carta Goblin - Feitiço)
+Benefício: Todos os goblins podem entrar já podendo agir e bater novamente nesse turno.
+Custo: 5
+
+Nevasca (Carta mago - Feitiço)
+Benefício: Todas as tropas ao redor perdem 1 de movimento por 2 turnos do oponente.
+Pode ser posta em qualquer lugar da arena.
+Dano: 1
+Custo: 4
+
+
+Cartas Raras:
+
+Mago (Carta mago - Tropa)
+Benefício: Atira dois fogos que causam 2 de dano.
+Vida: 2
+Dano: 2
+Movimento: 1 (Qualquer lado)
+Custo: 6
+Habilidade: Jogue um ácido em volta do mago. Todas as cartas em volta tomam 3 de dano, inclusive as suas. (Custo: 4)
+
+Torre Goblin (Carta goblin - Construção)
+Requisito: Necessita de 2 goblins. Fica mais barata por cada goblin em jogo, mínimo 5.
+Benefício: Goblins que nascem ao lado ganham +1 de vida. Pode surgir em qualquer lugar da arena.
+Malefício: Nenhum.
+Resistência: 5
+Custo: 10
+Velocidade de construção: 1
+Habilidade: Necessita de ter um goblin no deck. Surge em qualquer lugar da arena que você escolher, menos na área da base do oponente. Ele não faz uma ação nesse turno. (Custo: 4)
+
+Altar Goblin (Carta goblin - Construção)
+Requisito: Ter 2 tropas goblins na sua área de base.
+Benefício: Cartas goblins custam 1 a menos. Fornece uma carta goblin aleatória.
+Malefício: Nenhum.
+Resistência: 1
+Custo: 5
+Velocidade de construção: 1
+Habilidade: Os goblins no raio de 6 quadrados ganham mais uma ação extra nesse turno. (Custo: 4)
+
+Altar Mago (Carta mago - Construção)
+Requisito: Não pode ter goblins controlados na arena.
+Benefício: Cartas mago custam 1 a menos. Permite escolher qualquer carta do baralho.
+Malefício: Nenhum.
+Resistência: 1
+Custo: 6
+Velocidade de construção: 1
+Habilidade: Todos os goblins na arena recebem -1 de ataque por 2 turnos. (Custo: 7)
+
+Guerreiro Real (Carta Básica - Tropa)
+Requisito: 10 cidadãos, nenhum mago e nenhum goblin do reino na arena.
+Benefício: Todos os guerreiros ganham +1 de vida.
+Malefício: Nenhum.
+Dano: 5
+Movimento: 2 (Reto)
+Custo: 7
+
+Torre Real (Carta Básica - Tropa)
+Requisito: Necessita de 12 cidadãos, nenhum mago e nenhum goblin do seu reino na arena para ser conjurado.
+Benefício: Todas as construções ganham +3 de vida quando a torre é construída.
+Arqueiros em volta ganham +1 de alcance.
+Arqueiros na torre ganham +1 de alcance e +1 de dano.
+Malefício: Caso a torre seja destruída, o arqueiro também é.
+Resistência: 7
+Dano: 5
+Custo: 8
+Velocidade de construção: 3
