@@ -72,12 +72,13 @@ function createStarDustTexture(size = 64) {
       const dy = (y - center) / center;
       const distance = Math.hypot(dx, dy);
       const angle = Math.atan2(dy, dx);
-      const spikes = Math.abs(Math.cos(angle * 4)) ** 8;
-      const boundary = 0.14 + spikes * 0.72;
-      const starBody = 1 - THREE.MathUtils.smoothstep(distance, boundary - 0.035, boundary + 0.035);
-      const core = Math.max(0, 1 - distance * 2.8) ** 2;
-      const halo = Math.max(0, 1 - distance) ** 7;
-      const alpha = Math.min(1, starBody * 0.94 + core * 0.75 + halo * 0.18);
+      const cardinalSpikes = Math.abs(Math.cos(angle * 2)) ** 20;
+      const diagonalSpikes = Math.abs(Math.sin(angle * 2)) ** 18;
+      const boundary = 0.1 + cardinalSpikes * 0.82 + diagonalSpikes * 0.3;
+      const starBody = 1 - THREE.MathUtils.smoothstep(distance, boundary - 0.026, boundary + 0.026);
+      const core = Math.max(0, 1 - distance * 3.7) ** 2;
+      const halo = Math.max(0, 1 - distance * 1.25) ** 10;
+      const alpha = Math.min(1, starBody * 0.96 + core * 0.82 + halo * 0.075);
       const offset = (y * size + x) * 4;
       data[offset] = 248;
       data[offset + 1] = 232;
@@ -95,7 +96,7 @@ function createStarDustTexture(size = 64) {
   return sharedStarDustTexture;
 }
 
-export function createOrbitalSparkles({
+export function createOrbitalStars({
   radiusX,
   radiusZ,
   count = 64,
@@ -153,6 +154,8 @@ export function createOrbitalSparkles({
   orbit.userData = { count, baseOpacity: opacity };
   return orbit;
 }
+
+export const createOrbitalSparkles = createOrbitalStars;
 
 export function createMagicDust() {
   const group = new THREE.Group();
@@ -254,7 +257,7 @@ export function createMagicDust() {
   );
   featured.name = 'Estrelinhas definidas em primeiro plano';
   featured.userData.count = featuredCount;
-  const orbit = createOrbitalSparkles({
+  const orbit = createOrbitalStars({
     radiusX: ISLAND_RADIUS_X,
     radiusZ: ISLAND_RADIUS_Z,
     count: 1800,
@@ -269,7 +272,22 @@ export function createMagicDust() {
   });
   orbit.name = 'Órbita estelar permanente da ilha principal';
   orbit.rotation.set(-0.035, 0, 0.045);
-  const twinkleOrbit = createOrbitalSparkles({
+  const clusterOrbit = createOrbitalStars({
+    radiusX: ISLAND_RADIUS_X,
+    radiusZ: ISLAND_RADIUS_Z,
+    count: 960,
+    seed: 7238,
+    verticalCenter: -2.5,
+    verticalSpread: 6.2,
+    radialBase: 1.01,
+    radialSpread: 0.25,
+    angularJitter: 0.08,
+    size: 0.066,
+    opacity: 0.36
+  });
+  clusterOrbit.name = 'Névoa de microestrelas do aglomerado orbital';
+  clusterOrbit.rotation.set(-0.02, -0.11, 0.028);
+  const twinkleOrbit = createOrbitalStars({
     radiusX: ISLAND_RADIUS_X * 1.02,
     radiusZ: ISLAND_RADIUS_Z * 1.02,
     count: 112,
@@ -284,11 +302,16 @@ export function createMagicDust() {
   });
   twinkleOrbit.name = 'Poucas estrelas cintilantes da órbita principal';
   twinkleOrbit.rotation.set(-0.042, 0.18, 0.052);
-  group.add(field, featured, orbit, twinkleOrbit);
+  group.add(field, featured, clusterOrbit, orbit, twinkleOrbit);
   group.userData = {
-    count: count + featuredCount + orbit.userData.count + twinkleOrbit.userData.count,
+    count: count
+      + featuredCount
+      + clusterOrbit.userData.count
+      + orbit.userData.count
+      + twinkleOrbit.userData.count,
     field,
     featured,
+    clusterOrbit,
     orbit,
     twinkleOrbit,
     boardClearZone: field.userData.boardClearZone

@@ -133,6 +133,142 @@ textarea:focus {
   color: #b99bcf !important;
 }
 
+.nexus-lobby,
+.deck-builder-panel,
+.settings-panel,
+.mage-altar-choice > div,
+.ability-confirm > div,
+.dev-gallery-bar {
+  border-color: rgba(166, 94, 225, .46);
+  background:
+    radial-gradient(circle at 16% 0, rgba(103, 43, 145, .24), transparent 38%),
+    radial-gradient(circle at 88% 100%, rgba(62, 25, 91, .2), transparent 44%),
+    linear-gradient(150deg, rgba(20, 11, 29, .99), rgba(7, 5, 11, .995) 68%);
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, .82),
+    inset 0 0 0 3px rgba(211, 166, 245, .025);
+}
+
+.deck-builder,
+.dev-card-gallery,
+.settings-modal,
+.mage-altar-choice,
+.ability-confirm,
+.dev-card-detail {
+  background:
+    radial-gradient(circle at 50% 0, rgba(77, 28, 113, .3), transparent 42%),
+    radial-gradient(circle at 18% 75%, rgba(42, 17, 66, .26), transparent 38%),
+    rgba(3, 2, 6, .9);
+}
+
+.nexus-lobby::before,
+.deck-builder-heading,
+.deck-library,
+.settings-panel header,
+.settings-group,
+.dev-settings,
+.dev-setting-row {
+  border-color: rgba(166, 94, 225, .2);
+}
+
+.nexus-brand > span {
+  border-color: rgba(184, 112, 237, .5);
+  background: rgba(137, 61, 190, .12);
+  color: #d9a8ff;
+  box-shadow: 0 0 18px rgba(155, 72, 216, .2);
+}
+
+.nexus-brand h1,
+.nexus-screen-header h2,
+.deck-builder-heading h2,
+.deck-rarity-group h3,
+.deck-library h3,
+.settings-panel h2,
+.settings-group h3,
+.mage-altar-choice h2,
+.ability-confirm h2,
+.dev-gallery-bar h2,
+.dev-detail-copy h3 {
+  color: #eee3f7;
+  text-shadow: 0 2px 18px rgba(147, 67, 207, .18);
+}
+
+.nexus-screen-header p,
+.deck-builder-heading p,
+.deck-library p,
+.settings-group p,
+.mage-altar-choice p,
+.dev-detail-copy p {
+  color: #a79cad;
+}
+
+.nexus-deck-button {
+  border-color: #b875e7 !important;
+  background: linear-gradient(105deg, #2c123e, #71399a 50%, #2c123e) !important;
+  color: #f3e3ff !important;
+  box-shadow: 0 0 22px rgba(172, 83, 231, .3), inset 0 0 18px rgba(233, 196, 255, .09);
+  animation: menu-violet-pulse 2.8s ease-in-out infinite;
+}
+
+.nexus-deck-button small,
+.nexus-discord-button span,
+.dev-gallery-bar small,
+.dev-gallery-bar label > span,
+.dev-detail-copy small,
+.settings-panel header small,
+.settings-group small,
+.mage-altar-choice small {
+  color: #bf92dc;
+}
+
+.nexus-dev-button {
+  border-color: #75459a !important;
+  background: #160b20 !important;
+  color: #c99be7 !important;
+}
+
+.nexus-room-card,
+.nexus-visibility label,
+.deck-slot,
+.deck-library-card {
+  border-color: rgba(135, 81, 169, .38);
+  background: rgba(14, 8, 20, .82);
+}
+
+.nexus-visibility input {
+  accent-color: #a85edc;
+}
+
+.dev-card-gallery {
+  scrollbar-color: #8f52b9 #09050e;
+}
+
+.dev-card-gallery::-webkit-scrollbar-track {
+  background: #09050e;
+}
+
+.dev-card-gallery::-webkit-scrollbar-thumb {
+  border-color: #09050e;
+  background: #8f52b9;
+}
+
+.dev-gallery-card {
+  background: rgba(107, 51, 146, .025);
+}
+
+.dev-gallery-card:hover,
+.dev-gallery-card:focus-visible {
+  background: rgba(144, 74, 190, .08);
+}
+
+@keyframes menu-violet-pulse {
+  50% {
+    box-shadow:
+      0 0 31px rgba(177, 91, 235, .45),
+      inset 0 0 22px rgba(232, 191, 255, .13);
+  }
+}
+
 .bottom-command button i,
 .hint i {
   background: #a95ee4;

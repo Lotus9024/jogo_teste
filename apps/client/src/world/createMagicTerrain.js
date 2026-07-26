@@ -114,6 +114,9 @@ export function createMagicTerrain(renderer, { quality = 'high' } = {}) {
     magicDust.userData.field.material.opacity = 0.35;
     magicDust.userData.featured.rotation.y = elapsed * 0.008;
     magicDust.userData.featured.material.opacity = 0.56;
+    magicDust.userData.clusterOrbit.rotation.y = -elapsed * 0.027 - 0.11;
+    magicDust.userData.clusterOrbit.material.opacity =
+      magicDust.userData.clusterOrbit.userData.baseOpacity;
     magicDust.userData.orbit.rotation.y = -elapsed * 0.032;
     magicDust.userData.orbit.material.opacity = magicDust.userData.orbit.userData.baseOpacity;
     magicDust.userData.twinkleOrbit.rotation.y = -elapsed * 0.036 + 0.18;
