@@ -325,6 +325,187 @@ textarea:focus {
   text-shadow: 0 0 10px rgba(185, 99, 236, .32);
 }
 
+.castle-hover {
+  position: fixed;
+  z-index: 18;
+  width: min(324px, calc(100vw - 24px));
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(7px) scale(.975);
+  transform-origin: top left;
+  transition: opacity .16s ease, transform .2s ease, visibility .16s;
+}
+
+.castle-hover.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+}
+
+.castle-hover-card {
+  position: relative;
+  overflow: hidden;
+  padding: 18px;
+  border: 1px solid rgba(181, 105, 235, .56);
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 82% 0, rgba(129, 55, 180, .26), transparent 37%),
+    linear-gradient(150deg, rgba(24, 12, 35, .985), rgba(7, 5, 11, .995) 70%);
+  box-shadow:
+    0 22px 55px rgba(0, 0, 0, .76),
+    inset 0 0 0 2px rgba(220, 175, 250, .025);
+  color: #e6d9ee;
+}
+
+.castle-hover-card::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid rgba(166, 92, 218, .12);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.castle-hover-card header,
+.castle-hover-health span,
+.castle-hover-requirements li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.castle-hover-card header span,
+.castle-hover-card section > small {
+  color: #ae7bce;
+  font: 600 7px Cinzel;
+  letter-spacing: .18em;
+}
+
+.castle-hover-card header b {
+  padding: 4px 7px;
+  border: 1px solid rgba(187, 112, 237, .38);
+  background: rgba(91, 37, 128, .22);
+  color: #dcb0fa;
+  font: 600 8px Cinzel;
+  letter-spacing: .08em;
+}
+
+.castle-hover-card h3 {
+  margin: 12px 0 4px;
+  color: #f1e7f8;
+  font: 600 20px/1.15 Cinzel;
+  text-shadow: 0 0 16px rgba(174, 88, 226, .2);
+}
+
+.castle-hover-name {
+  margin: 0 0 15px;
+  color: #95899e;
+  font-size: 9px;
+}
+
+.castle-hover-health {
+  margin-bottom: 15px;
+}
+
+.castle-hover-health span small {
+  color: #91849a;
+  font: 600 6px Cinzel;
+  letter-spacing: .14em;
+}
+
+.castle-hover-health span b {
+  color: #c99ae8;
+  font: 600 9px Cinzel;
+}
+
+.castle-hover-health > i {
+  display: block;
+  height: 5px;
+  margin-top: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(123, 69, 154, .3);
+  background: #08050c;
+}
+
+.castle-hover-health > i em {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #59217d, #bd70ea);
+  box-shadow: 0 0 10px rgba(185, 99, 235, .38);
+}
+
+.castle-hover-card section {
+  padding: 13px 0 0;
+  border-top: 1px solid rgba(151, 83, 195, .18);
+}
+
+.castle-hover-card section + section {
+  margin-top: 12px;
+}
+
+.castle-hover-card ul {
+  display: grid;
+  gap: 7px;
+  margin: 9px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.castle-hover-card li {
+  display: flex;
+  align-items: center;
+  color: #aaa0b0;
+  font-size: 8px;
+  line-height: 1.4;
+}
+
+.castle-hover-card li i {
+  flex: 0 0 17px;
+  color: #8752a8;
+  font-style: normal;
+}
+
+.castle-hover-card li span {
+  flex: 1;
+}
+
+.castle-hover-requirements li b {
+  color: #a998b2;
+  font: 600 8px Cinzel;
+}
+
+.castle-hover-requirements li.met i,
+.castle-hover-requirements li.met b {
+  color: #c584ec;
+}
+
+.castle-hover-max {
+  display: flex;
+  gap: 9px;
+  margin: 15px 0 0;
+  padding: 12px;
+  border: 1px solid rgba(156, 89, 198, .2);
+  background: rgba(72, 30, 101, .14);
+  color: #b6a5c0;
+  font-size: 8px;
+  line-height: 1.55;
+}
+
+.castle-hover-max i {
+  color: #c47bec;
+  font-style: normal;
+}
+
+@media (max-width: 560px) {
+  .castle-hover-card {
+    padding: 14px;
+  }
+  .castle-hover-card h3 {
+    font-size: 17px;
+  }
+}
+
 @keyframes menu-violet-pulse {
   50% {
     box-shadow:

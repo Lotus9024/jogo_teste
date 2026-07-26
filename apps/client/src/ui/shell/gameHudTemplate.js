@@ -8,6 +8,7 @@ export function gameHudTemplate() {
       <button id="draw-card" class="sr-only" aria-label="Comprar carta do baralho 3D">Comprar carta <span id="deck-count">28</span></button>
       <section id="deck-preview" class="deck-preview" aria-live="polite" aria-hidden="true"></section>
       <aside id="hover-card" class="hover-card unit-card-preview" aria-hidden="true"></aside>
+      <aside id="castle-hover" class="castle-hover" role="tooltip" aria-hidden="true"></aside>
       <div id="match-state" class="match-state" hidden><span id="turn-label">SEU TURNO</span><time id="turn-clock">02:00</time></div>
       <button id="settings-toggle" class="settings-toggle" aria-haspopup="dialog" aria-controls="settings-modal" aria-label="Abrir configurações">⚙</button>
       <button id="leave-match" class="leave-match" type="button" hidden>SAIR <span>W.O.</span></button>

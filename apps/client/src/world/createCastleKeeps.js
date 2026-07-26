@@ -141,6 +141,7 @@ function createKeep(tile, accent, enemy = false) {
   keep.name = enemy ? 'Cidadela da Noite Rubra' : 'Fortaleza do Corvo Negro';
   keep.userData = {
     hoverable: true,
+    isCastle: true,
     name: keep.name,
     role: 'BASE 3×3 · NÍVEL 1',
     hp: enemy ? 16 : 18,
@@ -161,6 +162,16 @@ function createKeep(tile, accent, enemy = false) {
 export function createCastleKeeps(board, { tile, half }) {
   const alliedKeep = createKeep(tile, 0x49356f);
   const enemyKeep = createKeep(tile, 0x713154, true);
+  Object.assign(alliedKeep.userData, {
+    ownerSeat: 1,
+    kingdomName: 'Reino do Corvo Negro',
+    currentLevel: 1,
+  });
+  Object.assign(enemyKeep.userData, {
+    ownerSeat: 2,
+    kingdomName: 'Reino da Noite Rubra',
+    currentLevel: 1,
+  });
   alliedKeep.position.set(0, 0.06, half - tile);
   enemyKeep.position.set(0, 0.06, -half + tile);
 

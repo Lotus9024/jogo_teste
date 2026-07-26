@@ -42,7 +42,7 @@ export function createUnitInteractionController(options) {
 
   function hoverableAtPointer(event) {
     updateRay(event);
-    const hit = ray.intersectObjects(hoverables, true)[0];
+    const hit = ray.intersectObjects([alliedKeep, enemyKeep, ...hoverables], true)[0];
     if (!hit) return null;
     let object = hit.object;
     while (object.parent && !object.userData.hoverable) object = object.parent;

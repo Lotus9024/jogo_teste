@@ -50,6 +50,8 @@ export function createDevToolsController({
     const kingdom = kingdoms[seat];
     if (!kingdom || !Number.isFinite(amount) || amount <= 0) return null;
     kingdom.hp = Math.max(0, kingdom.hp - amount);
+    const keep = keepForSeat(seat);
+    if (keep) keep.userData.baseHp = kingdom.hp;
     callbacks.syncDevKingdomHud?.();
     return kingdom.hp;
   }
@@ -71,7 +73,11 @@ export function createDevToolsController({
       button.addEventListener('click', () => {
         const level = Number(button.dataset.baseLevel);
         kingdoms[state.activePlayer].baseLevel = level;
-        keepForSeat(state.activePlayer).scale.set(1, 1, 1);
+        const keep = keepForSeat(state.activePlayer);
+        if (keep) {
+          keep.userData.currentLevel = level;
+          keep.scale.set(1, 1, 1);
+        }
         callbacks.syncDevKingdomHud?.();
       });
     });

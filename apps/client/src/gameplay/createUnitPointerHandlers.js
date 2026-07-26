@@ -1,12 +1,63 @@
 import { isMountedArcher } from './unitState.js';
 import { cardMarkup, cards } from '../ui/cardView.js';
+import { citizensForSeat, completedRoadCount } from '@tronos/shared/cards';
+import { GAME_CONFIG } from '@tronos/shared/game-config';
+import { castleHoverMarkup } from '../ui/castleHoverView.js';
 
 export function createUnitPointerHandlers({
   state, app, renderer, controls, cameraTransition, tile, half,
-  boardCoordinates, movementOverlay, actions, abilities, relations, interaction, callbacks,
+  units, boardCoordinates, boardPresentation, movementOverlay,
+  actions, abilities, relations, interaction, callbacks,
 }) {
   const hoverCard = document.querySelector('#hover-card');
+  const castleHover = document.querySelector('#castle-hover');
   let rangePreviewUnit = null;
+
+  function hideCastleHover() {
+    castleHover.classList.remove('visible');
+    castleHover.setAttribute('aria-hidden', 'true');
+  }
+
+  function clearRangePreview() {
+    if (!rangePreviewUnit) return;
+    rangePreviewUnit = null;
+    if (state.selected) movementOverlay.show(state.selected);
+    else movementOverlay.clear();
+  }
+
+  function localUnitData() {
+    return units.map(unit => ({
+      ownerSeat: unit.userData.ownerSeat,
+      cardId: unit.userData.cardId,
+      x: Math.round((unit.position.x + half) / tile),
+      z: Math.round((unit.position.z + half) / tile),
+      underConstruction: Boolean(unit.userData.underConstruction),
+    }));
+  }
+
+  function showCastleHover(object, event) {
+    const seat = object.userData.ownerSeat;
+    const onlinePlayer = state.onlineState?.state?.players?.find(player => player.seat === seat);
+    const level = onlinePlayer?.baseLevel ?? object.userData.currentLevel ?? 1;
+    const roads = boardPresentation.roads;
+    const citizens = onlinePlayer?.citizens
+      ?? citizensForSeat(seat, localUnitData(), roads, GAME_CONFIG.boardSize, level);
+    castleHover.innerHTML = castleHoverMarkup({
+      kingdomName: object.userData.kingdomName,
+      castleName: object.userData.name,
+      level,
+      hp: onlinePlayer?.baseHp ?? object.userData.baseHp ?? GAME_CONFIG.startingBaseHp,
+      maxHp: GAME_CONFIG.startingBaseHp,
+      citizens,
+      completedRoads: completedRoadCount(seat, roads),
+    });
+    castleHover.classList.add('visible');
+    castleHover.setAttribute('aria-hidden', 'false');
+    const width = castleHover.offsetWidth || 324;
+    const height = castleHover.offsetHeight || 430;
+    castleHover.style.left = `${Math.max(12, Math.min(event.clientX + 18, innerWidth - width - 12))}px`;
+    castleHover.style.top = `${Math.max(12, Math.min(event.clientY + 18, innerHeight - height - 12))}px`;
+  }
 
   function pick(event) {
     if (state.justDragged) {
@@ -184,19 +235,25 @@ export function createUnitPointerHandlers({
   function showHover(event) {
     if (state.dragged) {
       hoverCard.classList.remove('visible');
+      hideCastleHover();
       return;
     }
     const object = interaction.hoverableAtPointer(event);
     if (!object) {
       hoverCard.classList.remove('visible');
       hoverCard.setAttribute('aria-hidden', 'true');
-      if (rangePreviewUnit) {
-        rangePreviewUnit = null;
-        if (state.selected) movementOverlay.show(state.selected);
-        else movementOverlay.clear();
-      }
+      hideCastleHover();
+      clearRangePreview();
       return;
     }
+    if (object.userData.isCastle) {
+      hoverCard.classList.remove('visible');
+      hoverCard.setAttribute('aria-hidden', 'true');
+      clearRangePreview();
+      showCastleHover(object, event);
+      return;
+    }
+    hideCastleHover();
     if (object.userData.ownerSeat !== state.selfSeat && rangePreviewUnit !== object) {
       rangePreviewUnit = object;
       movementOverlay.previewRange(object);
@@ -228,6 +285,7 @@ export function createUnitPointerHandlers({
     renderer.domElement.addEventListener('pointercancel', finishDrag, true);
     renderer.domElement.addEventListener('pointerleave', () => {
       hoverCard.classList.remove('visible');
+      hideCastleHover();
       rangePreviewUnit = null;
       if (state.selected) movementOverlay.show(state.selected);
       else movementOverlay.clear();
