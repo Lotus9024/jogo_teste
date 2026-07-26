@@ -167,6 +167,30 @@ function createSpaceFocusTexture(size = 256) {
   return new THREE.CanvasTexture(canvas);
 }
 
+export function createSpaceFocusSpecs({ count = 32, seed = 7619 } = {}) {
+  const random = seededRandom(seed);
+  const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+  const violetTints = [0xb46cff, 0x9b5de5, 0xca87ff, 0x7541c5, 0xd6a1ff];
+  return Array.from({ length: count }, (_, index) => {
+    const vertical = -0.72 + (index + 0.5) / count * 1.44;
+    const horizontal = Math.sqrt(1 - vertical * vertical);
+    const angle = index * goldenAngle + (random() - 0.5) * 0.18;
+    const radius = 42 + random() * 13;
+    return {
+      position: [
+        Math.cos(angle) * horizontal * radius,
+        vertical * radius * 0.82,
+        Math.sin(angle) * horizontal * radius
+      ],
+      scale: 5.2 + random() * 6.8,
+      opacity: 0.15 + random() * 0.16,
+      phase: random() * Math.PI * 2,
+      twinkle: index % 11 === 3,
+      color: violetTints[Math.floor(random() * violetTints.length)]
+    };
+  });
+}
+
 function createSpaceLightFoci(scene) {
   const texture = createSpaceFocusTexture();
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -175,25 +199,7 @@ function createSpaceLightFoci(scene) {
   texture.generateMipmaps = false;
   const group = new THREE.Group();
   group.name = 'Focos de luz violeta no espaço';
-  const random = seededRandom(7619);
-  const violetTints = [0xb46cff, 0x9b5de5, 0xca87ff, 0x7541c5, 0xd6a1ff];
-  const specs = Array.from({ length: 18 }, (_, index) => {
-    const angle = index / 18 * Math.PI * 2 + (random() - 0.5) * 0.5;
-    const radiusX = 19 + random() * 11;
-    const radiusY = 14 + random() * 13;
-    return {
-      position: [
-        Math.cos(angle) * radiusX,
-        Math.sin(angle) * radiusY + (random() - 0.5) * 5,
-        -38 - random() * 13
-      ],
-      scale: 5.8 + random() * 7,
-      opacity: 0.17 + random() * 0.17,
-      phase: random() * Math.PI * 2,
-      twinkle: index % 7 === 2,
-      color: violetTints[Math.floor(random() * violetTints.length)]
-    };
-  });
+  const specs = createSpaceFocusSpecs();
   specs.forEach(spec => {
     const material = new THREE.SpriteMaterial({
       map: texture,
@@ -216,6 +222,10 @@ function createSpaceLightFoci(scene) {
     };
     group.add(focus);
   });
+  group.userData = {
+    count: specs.length,
+    distribution: 'spherical-360'
+  };
   scene.add(group);
   return group;
 }
@@ -460,7 +470,7 @@ export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) 
     brightStars.visible = nextQuality === 'high';
     stellarBand.visible = nextQuality === 'high';
     spaceLightFoci.children.forEach((focus, index) => {
-      focus.visible = high || index < 6;
+      focus.visible = high || index % 3 === 0;
     });
     distantStars.geometry.setDrawRange(0, high ? 1550 : 420);
     fineStars.geometry.setDrawRange(0, high ? 620 : 210);
