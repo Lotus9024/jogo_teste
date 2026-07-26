@@ -147,6 +147,48 @@ function createStarLayer({ count, radius, seed, size, opacity }) {
   return stars;
 }
 
+function createStellarBandLayer({ count, radius, seed, size }) {
+  const random = seededRandom(seed);
+  const positions = [];
+  const colors = [];
+  const violet = new THREE.Color(0x8e45df);
+  const pale = new THREE.Color(0xd8c4ef);
+  const color = new THREE.Color();
+
+  for (let index = 0; index < count; index += 1) {
+    const longitude = random() * Math.PI * 2;
+    const latitude = (random() - 0.5) * (0.12 + random() * 0.42);
+    const distance = radius - random() * 2.4;
+    positions.push(
+      Math.cos(longitude) * Math.cos(latitude) * distance,
+      Math.sin(latitude) * distance,
+      Math.sin(longitude) * Math.cos(latitude) * distance
+    );
+    color.lerpColors(violet, pale, random() * 0.68);
+    colors.push(color.r, color.g, color.b);
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+  const material = new THREE.PointsMaterial({
+    size,
+    vertexColors: true,
+    transparent: true,
+    opacity: 0.5,
+    depthWrite: false,
+    depthTest: true,
+    fog: false,
+    toneMapped: false,
+    sizeAttenuation: false
+  });
+  const band = new THREE.Points(geometry, material);
+  band.rotation.set(0.26, SKY_ROTATION, -0.34);
+  band.frustumCulled = false;
+  band.renderOrder = -999;
+  return band;
+}
+
 function createDarkFantasyTexture(size) {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -162,30 +204,9 @@ function createDarkFantasyTexture(size) {
   context.fillStyle = night;
   context.fillRect(0, 0, width, height);
 
-  addMysticGlow(context, width, height, width * 0.2, height * 0.34, height * 0.62, 'rgba(100, 38, 181, 0.12)');
-  addMysticGlow(context, width, height, width * 0.52, height * 0.55, height * 0.72, 'rgba(58, 19, 130, 0.1)');
-  addMysticGlow(context, width, height, width * 0.82, height * 0.28, height * 0.5, 'rgba(144, 61, 206, 0.09)');
-
-  const random = seededRandom(19027);
-  const starCount = Math.round(size * 0.65);
-  for (let index = 0; index < starCount; index += 1) {
-    const x = random() * width;
-    const y = Math.pow(random(), 1.24) * height * 0.84;
-    const bright = random() > 0.82;
-    const radius = (bright ? 1.1 + random() * 1.9 : 0.35 + random() * 0.8) * size / 2048;
-    const alpha = bright ? 0.78 + random() * 0.22 : 0.36 + random() * 0.46;
-    context.fillStyle = random() > 0.18
-      ? `rgba(194, 96, 255, ${alpha})`
-      : `rgba(224, 205, 255, ${alpha * 0.85})`;
-    if (bright) {
-      context.shadowColor = 'rgba(167, 73, 255, 0.92)';
-      context.shadowBlur = radius * 6;
-    }
-    context.beginPath();
-    context.arc(x, y, radius, 0, Math.PI * 2);
-    context.fill();
-    context.shadowBlur = 0;
-  }
+  addMysticGlow(context, width, height, width * 0.2, height * 0.34, height * 0.48, 'rgba(100, 38, 181, 0.07)');
+  addMysticGlow(context, width, height, width * 0.52, height * 0.55, height * 0.54, 'rgba(58, 19, 130, 0.06)');
+  addMysticGlow(context, width, height, width * 0.82, height * 0.28, height * 0.42, 'rgba(144, 61, 206, 0.055)');
 
   const vignette = context.createRadialGradient(width * 0.53, height * 0.36, height * 0.12, width * 0.5, height * 0.48, width * 0.62);
   vignette.addColorStop(0, 'rgba(0, 0, 0, 0)');
@@ -264,7 +285,13 @@ export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) 
     size: quality === 'low' ? 1.35 : 1.8,
     opacity: 0.92
   });
-  scene.add(fineStars, brightStars);
+  const stellarBand = createStellarBandLayer({
+    count: quality === 'low' ? 380 : 1100,
+    radius: 60,
+    seed: 77421,
+    size: quality === 'low' ? 0.6 : 0.78
+  });
+  scene.add(fineStars, brightStars, stellarBand);
 
   const moonMaterial = new THREE.SpriteMaterial({
     map: createMoonTexture(1024),
@@ -287,6 +314,7 @@ export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) 
     skyMaterial.needsUpdate = true;
     fineStars.visible = true;
     brightStars.visible = nextQuality === 'high';
+    stellarBand.visible = nextQuality === 'high';
     app.dataset.skybox = `dark-fantasy-moon-${nextQuality}`;
   }
 

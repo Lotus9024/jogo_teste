@@ -3,6 +3,8 @@ import * as THREE from 'three';
 const BOARD_SCENERY_CLEARANCE = 12;
 const TREE_COUNT = 8;
 const BRANCHES_PER_TREE = 6;
+const TWIGS_PER_BRANCH = 2;
+const ROOTS_PER_TREE = 4;
 const UP = new THREE.Vector3(0, 1, 0);
 
 function seededRandom(seed) {
@@ -60,29 +62,50 @@ function createSegmentMatrix(start, end, thickness, placement) {
 }
 
 function createTreeInstances() {
-  const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.3, 1, 5, 1, false);
-  const branchGeometry = new THREE.CylinderGeometry(0.11, 0.17, 1, 5, 1, false);
+  const trunkGeometry = new THREE.CylinderGeometry(0.18, 0.31, 1, 7, 4, false);
+  const branchGeometry = new THREE.CylinderGeometry(0.075, 0.16, 1, 6, 2, false);
+  const twigGeometry = new THREE.CylinderGeometry(0.035, 0.075, 1, 5, 1, false);
+  const rootGeometry = new THREE.CylinderGeometry(0.045, 0.16, 1, 6, 1, false);
   const trunkMaterial = new THREE.MeshStandardMaterial({
-    color: 0x261711,
+    color: 0x211410,
+    emissive: 0x030102,
+    emissiveIntensity: 0.06,
     roughness: 1,
-    metalness: 0
+    metalness: 0,
+    flatShading: true
   });
   const branchMaterial = new THREE.MeshStandardMaterial({
-    color: 0x1d110d,
+    color: 0x180d0b,
+    emissive: 0x020102,
+    emissiveIntensity: 0.04,
     roughness: 1,
-    metalness: 0
+    metalness: 0,
+    flatShading: true
   });
+  const twigMaterial = branchMaterial.clone();
+  twigMaterial.color.setHex(0x120908);
+  const rootMaterial = trunkMaterial.clone();
+  rootMaterial.color.setHex(0x1a0f0c);
   const trunks = new THREE.InstancedMesh(trunkGeometry, trunkMaterial, TREE_COUNT);
   const branches = new THREE.InstancedMesh(
     branchGeometry,
     branchMaterial,
     TREE_COUNT * BRANCHES_PER_TREE
   );
+  const twigs = new THREE.InstancedMesh(
+    twigGeometry,
+    twigMaterial,
+    TREE_COUNT * BRANCHES_PER_TREE * TWIGS_PER_BRANCH
+  );
+  const roots = new THREE.InstancedMesh(rootGeometry, rootMaterial, TREE_COUNT * ROOTS_PER_TREE);
   const treeRotation = new THREE.Quaternion();
   const treeScale = new THREE.Vector3();
   const treePosition = new THREE.Vector3();
   const placementMatrix = new THREE.Matrix4();
+  const rootPlacementMatrix = new THREE.Matrix4();
   let branchIndex = 0;
+  let twigIndex = 0;
+  let rootIndex = 0;
 
   createPlacements().forEach((spec, treeIndex) => {
     treeRotation.setFromAxisAngle(UP, spec.rotation);
@@ -93,6 +116,11 @@ function createTreeInstances() {
     );
     treePosition.set(spec.x, -0.54, spec.z);
     placementMatrix.compose(treePosition, treeRotation, treeScale);
+    rootPlacementMatrix.compose(
+      treePosition,
+      treeRotation,
+      new THREE.Vector3(spec.scale, spec.scale * spec.height, spec.scale)
+    );
 
     trunks.setMatrixAt(
       treeIndex,
@@ -113,27 +141,64 @@ function createTreeInstances() {
       [[0.08, 2.28, -0.03], [-0.48, 2.9, -0.3], 0.62]
     ];
     const branchRandom = seededRandom(8100 + treeIndex * 97);
-    branchSpecs.slice(0, spec.branchCount).forEach(([start, end, thickness]) => {
+    branchSpecs.slice(0, spec.branchCount).forEach(([start, end, thickness], primaryIndex) => {
+      const branchStart = new THREE.Vector3(...start);
       const variedEnd = [
         end[0] * (0.84 + branchRandom() * 0.34),
         end[1] * (0.94 + branchRandom() * 0.1),
         end[2] * (0.84 + branchRandom() * 0.34)
       ];
+      const branchEnd = new THREE.Vector3(...variedEnd);
       branches.setMatrixAt(
         branchIndex,
         createSegmentMatrix(
-          new THREE.Vector3(...start),
-          new THREE.Vector3(...variedEnd),
+          branchStart,
+          branchEnd,
           thickness * (0.72 + branchRandom() * 0.24),
           placementMatrix
         )
       );
       branchIndex += 1;
+
+      for (let twig = 0; twig < TWIGS_PER_BRANCH; twig += 1) {
+        const twigStart = branchStart.clone().lerp(branchEnd, 0.68 + twig * 0.16);
+        const side = (twig + primaryIndex) % 2 ? -1 : 1;
+        const twigEnd = branchEnd.clone().add(new THREE.Vector3(
+          side * (0.22 + branchRandom() * 0.32),
+          0.24 + branchRandom() * 0.42,
+          (branchRandom() - 0.5) * 0.54
+        ));
+        twigs.setMatrixAt(
+          twigIndex,
+          createSegmentMatrix(twigStart, twigEnd, 0.68 + branchRandom() * 0.2, placementMatrix)
+        );
+        twigIndex += 1;
+      }
     });
+
+    for (let root = 0; root < ROOTS_PER_TREE; root += 1) {
+      const angle = root / ROOTS_PER_TREE * Math.PI * 2 + spec.rotation * 0.21;
+      roots.setMatrixAt(
+        rootIndex,
+        createSegmentMatrix(
+          new THREE.Vector3(0, 0.1, 0),
+          new THREE.Vector3(
+            Math.cos(angle) * (0.48 + branchRandom() * 0.32),
+            -0.05,
+            Math.sin(angle) * (0.48 + branchRandom() * 0.32)
+          ),
+          0.72 + branchRandom() * 0.18,
+          rootPlacementMatrix
+        )
+      );
+      rootIndex += 1;
+    }
   });
   branches.count = branchIndex;
+  twigs.count = twigIndex;
+  roots.count = rootIndex;
 
-  [trunks, branches].forEach(mesh => {
+  [trunks, branches, twigs, roots].forEach(mesh => {
     mesh.castShadow = true;
     mesh.receiveShadow = true;
     mesh.frustumCulled = true;
@@ -141,7 +206,7 @@ function createTreeInstances() {
     mesh.computeBoundingSphere();
   });
 
-  return { trunks, branches };
+  return { trunks, branches, twigs, roots };
 }
 
 export function createIslandTrees({ autoLoad = true } = {}) {
@@ -153,11 +218,11 @@ export function createIslandTrees({ autoLoad = true } = {}) {
   function load() {
     if (started) return;
     started = true;
-    const { trunks, branches } = createTreeInstances();
-    group.add(trunks, branches);
+    const { trunks, branches, twigs, roots } = createTreeInstances();
+    group.add(trunks, branches, twigs, roots);
     group.userData.status = 'ready';
     group.userData.count = TREE_COUNT;
-    group.userData.drawCalls = 2;
+    group.userData.drawCalls = 4;
   }
 
   group.userData.load = load;

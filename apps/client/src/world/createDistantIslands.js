@@ -71,7 +71,7 @@ function createIslandGeometry({ radiusX, radiusZ, depth, lobes, phase, seed }) {
 
 function addSurfaceDetails(island, radiusX, radiusZ, seed, materials) {
   const random = seededRandom(seed);
-  const rockCount = 2 + Math.floor(random() * 3);
+  const rockCount = 4 + Math.floor(random() * 3);
   for (let index = 0; index < rockCount; index += 1) {
     const angle = random() * Math.PI * 2;
     const radial = 0.25 + random() * 0.48;
@@ -90,14 +90,81 @@ function addSurfaceDetails(island, radiusX, radiusZ, seed, materials) {
     island.add(rock);
   }
 
-  const crystal = new THREE.Mesh(
-    new THREE.OctahedronGeometry(0.18 + random() * 0.12, 0),
-    materials.crystal
+  for (let patchIndex = 0; patchIndex < 3; patchIndex += 1) {
+    const patch = new THREE.Mesh(
+      new THREE.CircleGeometry(0.3 + random() * 0.42, 11),
+      materials.surfaceAccent
+    );
+    patch.position.set(
+      radiusX * (random() - 0.5) * 0.86,
+      0.025 + patchIndex * 0.006,
+      radiusZ * (random() - 0.5) * 0.86
+    );
+    patch.rotation.x = -Math.PI / 2;
+    patch.scale.set(1.5, 0.65 + random() * 0.5, 1);
+    island.add(patch);
+  }
+
+  const crystalOrigin = new THREE.Vector3(
+    radiusX * (random() - 0.5) * 0.58,
+    0.22,
+    radiusZ * (random() - 0.5) * 0.58
   );
-  crystal.position.set(radiusX * (random() - 0.5) * 0.65, 0.32, radiusZ * (random() - 0.5) * 0.65);
-  crystal.scale.y = 2.4;
-  crystal.rotation.y = random() * Math.PI;
-  island.add(crystal);
+  for (let shardIndex = 0; shardIndex < 4; shardIndex += 1) {
+    const crystal = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.12 + random() * 0.12, 0),
+      shardIndex === 0 ? materials.crystalCore : materials.crystal
+    );
+    crystal.position.copy(crystalOrigin).add(new THREE.Vector3(
+      (random() - 0.5) * 0.42,
+      shardIndex === 0 ? 0.18 : 0.06 + random() * 0.12,
+      (random() - 0.5) * 0.42
+    ));
+    crystal.scale.set(0.62 + random() * 0.4, 1.8 + random() * 1.55, 0.62 + random() * 0.4);
+    crystal.rotation.set((random() - 0.5) * 0.22, random() * Math.PI, (random() - 0.5) * 0.28);
+    island.add(crystal);
+  }
+
+  const arcaneLight = new THREE.PointLight(0x8d4ee6, 2.15, 3.8, 2);
+  arcaneLight.position.copy(crystalOrigin).add(new THREE.Vector3(0, 0.55, 0));
+  island.add(arcaneLight);
+
+  const ruin = new THREE.Group();
+  ruin.position.set(
+    -crystalOrigin.x * 0.48,
+    0.04,
+    -crystalOrigin.z * 0.48
+  );
+  ruin.rotation.y = random() * Math.PI;
+  for (const side of [-1, 1]) {
+    const pillar = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, 0.52 + random() * 0.32, 0.2, 2, 3, 2),
+      materials.ruin
+    );
+    pillar.position.set(side * 0.32, pillar.geometry.parameters.height / 2, 0);
+    pillar.rotation.z = side * (0.05 + random() * 0.1);
+    ruin.add(pillar);
+  }
+  const lintel = new THREE.Mesh(new THREE.BoxGeometry(0.74, 0.16, 0.22, 3, 1, 2), materials.ruin);
+  lintel.position.set(0.04, 0.64, 0);
+  lintel.rotation.z = 0.12;
+  ruin.add(lintel);
+  island.add(ruin);
+
+  for (let layer = 0; layer < 7; layer += 1) {
+    const angle = layer / 7 * Math.PI * 2 + random() * 0.16;
+    const stratum = new THREE.Mesh(
+      new THREE.BoxGeometry(0.34 + random() * 0.24, 0.09, 0.13),
+      materials.strata
+    );
+    stratum.position.set(
+      Math.cos(angle) * radiusX * (0.69 - layer * 0.018),
+      -0.55 - layer * 0.19,
+      Math.sin(angle) * radiusZ * (0.69 - layer * 0.018)
+    );
+    stratum.rotation.set((random() - 0.5) * 0.18, -angle, (random() - 0.5) * 0.22);
+    island.add(stratum);
+  }
 }
 
 export function createDistantIslands() {
@@ -128,8 +195,30 @@ export function createDistantIslands() {
     crystal: new THREE.MeshStandardMaterial({
       color: 0x8c55c7,
       emissive: 0x6f2bb5,
-      emissiveIntensity: 1.9,
-      roughness: 0.38
+      emissiveIntensity: 2.35,
+      roughness: 0.28,
+      flatShading: true
+    }),
+    crystalCore: new THREE.MeshBasicMaterial({ color: 0xe0c2ff, toneMapped: false }),
+    surfaceAccent: new THREE.MeshStandardMaterial({
+      color: 0x372d44,
+      emissive: 0x12091c,
+      emissiveIntensity: 0.28,
+      roughness: 1
+    }),
+    ruin: new THREE.MeshStandardMaterial({
+      color: 0x60566a,
+      emissive: 0x15091d,
+      emissiveIntensity: 0.32,
+      roughness: 0.98,
+      flatShading: true
+    }),
+    strata: new THREE.MeshStandardMaterial({
+      color: 0x6a5b72,
+      emissive: 0x13091a,
+      emissiveIntensity: 0.24,
+      roughness: 1,
+      flatShading: true
     })
   };
 

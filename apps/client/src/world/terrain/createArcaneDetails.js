@@ -11,17 +11,23 @@ export function createCrystals() {
   const group = new THREE.Group();
   group.name = 'Cristais arcanos inferiores';
   const materials = [
-    new THREE.MeshStandardMaterial({ color: 0x8eeaff, emissive: 0x247cc6, emissiveIntensity: 2.6, roughness: 0.2, metalness: 0.18 }),
-    new THREE.MeshStandardMaterial({ color: 0xd0a0ff, emissive: 0x7132c7, emissiveIntensity: 2.4, roughness: 0.2, metalness: 0.18 })
+    new THREE.MeshStandardMaterial({ color: 0xcba3ff, emissive: 0x6424c7, emissiveIntensity: 3.05, roughness: 0.16, metalness: 0.24, flatShading: true }),
+    new THREE.MeshStandardMaterial({ color: 0x9d62ee, emissive: 0x8b35e8, emissiveIntensity: 3.25, roughness: 0.14, metalness: 0.2, flatShading: true })
   ];
-  const geometries = [new THREE.ConeGeometry(0.15, 0.72, 5), new THREE.ConeGeometry(0.12, 0.55, 5)];
+  const coreMaterials = [
+    new THREE.MeshBasicMaterial({ color: 0xd3adff, transparent: true, opacity: 0.4, toneMapped: false }),
+    new THREE.MeshBasicMaterial({ color: 0xb879ff, transparent: true, opacity: 0.44, toneMapped: false })
+  ];
+  const geometries = [new THREE.ConeGeometry(0.16, 0.78, 6, 2), new THREE.ConeGeometry(0.13, 0.61, 6, 2)];
   const random = seededRandom(6143);
 
   for (let type = 0; type < 2; type += 1) {
     const count = type === 0 ? 13 : 10;
     const crystals = new THREE.InstancedMesh(geometries[type], materials[type], count);
-    crystals.castShadow = false;
+    const cores = new THREE.InstancedMesh(geometries[type], coreMaterials[type], count);
+    crystals.castShadow = true;
     const dummy = new THREE.Object3D();
+    const coreDummy = new THREE.Object3D();
     for (let index = 0; index < count; index += 1) {
       const angle = (index / count + type * 0.071) * Math.PI * 2 + (random() - 0.5) * 0.22;
       const depth = 0.34 + random() * 0.54;
@@ -33,19 +39,25 @@ export function createCrystals() {
       dummy.scale.set(scale, scale, scale);
       dummy.updateMatrix();
       crystals.setMatrixAt(index, dummy.matrix);
+      coreDummy.position.copy(dummy.position);
+      coreDummy.rotation.copy(dummy.rotation);
+      coreDummy.scale.setScalar(scale * 0.54);
+      coreDummy.updateMatrix();
+      cores.setMatrixAt(index, coreDummy.matrix);
     }
     crystals.instanceMatrix.needsUpdate = true;
-    group.add(crystals);
+    cores.instanceMatrix.needsUpdate = true;
+    group.add(crystals, cores);
   }
 
   [[-5.6, -3.15, 2.8], [5.8, -3.55, -2.5], [0.4, -5.65, 0.2]].forEach(([x, y, z], index) => {
-    const light = new THREE.PointLight(index === 1 ? 0x8d55ff : 0x4cbcff, 3.8, 6.4, 2);
+    const light = new THREE.PointLight(index === 1 ? 0xa869ff : 0x7b3fd1, 4.8, 7.2, 2);
     light.position.set(x, y, z);
     light.userData.phase = index * 1.9;
     group.add(light);
   });
 
-  return { group, materials };
+  return { group, materials: [...materials, ...coreMaterials] };
 }
 
 export function createMagicDust() {

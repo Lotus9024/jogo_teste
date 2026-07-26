@@ -16,12 +16,39 @@ function createRuinMaterials() {
     return material;
   });
   const crack = new THREE.MeshBasicMaterial({ color: 0x0b080d, toneMapped: false });
+  const rune = new THREE.MeshStandardMaterial({
+    color: 0x9a6bc7,
+    emissive: 0x5d238d,
+    emissiveIntensity: 1.05,
+    roughness: 0.52,
+    metalness: 0.08
+  });
+  const lichen = new THREE.MeshStandardMaterial({
+    color: 0x2f3730,
+    emissive: 0x090d0a,
+    emissiveIntensity: 0.12,
+    roughness: 1
+  });
+  const crystal = new THREE.MeshStandardMaterial({
+    color: 0xb879ff,
+    emissive: 0x772bd1,
+    emissiveIntensity: 3.1,
+    roughness: 0.18,
+    metalness: 0.16,
+    flatShading: true
+  });
+  const crystalCore = new THREE.MeshBasicMaterial({
+    color: 0xc99cff,
+    transparent: true,
+    opacity: 0.38,
+    toneMapped: false
+  });
   const charredWood = M.wood.clone();
   charredWood.color.setHex(0x251a18);
   charredWood.emissive.setHex(0x040203);
   charredWood.emissiveIntensity = 0.05;
   charredWood.roughness = 1;
-  return { stones, crack, charredWood };
+  return { stones, crack, rune, lichen, crystal, crystalCore, charredWood };
 }
 
 function addRubble(parent, materials, scale = 1) {
@@ -50,7 +77,10 @@ function addBrokenPillar(environment, materials, x, z, height = 1.35, lean = 0) 
   add(new THREE.CylinderGeometry(0.29, 0.36, 0.18, 9), materials.stones[2], ruin, [0, 0.09, 0], [0, 0.08, 0]);
   add(new THREE.CylinderGeometry(0.2, 0.24, standingHeight, 9), materials.stones[0], ruin, [0, 0.18 + standingHeight / 2, 0], [0.03, 0, lean]);
   add(new THREE.CylinderGeometry(0.23, 0.19, 0.13, 9), materials.stones[1], ruin, [lean * standingHeight, standingHeight + 0.2, 0], [0.14, 0.06, lean]);
+  add(new THREE.TorusGeometry(0.205, 0.028, 5, 12), materials.stones[2], ruin, [0, standingHeight * 0.52, 0], [Math.PI / 2, 0, lean]);
+  add(new THREE.TorusGeometry(0.075, 0.012, 5, 10), materials.rune, ruin, [0.205, standingHeight * 0.7, 0], [0, Math.PI / 2, 0]);
   add(new THREE.BoxGeometry(0.025, standingHeight * 0.36, 0.014), materials.crack, ruin, [0.205, standingHeight * 0.72, 0], [0, 0, -0.34]);
+  add(new THREE.CircleGeometry(0.16, 9), materials.lichen, ruin, [-0.08, standingHeight + 0.275, 0.04], [-Math.PI / 2, 0, 0], [1.35, 0.7, 1]);
   const fallen = add(
     new THREE.CylinderGeometry(0.18, 0.21, height * 0.48, 9),
     materials.stones[3],
@@ -74,6 +104,8 @@ function addGraveStone(environment, materials, x, z, rotation = 0) {
   add(new THREE.SphereGeometry(0.23, 9, 6, 0, Math.PI * 2, 0, Math.PI / 2), materials.stones[0], grave, [-0.015, 0.63, 0], [0, 0, 0.075]);
   add(new THREE.BoxGeometry(0.025, 0.34, 0.012), materials.crack, grave, [0.08, 0.44, 0.087], [0, 0, -0.42]);
   add(new THREE.BoxGeometry(0.18, 0.02, 0.012), materials.crack, grave, [-0.01, 0.5, 0.089], [0, 0, 0.22]);
+  add(new THREE.TorusGeometry(0.105, 0.014, 5, 12, Math.PI * 1.72), materials.rune, grave, [-0.06, 0.44, 0.102], [0, 0, 0.4]);
+  add(new THREE.CircleGeometry(0.13, 9), materials.lichen, grave, [-0.14, 0.66, 0.02], [0, 0.08, 0.075], [1.25, 0.6, 1]);
   add(new THREE.BoxGeometry(0.22, 0.035, 0.018), M.iron, grave, [0, 0.36, 0.1]);
   add(new THREE.BoxGeometry(0.035, 0.23, 0.018), M.iron, grave, [0, 0.36, 0.1]);
   addRubble(grave, materials, 0.34);
@@ -103,6 +135,9 @@ function addRuinedWall(environment, materials, x, z, rotation = 0) {
   add(new THREE.BoxGeometry(0.7, 0.26, 0.32), materials.stones[1], wall, [1.12, 0.08, 0.28], [0.08, 0.42, 0.16]);
   add(new THREE.BoxGeometry(0.46, 0.2, 0.28), materials.stones[3], wall, [-1.22, 0.06, -0.36], [-0.12, -0.28, -0.08]);
   add(new THREE.BoxGeometry(0.034, 0.42, 0.012), materials.crack, wall, [-0.48, 0.45, 0.18], [0, 0, -0.52]);
+  add(new THREE.BoxGeometry(0.026, 0.31, 0.012), materials.crack, wall, [0.18, 0.41, 0.19], [0, 0, 0.46]);
+  add(new THREE.TorusGeometry(0.12, 0.014, 5, 12, Math.PI * 1.45), materials.rune, wall, [-0.05, 0.61, 0.192], [0, 0, -0.32]);
+  add(new THREE.CircleGeometry(0.24, 10), materials.lichen, wall, [-0.5, 0.79, 0.04], [0, 0.08, 0.03], [1.6, 0.55, 1]);
   add(new THREE.BoxGeometry(1.1, 0.13, 0.16), materials.charredWood, wall, [0.35, 0.13, -0.38], [0.2, 0.36, -0.12]);
   add(new THREE.CylinderGeometry(0.025, 0.025, 0.38, 7), M.iron, wall, [-0.56, 0.47, -0.19], [0, 0, -0.65]);
   addRubble(wall, materials, 0.82);
@@ -139,8 +174,58 @@ function addCollapsedArch(environment, materials, x, z, rotation = 0) {
   add(new THREE.BoxGeometry(0.48, 0.29, 0.42), materials.stones[2], arch, [0.5, 0.16, 0.52], [0.15, -0.32, 0.42]);
   add(new THREE.BoxGeometry(0.72, 0.12, 0.14), materials.charredWood, arch, [-0.3, 0.3, -0.34], [0.18, -0.15, 0.75]);
   add(new THREE.BoxGeometry(0.03, 0.32, 0.012), materials.crack, arch, [-0.68, 0.63, 0.24], [0, 0, 0.28]);
+  add(new THREE.TorusGeometry(0.1, 0.014, 5, 12), materials.rune, arch, [-0.02, 1.82, 0.235], [0, 0, 0.16]);
+  add(new THREE.CircleGeometry(0.22, 10), materials.lichen, arch, [0.66, 1.34, 0.04], [0, 0.06, 0.04], [1.4, 0.6, 1]);
   addRubble(arch, materials, 0.76);
   environment.add(arch);
+}
+
+function addSurfaceCrystalCluster(environment, materials, x, z, rotation = 0, scale = 1) {
+  const cluster = new THREE.Group();
+  cluster.name = 'Cristais violetas detalhados da superfície';
+  cluster.position.set(x, -0.51, z);
+  cluster.rotation.y = rotation;
+  const shards = [
+    [0, 0.56, 0, 0.22, 1.18, 0],
+    [-0.28, 0.35, 0.1, 0.15, 0.72, -0.22],
+    [0.24, 0.3, 0.16, 0.13, 0.62, 0.26],
+    [-0.12, 0.25, -0.24, 0.12, 0.52, -0.34],
+    [0.31, 0.22, -0.15, 0.1, 0.43, 0.38]
+  ];
+  shards.forEach(([sx, sy, sz, radius, height, lean], index) => {
+    add(
+      new THREE.ConeGeometry(radius, height, 6, 2),
+      materials.crystal,
+      cluster,
+      [sx, sy, sz],
+      [lean * 0.35, index * 0.71, lean]
+    );
+    if (index < 3) {
+      add(
+        new THREE.ConeGeometry(radius * 0.5, height * 0.82, 6, 1),
+        materials.crystalCore,
+        cluster,
+        [sx, sy + height * 0.035, sz],
+        [lean * 0.35, index * 0.71, lean]
+      );
+    }
+  });
+  for (let index = 0; index < 7; index += 1) {
+    const angle = index / 7 * Math.PI * 2;
+    add(
+      new THREE.DodecahedronGeometry(0.1 + (index % 3) * 0.018, 0),
+      materials.stones[(index + 2) % materials.stones.length],
+      cluster,
+      [Math.cos(angle) * 0.48, 0.08, Math.sin(angle) * 0.4],
+      [index * 0.2, index * 0.48, index * 0.12],
+      [1.2, 0.65, 0.9]
+    );
+  }
+  const light = new THREE.PointLight(0x9e55f0, 2.9, 4.1, 2);
+  light.position.set(0, 0.82, 0);
+  cluster.add(light);
+  cluster.scale.setScalar(scale);
+  environment.add(cluster);
 }
 
 function addWatchFires(scene, environment, fireLights, flameOuter, flameCore) {
@@ -218,6 +303,11 @@ export function createWorldEnvironment(scene, renderer, { quality, fireLights, f
     [7.4, -12.25, -0.08],
     [-7.6, 12.3, Math.PI + 0.1]
   ].forEach(args => addCollapsedArch(environment, ruinMaterials, ...args));
+  [
+    [-10.55, -8.85, 0.35, 0.92],
+    [10.8, 8.45, -0.42, 0.8],
+    [-10.7, 8.55, 1.1, 0.7]
+  ].forEach(args => addSurfaceCrystalCluster(environment, ruinMaterials, ...args));
 
   addWatchFires(scene, environment, fireLights, flameOuter, flameCore);
   const wisps = addMist(environment);
