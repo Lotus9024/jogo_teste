@@ -1,3 +1,4 @@
+import { FileIdentityRepository } from './fileIdentityRepository.js';
 import { MemoryIdentityRepository } from './memoryIdentityRepository.js';
 import { PostgresIdentityRepository } from './postgresIdentityRepository.js';
 
@@ -6,5 +7,6 @@ export function createIdentityRepository({ pool, config }) {
   if (config.nodeEnv === 'production') {
     throw new Error('DATABASE_URL é obrigatória em produção para autenticação e sessões.');
   }
+  if (config.localAuthFile) return new FileIdentityRepository({ filePath: config.localAuthFile });
   return new MemoryIdentityRepository();
 }

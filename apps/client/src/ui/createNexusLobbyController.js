@@ -279,13 +279,28 @@ export function createNexusLobbyController({
     });
   }
 
+  async function restoreSessionWithRetry() {
+    let lastError;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        return await api.restoreSession();
+      } catch (error) {
+        lastError = error;
+        if (attempt < 2) {
+          await new Promise(resolve => setTimeout(resolve, 250 + attempt * 350));
+        }
+      }
+    }
+    throw lastError;
+  }
+
   async function start() {
     mountForms();
     mountMatchMenu();
     mountSessionEvents();
     syncDeckGate();
     try {
-      applySession(await api.restoreSession());
+      applySession(await restoreSessionWithRetry());
     } catch {
       showScreen('entry');
       errorOutput.textContent = 'Não foi possível verificar sua sessão.';

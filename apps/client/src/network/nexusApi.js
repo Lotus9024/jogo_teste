@@ -94,12 +94,17 @@ export class NexusApi {
       if (!this.csrfToken) throw new Error('Sua sessão expirou. Entre novamente.');
       headers['X-CSRF-Token'] = this.csrfToken;
     }
-    const response = await this.fetchImpl(`${this.baseUrl}${path}`, {
-      method,
-      credentials: 'include',
-      headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
-    });
+    let response;
+    try {
+      response = await this.fetchImpl(`${this.baseUrl}${path}`, {
+        method,
+        credentials: 'include',
+        headers,
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+    } catch {
+      throw new Error('Não foi possível conectar ao Nexus. Verifique se o servidor está ativo.');
+    }
     const payload = response.status === 204
       ? {}
       : await response.json().catch(() => ({}));

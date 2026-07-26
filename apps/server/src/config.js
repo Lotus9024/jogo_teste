@@ -66,5 +66,7 @@ export const config = Object.freeze({
   databaseSsl: process.env.DATABASE_SSL === 'true',
   databaseCertificate: process.env.DATABASE_CERTIFICATE_BASE64
     ? Buffer.from(process.env.DATABASE_CERTIFICATE_BASE64, 'base64').toString('utf8')
-    : ''
+    : '',
+  localAuthFile: process.env.LOCAL_AUTH_FILE
+    ?? resolve(dirname(fileURLToPath(import.meta.url)), '../.local-data/auth.json')
 });

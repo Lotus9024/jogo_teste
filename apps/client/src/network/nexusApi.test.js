@@ -52,3 +52,15 @@ test('restaurar sessão aceita resposta 401 sem expor erro', async () => {
   });
   assert.deepEqual(await api.restoreSession(), { authenticated: false });
 });
+
+test('falha de rede no login produz uma mensagem compreensível', async () => {
+  const api = new NexusApi({
+    fetchImpl: async () => {
+      throw new TypeError('Failed to fetch');
+    },
+  });
+  await assert.rejects(
+    api.login('Rainha', 'senha-segura'),
+    /Não foi possível conectar ao Nexus/u
+  );
+});
