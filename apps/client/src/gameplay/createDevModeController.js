@@ -58,6 +58,12 @@ export function createDevModeController(options) {
     tools.syncSettings();
   }
 
+  function damageDevBase(seat, amount) {
+    const remainingHp = tools.damageBase(seat, amount);
+    if (remainingHp === 0) callbacks.showMatchResult?.({ outcome: 'victory', winnerSeat: state.activePlayer });
+    return remainingHp;
+  }
+
   function finishLocalRoadsForSeat(seat) {
     let changed = false;
     roads.forEach(road => {
@@ -153,6 +159,7 @@ export function createDevModeController(options) {
     syncTurnRoundStatus,
     syncLocalKingdomHud,
     syncDevKingdomHud,
+    damageDevBase,
     initializeDevMode,
   };
 }

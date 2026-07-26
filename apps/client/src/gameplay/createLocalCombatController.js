@@ -141,6 +141,28 @@ export function createLocalCombatController({
     return true;
   }
 
+  function attackBase(unit, baseSeat, destination, origin, originPosition, validDistance) {
+    unit.position.copy(originPosition);
+    if (!validDistance) {
+      callbacks.showGameError?.('Base inimiga fora de alcance.');
+      return false;
+    }
+    if (unit.userData.cardId === 'cannon') {
+      const forwardX = Math.sign(destination.x - origin.x);
+      const forwardZ = Math.sign(destination.z - origin.z);
+      const operator = unitAtCell(origin.x - forwardX, origin.z - forwardZ, unit);
+      if (operator?.userData.cardId !== 'operator' || operator.userData.ownerSeat !== unit.userData.ownerSeat) {
+        callbacks.showGameError?.('O Canhão precisa de um Operador exatamente atrás.');
+        return false;
+      }
+    }
+    const impactPosition = originPosition.clone().set(destination.worldX, 0.06, destination.worldZ);
+    damageEffects.show(impactPosition, unit.userData.damage);
+    callbacks.damageDevBase?.(baseSeat, unit.userData.damage);
+    app.dataset.lastAttack = `${unit.userData.name}->base-${baseSeat}`;
+    return true;
+  }
+
   return {
     removeLocalUnit,
     damageLocalUnit,
@@ -149,5 +171,6 @@ export function createLocalCombatController({
     fireCannon,
     moveCannon,
     attackTarget,
+    attackBase,
   };
 }

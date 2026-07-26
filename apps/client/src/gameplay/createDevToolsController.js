@@ -46,6 +46,14 @@ export function createDevToolsController({
     callbacks.syncDevKingdomHud?.();
   }
 
+  function damageBase(seat, amount) {
+    const kingdom = kingdoms[seat];
+    if (!kingdom || !Number.isFinite(amount) || amount <= 0) return null;
+    kingdom.hp = Math.max(0, kingdom.hp - amount);
+    callbacks.syncDevKingdomHud?.();
+    return kingdom.hp;
+  }
+
   function mount() {
     document.querySelector('#dev-base-size-minus').addEventListener('click', () => {
       const kingdom = kingdoms[state.activePlayer];
@@ -117,5 +125,5 @@ export function createDevToolsController({
     });
   }
 
-  return { mount, syncSettings, kingdoms, keepForSeat };
+  return { mount, syncSettings, kingdoms, keepForSeat, damageBase };
 }

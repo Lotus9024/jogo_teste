@@ -83,8 +83,9 @@ export function createUnitActionController(options) {
     };
     const occupants = unitsAtCell(destination.x, destination.z, unit);
     const target = explicitTarget ?? occupants.find(item => item !== unit) ?? null;
-    const opponentBaseSeat = state.selfSeat === 1 ? 2 : 1;
-    const baseTarget = state.onlineState && baseSeatAtCell(destination.x, destination.z) === opponentBaseSeat;
+    const opponentBaseSeat = unit.userData.ownerSeat === 1 ? 2 : 1;
+    const baseTarget = (state.onlineState || state.devMode)
+      && baseSeatAtCell(destination.x, destination.z) === opponentBaseSeat;
     const mountable = unit.userData.cardId === 'archer'
       && ['tower', 'royal_tower'].includes(target?.userData.cardId)
       && target.userData.ownerSeat === unit.userData.ownerSeat
@@ -129,7 +130,12 @@ export function createUnitActionController(options) {
       if (moveDistance <= unit.userData.move) mountArcherLocally(unit, target);
       else callbacks.showGameError?.('Movimento fora de alcance.');
     } else if (cannonMove) local.moveCannon(unit, destination, target, origin, originPosition, forward);
-    else if (unit.userData.cardId === 'cannon' && cannonTarget) local.fireCannon(unit, destination, origin, originPosition, forward);
+    else if (baseTarget) {
+      if (local.attackBase(unit, opponentBaseSeat, destination, origin, originPosition,
+        cannonTarget || isAttackTargetValid(effectiveAttackStats(unit, origin), origin, destination))) {
+        markHenryAction(unit, 'attack');
+      }
+    } else if (unit.userData.cardId === 'cannon' && cannonTarget) local.fireCannon(unit, destination, origin, originPosition, forward);
     else if (target) {
       if (local.attackTarget(unit, target, destination, origin, originPosition,
         cannonTarget || isAttackTargetValid(effectiveAttackStats(unit, origin), origin, destination))) {

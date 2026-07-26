@@ -185,6 +185,7 @@ const devController = createDevModeController({
 Object.assign(callbacks, {
   syncDevSettings: devController.syncDevSettings,
   syncDevKingdomHud: devController.syncDevKingdomHud,
+  damageDevBase: devController.damageDevBase,
 });
 
 const renderLoop = createRenderLoop({

@@ -136,7 +136,10 @@ export function createMovementOverlay({
       setAttackHighlight(target, true);
     });
 
-    const opponentBaseCells = attackAvailable && onlineState && unit.userData.ownerSeat === selfSeat ? baseCellsForSeat(selfSeat === 1 ? 2 : 1) : [];
+    const canAttackOpponentBase = attackAvailable && (devMode
+      || (onlineState && unit.userData.ownerSeat === selfSeat));
+    const opponentBaseSeat = unit.userData.ownerSeat === 1 ? 2 : 1;
+    const opponentBaseCells = canAttackOpponentBase ? baseCellsForSeat(opponentBaseSeat) : [];
     const reachableBaseCells = opponentBaseCells.filter(cell => (unit.userData.cardId === 'cannon'
       ? isCannonTargetValid({ x: originX, z: originZ, ownerSeat: unit.userData.ownerSeat }, cell)
       : isAttackTargetValid(attackStats, { x: originX, z: originZ }, cell))

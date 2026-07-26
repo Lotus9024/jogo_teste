@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
+import { createDevToolsController } from './createDevToolsController.js';
 import { createMovementOverlay } from './createMovementOverlay.js';
 
 function unit(id, ownerSeat, x, z) {
@@ -167,4 +168,36 @@ test('espectador não recebe casas interativas para mover ou atacar', () => {
   assert.equal(app.dataset.attackTiles, '0');
   assert.equal(overlay.isInteractiveCell(5, 4), false);
   assert.equal(overlay.isInteractiveCell(5, 3), false);
+});
+
+test('DEV MODE marca a base inimiga como alvo de ataque', () => {
+  const scene = new THREE.Scene();
+  const app = { dataset: {} };
+  const source = unit('source', 1, 7, 3);
+  const units = [source];
+  const overlay = createMovementOverlay({
+    scene, app, units, tile: 1, half: 0,
+    unitAtCell: () => null,
+    baseSeatAtCell: (x, z) => x === 7 && z === 1 ? 2 : null,
+    baseCellsForSeat: seat => seat === 2 ? [{ x: 7, z: 1 }] : [],
+    getRoads: () => [],
+    getMatchContext: () => ({ onlineState: null, selfSeat: 1, devMode: true })
+  });
+
+  overlay.show(source);
+
+  assert.equal(overlay.isInteractiveCell(7, 1), true);
+  assert.equal(app.dataset.attackTiles, '1');
+});
+
+test('DEV MODE aplica dano à base inimiga sem deixar a vida negativa', () => {
+  let hudUpdates = 0;
+  const tools = createDevToolsController({
+    callbacks: { syncDevKingdomHud: () => { hudUpdates += 1; } }
+  });
+
+  assert.equal(tools.damageBase(2, 3), 7);
+  assert.equal(tools.damageBase(2, 20), 0);
+  assert.equal(tools.kingdoms[2].hp, 0);
+  assert.equal(hudUpdates, 2);
 });
