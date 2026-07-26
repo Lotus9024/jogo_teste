@@ -1,0 +1,154 @@
+:root {
+  --bone: #eee8f6;
+  --muted: #93899f;
+  --gold: #9255ce;
+  --gold-hi: #d5a5ff;
+  --panel: rgba(10, 6, 15, .94);
+  --line: rgba(160, 91, 222, .34);
+  --control-violet: #a961ea;
+  --control-violet-bright: #d9adff;
+  --control-violet-deep: #32164d;
+  --control-black: #09060d;
+}
+
+button:not(.game-card):not(.dev-gallery-card) {
+  border-color: rgba(163, 91, 226, .48);
+  background:
+    linear-gradient(155deg, rgba(53, 25, 76, .96), rgba(19, 10, 29, .98) 48%, rgba(7, 5, 11, .99));
+  color: #e6d7f3;
+  box-shadow:
+    0 9px 24px rgba(0, 0, 0, .58),
+    inset 0 1px rgba(232, 198, 255, .08),
+    inset 0 -2px rgba(80, 31, 116, .28);
+  text-shadow: 0 1px 8px rgba(196, 129, 255, .18);
+  transition:
+    color .18s ease,
+    border-color .18s ease,
+    background .18s ease,
+    box-shadow .18s ease,
+    transform .18s ease,
+    filter .18s ease;
+}
+
+button:not(.game-card):not(.dev-gallery-card):hover:not(:disabled) {
+  border-color: rgba(210, 152, 255, .82);
+  color: #fff5ff;
+  background:
+    linear-gradient(155deg, rgba(76, 34, 109, .98), rgba(31, 14, 48, .99) 52%, rgba(10, 6, 16, .99));
+  box-shadow:
+    0 0 0 1px rgba(184, 112, 240, .12),
+    0 0 20px rgba(140, 56, 205, .22),
+    0 11px 28px rgba(0, 0, 0, .68),
+    inset 0 1px rgba(244, 222, 255, .12);
+}
+
+button:not(.game-card):not(.dev-gallery-card):focus-visible {
+  outline: 1px solid var(--control-violet-bright);
+  outline-offset: 3px;
+  border-color: var(--control-violet-bright);
+  box-shadow:
+    0 0 0 3px rgba(151, 75, 211, .22),
+    0 0 24px rgba(170, 85, 235, .26);
+}
+
+button:not(.game-card):not(.dev-gallery-card)[aria-pressed="true"],
+button:not(.game-card):not(.dev-gallery-card).selected {
+  border-color: #c88bf4;
+  color: #f6e8ff;
+  background:
+    radial-gradient(circle at 50% 0, rgba(144, 68, 204, .35), transparent 62%),
+    linear-gradient(180deg, #3c1b58, #160b22);
+  box-shadow:
+    inset 0 -2px #a45cda,
+    0 0 17px rgba(159, 78, 218, .2);
+}
+
+button:not(.game-card):not(.dev-gallery-card):disabled {
+  border-color: rgba(105, 78, 124, .25);
+  background: linear-gradient(155deg, rgba(24, 18, 29, .82), rgba(8, 7, 10, .9));
+  color: #716878;
+  box-shadow: none;
+}
+
+input:not([type="range"]):not([type="checkbox"]):not([type="radio"]),
+select,
+textarea {
+  border-color: rgba(154, 86, 216, .42);
+  background: linear-gradient(155deg, rgba(23, 12, 34, .97), rgba(7, 5, 11, .98));
+  color: #e4d8ec;
+  caret-color: #d19bff;
+  box-shadow: inset 0 1px 8px rgba(0, 0, 0, .52);
+}
+
+input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: #bd7bea;
+  box-shadow:
+    0 0 0 2px rgba(160, 82, 218, .16),
+    0 0 18px rgba(137, 58, 195, .14),
+    inset 0 1px 8px rgba(0, 0, 0, .52);
+}
+
+.settings-toggle,
+.settings-panel,
+.bottom-command,
+.turn-round-card,
+.player,
+.unit-panel,
+.deck-panel,
+.field-notes,
+.dev-unit-tools,
+.dev-gallery-bar {
+  border-color: rgba(154, 86, 216, .36);
+  background:
+    radial-gradient(circle at 50% 0, rgba(73, 29, 105, .18), transparent 56%),
+    linear-gradient(155deg, rgba(20, 11, 29, .97), rgba(7, 5, 11, .98));
+  box-shadow:
+    0 16px 38px rgba(0, 0, 0, .62),
+    inset 0 1px rgba(222, 183, 255, .035);
+}
+
+#tower-ability-accept {
+  border-color: rgba(181, 111, 237, .72);
+  background: linear-gradient(160deg, #482265, #180c25);
+  color: #ead3ff;
+}
+
+.nexus-primary,
+.nexus-discord-button {
+  border-color: rgba(169, 96, 226, .72) !important;
+  background: linear-gradient(180deg, #482466 0%, #281338 52%, #100818 100%) !important;
+  color: #ead7fa !important;
+}
+
+.nexus-quiet {
+  border-color: rgba(111, 76, 135, .48) !important;
+  background: #0b0710 !important;
+  color: #a99caf !important;
+}
+
+.nexus-text-button {
+  color: #b99bcf !important;
+}
+
+.bottom-command button i,
+.hint i {
+  background: #a95ee4;
+  box-shadow: 0 0 10px rgba(185, 101, 244, .7);
+}
+
+.dev-danger-button,
+.leave-match.confirming,
+#tower-ability-cancel {
+  border-color: rgba(190, 73, 92, .64);
+  background: linear-gradient(160deg, rgba(78, 24, 40, .96), rgba(23, 8, 15, .98));
+  color: #f3b6c2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:not(.game-card):not(.dev-gallery-card) {
+    transition: none;
+  }
+}

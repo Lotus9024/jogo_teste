@@ -109,9 +109,16 @@ export function createMagicTerrain(renderer, { quality = 'high' } = {}) {
   let currentQuality = quality;
   function update(elapsed) {
     if (currentQuality === 'low') return;
-    magicDust.rotation.y = elapsed * 0.014;
-    magicDust.position.y = Math.sin(elapsed * 0.24) * 0.09;
-    magicDust.material.opacity = 0.5 + Math.sin(elapsed * 0.47) * 0.1;
+    magicDust.position.y = Math.sin(elapsed * 0.2) * 0.07;
+    magicDust.userData.field.rotation.y = elapsed * 0.008;
+    magicDust.userData.field.material.opacity = 0.35;
+    magicDust.userData.featured.rotation.y = elapsed * 0.008;
+    magicDust.userData.featured.material.opacity = 0.56;
+    magicDust.userData.orbit.rotation.y = -elapsed * 0.032;
+    magicDust.userData.orbit.material.opacity = magicDust.userData.orbit.userData.baseOpacity;
+    magicDust.userData.twinkleOrbit.rotation.y = -elapsed * 0.036 + 0.18;
+    magicDust.userData.twinkleOrbit.material.opacity = 0.46
+      + Math.sin(elapsed * 0.95 + 0.8) * 0.12;
     crystals.materials.forEach((material, index) => {
       material.emissiveIntensity = 2.35 + Math.sin(elapsed * 1.05 + index * 1.7) * 0.38;
     });

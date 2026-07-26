@@ -60,20 +60,71 @@ export function createCrystals() {
   return { group, materials: [...materials, ...coreMaterials] };
 }
 
-export function createMagicDust() {
-  const count = 132;
+let sharedStarDustTexture;
+
+function createStarDustTexture(size = 64) {
+  if (sharedStarDustTexture) return sharedStarDustTexture;
+  const data = new Uint8Array(size * size * 4);
+  const center = (size - 1) / 2;
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const dx = (x - center) / center;
+      const dy = (y - center) / center;
+      const distance = Math.hypot(dx, dy);
+      const angle = Math.atan2(dy, dx);
+      const spikes = Math.abs(Math.cos(angle * 4)) ** 8;
+      const boundary = 0.14 + spikes * 0.72;
+      const starBody = 1 - THREE.MathUtils.smoothstep(distance, boundary - 0.035, boundary + 0.035);
+      const core = Math.max(0, 1 - distance * 2.8) ** 2;
+      const halo = Math.max(0, 1 - distance) ** 7;
+      const alpha = Math.min(1, starBody * 0.94 + core * 0.75 + halo * 0.18);
+      const offset = (y * size + x) * 4;
+      data[offset] = 248;
+      data[offset + 1] = 232;
+      data[offset + 2] = 255;
+      data[offset + 3] = Math.round(alpha * 255);
+    }
+  }
+  const texture = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  texture.needsUpdate = true;
+  sharedStarDustTexture = texture;
+  return sharedStarDustTexture;
+}
+
+export function createOrbitalSparkles({
+  radiusX,
+  radiusZ,
+  count = 64,
+  seed = 9024,
+  verticalCenter = -1.8,
+  verticalSpread = 4.2,
+  radialBase = 1.06,
+  radialSpread = 0.24,
+  angularJitter = 0.11,
+  size = 0.075,
+  opacity = 0.54
+}) {
   const positions = new Float32Array(count * 3);
   const colors = new Float32Array(count * 3);
-  const random = seededRandom(5021);
+  const random = seededRandom(seed);
   const color = new THREE.Color();
 
   for (let index = 0; index < count; index += 1) {
-    const angle = random() * Math.PI * 2;
-    const radial = 1.02 + random() * 0.2;
-    positions[index * 3] = Math.cos(angle) * ISLAND_RADIUS_X * radial;
-    positions[index * 3 + 1] = -6.4 + random() * 8.2;
-    positions[index * 3 + 2] = Math.sin(angle) * ISLAND_RADIUS_Z * radial;
-    color.setHSL(random() > 0.46 ? 0.53 : 0.75, 0.72, 0.72);
+    const angle = index / count * Math.PI * 2 + (random() - 0.5) * angularJitter;
+    const radial = radialBase + random() * radialSpread;
+    const wave = Math.sin(angle * 2.3 + seed * 0.001) * verticalSpread * 0.13;
+    positions[index * 3] = Math.cos(angle) * radiusX * radial;
+    positions[index * 3 + 1] = verticalCenter + wave + (random() - 0.5) * verticalSpread;
+    positions[index * 3 + 2] = Math.sin(angle) * radiusZ * radial;
+    color.setHSL(
+      0.71 + random() * 0.1,
+      0.62 + random() * 0.22,
+      0.65 + random() * 0.2
+    );
     colors[index * 3] = color.r;
     colors[index * 3 + 1] = color.g;
     colors[index * 3 + 2] = color.b;
@@ -82,18 +133,165 @@ export function createMagicDust() {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
   geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geometry.computeBoundingSphere();
   const material = new THREE.PointsMaterial({
     color: 0xffffff,
     vertexColors: true,
-    size: 0.085,
+    map: createStarDustTexture(),
+    size,
     sizeAttenuation: true,
     transparent: true,
-    opacity: 0.58,
+    opacity,
     blending: THREE.AdditiveBlending,
     depthWrite: false,
-    toneMapped: false
+    depthTest: true,
+    toneMapped: false,
+    alphaTest: 0.025
   });
-  const dust = new THREE.Points(geometry, material);
-  dust.name = 'Energia mágica da ilha';
-  return dust;
+  const orbit = new THREE.Points(geometry, material);
+  orbit.name = 'Órbita de pequenas estrelas';
+  orbit.userData = { count, baseOpacity: opacity };
+  return orbit;
+}
+
+export function createMagicDust() {
+  const group = new THREE.Group();
+  group.name = 'Estrelas espaciais e órbita da ilha principal';
+  const count = 2600;
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  const random = seededRandom(5021);
+  const color = new THREE.Color();
+
+  let index = 0;
+  let attempts = 0;
+  while (index < count && attempts < count * 30) {
+    attempts += 1;
+    const x = (random() * 2 - 1) * 46;
+    const y = -23 + random() * 40;
+    const z = (random() * 2 - 1) * 42;
+    const normalizedRadius = Math.hypot(x / ISLAND_RADIUS_X, z / ISLAND_RADIUS_Z);
+    const crossesBoardView = y > -3.2
+      && Math.abs(x) < ISLAND_RADIUS_X * 1.18
+      && z > -ISLAND_RADIUS_Z * 1.12
+      && z < ISLAND_RADIUS_Z * 1.38;
+    const intersectsIsland = normalizedRadius < 1.04 && y > -8;
+    const tooNearCamera = Math.hypot(x - 3.1, y - 14.8, z - 10.2) < 11;
+    if (crossesBoardView || intersectsIsland || tooNearCamera) continue;
+
+    positions[index * 3] = x;
+    positions[index * 3 + 1] = y;
+    positions[index * 3 + 2] = z;
+    const distanceFade = THREE.MathUtils.clamp(normalizedRadius / 2.8, 0, 1);
+    const lightness = 0.58 + random() * 0.18 + distanceFade * 0.04;
+    color.setHSL(0.72 + random() * 0.08, 0.58 + random() * 0.22, lightness);
+    colors[index * 3] = color.r;
+    colors[index * 3 + 1] = color.g;
+    colors[index * 3 + 2] = color.b;
+    index += 1;
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geometry.computeBoundingSphere();
+  const material = new THREE.PointsMaterial({
+    color: 0xffffff,
+    vertexColors: true,
+    map: createStarDustTexture(),
+    size: 0.075,
+    sizeAttenuation: true,
+    transparent: true,
+    opacity: 0.35,
+    blending: THREE.AdditiveBlending,
+    depthWrite: false,
+    depthTest: true,
+    toneMapped: false,
+    alphaTest: 0.025
+  });
+  const field = new THREE.Points(geometry, material);
+  field.name = 'Campo de pequenas estrelas no espaço';
+  field.userData.count = count;
+  field.userData.boardClearZone = {
+    halfWidth: ISLAND_RADIUS_X * 1.18,
+    nearZ: -ISLAND_RADIUS_Z * 1.12,
+    farZ: ISLAND_RADIUS_Z * 1.38,
+    minimumY: -3.2
+  };
+  const featuredCount = 180;
+  const featuredPositions = new Float32Array(featuredCount * 3);
+  const featuredColors = new Float32Array(featuredCount * 3);
+  for (let featuredIndex = 0; featuredIndex < featuredCount; featuredIndex += 1) {
+    const sourceIndex = (featuredIndex * 13 + 7) % count;
+    for (let axis = 0; axis < 3; axis += 1) {
+      featuredPositions[featuredIndex * 3 + axis] = positions[sourceIndex * 3 + axis];
+      featuredColors[featuredIndex * 3 + axis] = Math.min(
+        1,
+        colors[sourceIndex * 3 + axis] * 1.14
+      );
+    }
+  }
+  const featuredGeometry = new THREE.BufferGeometry();
+  featuredGeometry.setAttribute('position', new THREE.BufferAttribute(featuredPositions, 3));
+  featuredGeometry.setAttribute('color', new THREE.BufferAttribute(featuredColors, 3));
+  featuredGeometry.computeBoundingSphere();
+  const featured = new THREE.Points(
+    featuredGeometry,
+    new THREE.PointsMaterial({
+      color: 0xffffff,
+      vertexColors: true,
+      map: createStarDustTexture(),
+      size: 0.19,
+      sizeAttenuation: true,
+      transparent: true,
+      opacity: 0.56,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      depthTest: true,
+      toneMapped: false,
+      alphaTest: 0.05
+    })
+  );
+  featured.name = 'Estrelinhas definidas em primeiro plano';
+  featured.userData.count = featuredCount;
+  const orbit = createOrbitalSparkles({
+    radiusX: ISLAND_RADIUS_X,
+    radiusZ: ISLAND_RADIUS_Z,
+    count: 1800,
+    seed: 6412,
+    verticalCenter: -2.45,
+    verticalSpread: 4.8,
+    radialBase: 1.055,
+    radialSpread: 0.15,
+    angularJitter: 0.045,
+    size: 0.115,
+    opacity: 0.54
+  });
+  orbit.name = 'Órbita estelar permanente da ilha principal';
+  orbit.rotation.set(-0.035, 0, 0.045);
+  const twinkleOrbit = createOrbitalSparkles({
+    radiusX: ISLAND_RADIUS_X * 1.02,
+    radiusZ: ISLAND_RADIUS_Z * 1.02,
+    count: 112,
+    seed: 9173,
+    verticalCenter: -2.35,
+    verticalSpread: 5.2,
+    radialBase: 1.045,
+    radialSpread: 0.17,
+    angularJitter: 0.06,
+    size: 0.15,
+    opacity: 0.46
+  });
+  twinkleOrbit.name = 'Poucas estrelas cintilantes da órbita principal';
+  twinkleOrbit.rotation.set(-0.042, 0.18, 0.052);
+  group.add(field, featured, orbit, twinkleOrbit);
+  group.userData = {
+    count: count + featuredCount + orbit.userData.count + twinkleOrbit.userData.count,
+    field,
+    featured,
+    orbit,
+    twinkleOrbit,
+    boardClearZone: field.userData.boardClearZone
+  };
+  return group;
 }

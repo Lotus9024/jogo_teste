@@ -21,15 +21,15 @@ function addMysticGlow(context, width, height, x, y, radius, color) {
 
 function drawMoon(context, width, height, x, y, radius) {
   context.save();
-  context.shadowColor = 'rgba(183, 135, 255, 0.5)';
-  context.shadowBlur = radius * 0.58;
-  const aura = context.createRadialGradient(x, y, radius * 0.65, x, y, radius * 1.75);
-  aura.addColorStop(0, 'rgba(218, 207, 255, 0.26)');
-  aura.addColorStop(0.48, 'rgba(113, 60, 173, 0.12)');
+  context.shadowColor = 'rgba(169, 124, 218, 0.22)';
+  context.shadowBlur = radius * 0.34;
+  const aura = context.createRadialGradient(x, y, radius * 0.72, x, y, radius * 1.62);
+  aura.addColorStop(0, 'rgba(210, 202, 224, 0.14)');
+  aura.addColorStop(0.48, 'rgba(105, 62, 145, 0.06)');
   aura.addColorStop(1, 'rgba(53, 20, 91, 0)');
   context.fillStyle = aura;
   context.beginPath();
-  context.arc(x, y, radius * 1.75, 0, Math.PI * 2);
+  context.arc(x, y, radius * 1.62, 0, Math.PI * 2);
   context.fill();
   context.restore();
 
@@ -46,10 +46,10 @@ function drawMoon(context, width, height, x, y, radius) {
     y,
     radius * 1.18
   );
-  surface.addColorStop(0, '#f3f1f8');
-  surface.addColorStop(0.38, '#d7d3df');
-  surface.addColorStop(0.78, '#9992a7');
-  surface.addColorStop(1, '#4c4559');
+  surface.addColorStop(0, '#dddbe3');
+  surface.addColorStop(0.38, '#bab6c2');
+  surface.addColorStop(0.78, '#817b8c');
+  surface.addColorStop(1, '#393441');
   context.fillStyle = surface;
   context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
 
@@ -65,8 +65,8 @@ function drawMoon(context, width, height, x, y, radius) {
     context.translate(mariaX, mariaY);
     context.rotate(mariaRandom() * Math.PI);
     const maria = context.createRadialGradient(0, 0, 0, 0, 0, mariaWidth);
-    maria.addColorStop(0, 'rgba(65, 59, 78, 0.2)');
-    maria.addColorStop(0.65, 'rgba(80, 72, 94, 0.12)');
+    maria.addColorStop(0, 'rgba(48, 44, 58, 0.28)');
+    maria.addColorStop(0.65, 'rgba(66, 60, 76, 0.17)');
     maria.addColorStop(1, 'rgba(70, 62, 84, 0)');
     context.fillStyle = maria;
     context.beginPath();
@@ -90,9 +90,9 @@ function drawMoon(context, width, height, x, y, radius) {
       craterY,
       craterRadius
     );
-    crater.addColorStop(0, 'rgba(255, 255, 255, 0.12)');
-    crater.addColorStop(0.42, 'rgba(255, 255, 255, 0.05)');
-    crater.addColorStop(0.58, 'rgba(62, 56, 73, 0.24)');
+    crater.addColorStop(0, 'rgba(235, 232, 239, 0.1)');
+    crater.addColorStop(0.42, 'rgba(226, 222, 232, 0.035)');
+    crater.addColorStop(0.58, 'rgba(49, 45, 58, 0.31)');
     crater.addColorStop(1, 'rgba(25, 18, 39, 0)');
     context.fillStyle = crater;
     context.beginPath();
@@ -103,12 +103,129 @@ function drawMoon(context, width, height, x, y, radius) {
   context.restore();
 }
 
-function createStarLayer({ count, radius, seed, size, opacity }) {
+function createStarPointTexture(size = 64) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const context = canvas.getContext('2d');
+  const center = size / 2;
+  const glow = context.createRadialGradient(center, center, 0, center, center, center);
+  glow.addColorStop(0, 'rgba(255,255,255,0.62)');
+  glow.addColorStop(0.18, 'rgba(245,232,255,0.4)');
+  glow.addColorStop(0.48, 'rgba(197,146,244,0.16)');
+  glow.addColorStop(1, 'rgba(145,76,220,0)');
+  context.fillStyle = glow;
+  context.fillRect(0, 0, size, size);
+
+  context.save();
+  context.translate(center, center);
+  context.beginPath();
+  for (let point = 0; point < 16; point += 1) {
+    const angle = -Math.PI / 2 + point / 16 * Math.PI * 2;
+    const outerPoint = point % 2 === 0;
+    const cardinalPoint = point % 4 === 0;
+    const radius = outerPoint
+      ? size * (cardinalPoint ? 0.42 : 0.3)
+      : size * 0.075;
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius;
+    if (point === 0) context.moveTo(x, y);
+    else context.lineTo(x, y);
+  }
+  context.closePath();
+  const starFill = context.createRadialGradient(0, 0, 0, 0, 0, size * 0.42);
+  starFill.addColorStop(0, 'rgba(255,255,255,1)');
+  starFill.addColorStop(0.22, 'rgba(250,244,255,0.98)');
+  starFill.addColorStop(0.7, 'rgba(215,174,255,0.88)');
+  starFill.addColorStop(1, 'rgba(157,83,227,0.18)');
+  context.fillStyle = starFill;
+  context.shadowColor = 'rgba(190,120,255,0.7)';
+  context.shadowBlur = size * 0.09;
+  context.fill();
+  context.restore();
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  return texture;
+}
+
+function createSpaceFocusTexture(size = 256) {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const context = canvas.getContext('2d');
+  const center = size / 2;
+  const halo = context.createRadialGradient(center, center, 0, center, center, center);
+  halo.addColorStop(0, 'rgba(246,226,255,0.72)');
+  halo.addColorStop(0.055, 'rgba(199,132,255,0.52)');
+  halo.addColorStop(0.2, 'rgba(128,62,209,0.23)');
+  halo.addColorStop(0.52, 'rgba(75,28,143,0.085)');
+  halo.addColorStop(1, 'rgba(31,8,67,0)');
+  context.fillStyle = halo;
+  context.fillRect(0, 0, size, size);
+  return new THREE.CanvasTexture(canvas);
+}
+
+function createSpaceLightFoci(scene) {
+  const texture = createSpaceFocusTexture();
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  texture.generateMipmaps = false;
+  const group = new THREE.Group();
+  group.name = 'Focos de luz violeta no espaço';
+  const random = seededRandom(7619);
+  const violetTints = [0xb46cff, 0x9b5de5, 0xca87ff, 0x7541c5, 0xd6a1ff];
+  const specs = Array.from({ length: 18 }, (_, index) => {
+    const angle = index / 18 * Math.PI * 2 + (random() - 0.5) * 0.5;
+    const radiusX = 19 + random() * 11;
+    const radiusY = 14 + random() * 13;
+    return {
+      position: [
+        Math.cos(angle) * radiusX,
+        Math.sin(angle) * radiusY + (random() - 0.5) * 5,
+        -38 - random() * 13
+      ],
+      scale: 5.8 + random() * 7,
+      opacity: 0.17 + random() * 0.17,
+      phase: random() * Math.PI * 2,
+      twinkle: index % 7 === 2,
+      color: violetTints[Math.floor(random() * violetTints.length)]
+    };
+  });
+  specs.forEach(spec => {
+    const material = new THREE.SpriteMaterial({
+      map: texture,
+      color: spec.color,
+      transparent: true,
+      opacity: spec.opacity,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+      depthTest: true,
+      fog: false,
+      toneMapped: false
+    });
+    const focus = new THREE.Sprite(material);
+    focus.position.set(...spec.position);
+    focus.scale.setScalar(spec.scale);
+    focus.userData = {
+      baseOpacity: spec.opacity,
+      phase: spec.phase,
+      twinkle: spec.twinkle
+    };
+    group.add(focus);
+  });
+  scene.add(group);
+  return group;
+}
+
+function createStarLayer({ count, radius, seed, size, opacity, map, colorA = 0x7c35bd, colorB = 0xdcc8f4 }) {
   const random = seededRandom(seed);
   const positions = [];
   const colors = [];
-  const violet = new THREE.Color(0xa557ff);
-  const pale = new THREE.Color(0xeee7ff);
+  const violet = new THREE.Color(colorA);
+  const pale = new THREE.Color(colorB);
   const color = new THREE.Color();
 
   for (let index = 0; index < count; index += 1) {
@@ -131,6 +248,7 @@ function createStarLayer({ count, radius, seed, size, opacity }) {
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   const material = new THREE.PointsMaterial({
     size,
+    map,
     vertexColors: true,
     transparent: true,
     opacity,
@@ -138,7 +256,8 @@ function createStarLayer({ count, radius, seed, size, opacity }) {
     depthTest: true,
     fog: false,
     toneMapped: false,
-    sizeAttenuation: false
+    sizeAttenuation: false,
+    alphaTest: 0.025,
   });
   const stars = new THREE.Points(geometry, material);
   stars.frustumCulled = false;
@@ -147,7 +266,7 @@ function createStarLayer({ count, radius, seed, size, opacity }) {
   return stars;
 }
 
-function createStellarBandLayer({ count, radius, seed, size }) {
+function createStellarBandLayer({ count, radius, seed, size, map }) {
   const random = seededRandom(seed);
   const positions = [];
   const colors = [];
@@ -173,14 +292,16 @@ function createStellarBandLayer({ count, radius, seed, size }) {
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   const material = new THREE.PointsMaterial({
     size,
+    map,
     vertexColors: true,
     transparent: true,
-    opacity: 0.5,
+    opacity: 0.36,
     depthWrite: false,
     depthTest: true,
     fog: false,
     toneMapped: false,
-    sizeAttenuation: false
+    sizeAttenuation: false,
+    alphaTest: 0.025,
   });
   const band = new THREE.Points(geometry, material);
   band.rotation.set(0.26, SKY_ROTATION, -0.34);
@@ -271,31 +392,52 @@ export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) 
   sky.renderOrder = -1000;
   sky.frustumCulled = false;
   scene.add(sky);
+  const starPoint = createStarPointTexture();
+  const distantStars = createStarLayer({
+    count: 1550,
+    radius: 63,
+    seed: 5021,
+    size: 0.52,
+    opacity: 0.52,
+    map: starPoint,
+    colorA: 0x5a247f,
+    colorB: 0xaf82d1,
+  });
   const fineStars = createStarLayer({
-    count: quality === 'low' ? 230 : 720,
+    count: 620,
     radius: 61,
     seed: 7137,
-    size: quality === 'low' ? 0.8 : 1.05,
-    opacity: 0.78
+    size: 0.78,
+    opacity: 0.7,
+    map: starPoint,
+    colorA: 0x7e3db8,
+    colorB: 0xd7bced,
   });
   const brightStars = createStarLayer({
-    count: quality === 'low' ? 34 : 92,
+    count: 96,
     radius: 59,
     seed: 12821,
-    size: quality === 'low' ? 1.35 : 1.8,
-    opacity: 0.92
+    size: 3.2,
+    opacity: 0.88,
+    map: starPoint,
+    colorA: 0xa156dc,
+    colorB: 0xf0e6f8,
   });
   const stellarBand = createStellarBandLayer({
-    count: quality === 'low' ? 380 : 1100,
+    count: 940,
     radius: 60,
     seed: 77421,
-    size: quality === 'low' ? 0.6 : 0.78
+    size: 0.56,
+    map: starPoint,
   });
-  scene.add(fineStars, brightStars, stellarBand);
+  scene.add(distantStars, fineStars, brightStars, stellarBand);
+  const spaceLightFoci = createSpaceLightFoci(scene);
 
   const moonMaterial = new THREE.SpriteMaterial({
     map: createMoonTexture(1024),
+    color: 0xd2ccd8,
     transparent: true,
+    opacity: 0.86,
     depthTest: true,
     depthWrite: false,
     fog: false,
@@ -303,24 +445,48 @@ export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) 
   });
   const moon = new THREE.Sprite(moonMaterial);
   moon.name = 'Fixed mystical full moon';
-  moon.position.set(-17.3, -34.4, -19.5);
-  moon.scale.setScalar(4.3);
+  moon.position.set(-18.5, 20.5, -44);
+  moon.scale.setScalar(5.2);
   moon.renderOrder = -999;
   scene.add(moon);
 
   function setQuality(nextQuality) {
+    const high = nextQuality === 'high';
     sky.geometry = skyGeometries[nextQuality];
     skyMaterial.map = textures[nextQuality];
     skyMaterial.needsUpdate = true;
+    distantStars.visible = true;
     fineStars.visible = true;
     brightStars.visible = nextQuality === 'high';
     stellarBand.visible = nextQuality === 'high';
+    spaceLightFoci.children.forEach((focus, index) => {
+      focus.visible = high || index < 6;
+    });
+    distantStars.geometry.setDrawRange(0, high ? 1550 : 420);
+    fineStars.geometry.setDrawRange(0, high ? 620 : 210);
+    brightStars.geometry.setDrawRange(0, high ? 96 : 32);
+    stellarBand.geometry.setDrawRange(0, high ? 940 : 300);
+    distantStars.material.size = high ? 0.52 : 0.42;
+    fineStars.material.size = high ? 0.78 : 0.64;
+    brightStars.material.size = high ? 3.2 : 2.35;
+    stellarBand.material.size = high ? 0.56 : 0.42;
     app.dataset.skybox = `dark-fantasy-moon-${nextQuality}`;
   }
 
   setQuality(quality);
 
-  function update() {}
+  function update(elapsed = 0) {
+    distantStars.material.opacity = 0.54;
+    fineStars.material.opacity = 0.74;
+    brightStars.material.opacity = 0.89 + Math.sin(elapsed * 0.28 + 0.6) * 0.045;
+    stellarBand.material.opacity = 0.37;
+    spaceLightFoci.children.forEach(focus => {
+      focus.material.opacity = focus.userData.baseOpacity
+        + (focus.userData.twinkle
+          ? Math.sin(elapsed * 0.18 + focus.userData.phase) * 0.035
+          : 0);
+    });
+  }
 
   return { update, setQuality };
 }
