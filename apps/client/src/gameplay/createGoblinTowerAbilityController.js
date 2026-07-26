@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CARD_BY_ID } from '@tronos/shared/cards';
+import { CARD_BY_ID, isDeploymentCell } from '@tronos/shared/cards';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { createCardUnit } from '../models/createCardUnit.js';
 import { setUnitTeamColor } from './unitState.js';
@@ -21,8 +21,11 @@ export function createGoblinTowerAbilityController({
   }
 
   function validTarget(x, z) {
+    const enemySeat = state.selected?.userData.ownerSeat === 1 ? 2 : 1;
+    const enemyLevel = state.onlineState?.state.players.find(player => player.seat === enemySeat)?.baseLevel ?? 1;
     return x >= 0 && x < GAME_CONFIG.boardSize && z >= 0 && z < GAME_CONFIG.boardSize
-      && !baseSeatAtCell(x, z) && !unitAtCell(x, z);
+      && !baseSeatAtCell(x, z) && !unitAtCell(x, z)
+      && !isDeploymentCell(enemySeat, x, z, GAME_CONFIG.boardSize, enemyLevel);
   }
 
   function showTargets() {
@@ -44,8 +47,11 @@ export function createGoblinTowerAbilityController({
     const ownTurn = (state.onlineState?.state.activeSeat ?? state.activePlayer) === tower?.userData.ownerSeat;
     const owned = state.devMode ? tower?.userData.ownerSeat === state.activePlayer : tower?.userData.ownerSeat === state.selfSeat;
     const me = state.onlineState?.state.players.find(player => player.seat === state.selfSeat);
+    const hasGoblinInHand = !state.onlineState
+      || state.onlineState.self?.hand?.some(instance => instance.cardId === 'goblin');
     return tower?.userData.cardId === 'goblin_tower' && owned && ownTurn
       && !tower.userData.actionUsed && !tower.userData.underConstruction
+      && hasGoblinInHand
       && (!me || me.energy >= CARD_BY_ID.goblin_tower.ability.cost);
   }
 

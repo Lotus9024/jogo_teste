@@ -63,7 +63,7 @@ export function createDevToolsController({
       button.addEventListener('click', () => {
         const level = Number(button.dataset.baseLevel);
         kingdoms[state.activePlayer].baseLevel = level;
-        keepForSeat(state.activePlayer).scale.set(level >= 2 ? 5 / 3 : 1, 1, 1);
+        keepForSeat(state.activePlayer).scale.set(1, 1, 1);
         callbacks.syncDevKingdomHud?.();
       });
     });

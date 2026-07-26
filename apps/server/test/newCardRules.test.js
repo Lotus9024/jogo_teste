@@ -113,13 +113,13 @@ test('Desordem destrói construções sem resistência restante', () => {
   assert.equal(room.state.units.some(unit => unit.id === 'house'), false);
 });
 
-test('Goblin Bombardeiro corre cinco casas, explode e morre', () => {
+test('Goblin Bombardeiro corre quatro casas, explode e morre', () => {
   const { rooms, room, first } = match();
   room.state.units.push(
     { id: 'bomber', ownerSeat: 1, cardId: 'goblin_bomber', x: 7, z: 10, hp: 1, actionUsed: false, underConstruction: false },
-    { id: 'building', ownerSeat: 2, cardId: 'tower', x: 7, z: 5, hp: 5, actionUsed: false, underConstruction: false },
-    { id: 'enemy-troop', ownerSeat: 2, cardId: 'guard', x: 8, z: 5, hp: 4, actionUsed: false, underConstruction: false },
-    { id: 'ally-troop', ownerSeat: 1, cardId: 'warrior', x: 6, z: 5, hp: 4, actionUsed: false, underConstruction: false },
+    { id: 'building', ownerSeat: 2, cardId: 'tower', x: 7, z: 6, hp: 5, actionUsed: false, underConstruction: false },
+    { id: 'enemy-troop', ownerSeat: 2, cardId: 'guard', x: 8, z: 6, hp: 4, actionUsed: false, underConstruction: false },
+    { id: 'ally-troop', ownerSeat: 1, cardId: 'warrior', x: 6, z: 6, hp: 4, actionUsed: false, underConstruction: false },
   );
   rooms.action(room.code, first.id, { type: 'use_ability', unitId: 'bomber' }, room.state.version);
   assert.equal(room.state.units.some(unit => unit.id === 'bomber'), false);
@@ -150,7 +150,7 @@ test('Estrada de Pedregulhos não aumenta mais o ataque', () => {
   }, goblin.room.state.version), /fora de alcance/);
 });
 
-test('Altar Goblin concede movimento e ataque adicionais aos Goblins próximos', () => {
+test('Altar Goblin concede uma ação adicional aos Goblins próximos', () => {
   const { rooms, room, first } = match();
   const player = room.state.players[0];
   player.energy = 10;
@@ -161,10 +161,10 @@ test('Altar Goblin concede movimento e ataque adicionais aos Goblins próximos',
   );
   rooms.action(room.code, first.id, { type: 'use_ability', unitId: 'altar' }, room.state.version);
   const goblin = room.state.units.find(unit => unit.id === 'goblin');
-  assert.deepEqual({ moves: goblin.bonusMoves, attacks: goblin.bonusAttacks }, { moves: 1, attacks: 1 });
+  assert.equal(goblin.bonusActions, 1);
   rooms.action(room.code, first.id, { type: 'attack', unitId: 'goblin', targetUnitId: 'target' }, room.state.version);
   assert.equal(room.state.units.find(unit => unit.id === 'target').hp, 2);
-  assert.equal(goblin.bonusAttacks, 0);
+  assert.equal(goblin.bonusActions, 0);
 });
 
 test('Altar Mago não pode ser lançado enquanto o jogador controla um Goblin', () => {

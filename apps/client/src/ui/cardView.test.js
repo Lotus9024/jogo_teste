@@ -59,8 +59,17 @@ test('Torre Real mostra dano e Nevasca não exibe atributos inexistentes', () =>
   assert.match(towerMarkup, /aria-label="Dano"[^]*<b>5<\/b>/);
   const blizzardMarkup = cardMarkup(cards.find(card => card.id === 'blizzard'), 0);
   assert.doesNotMatch(blizzardMarkup, />null</);
-  assert.match(blizzardMarkup, /aria-label="Vida"[^]*<b>—<\/b>/);
+  assert.doesNotMatch(blizzardMarkup, /aria-label="Vida"/);
   assert.match(blizzardMarkup, /aria-label="Alcance"[^]*<b>∞<\/b>/);
+});
+
+test('construções omitem atributos zerados e cartas passivas omitem habilidade', () => {
+  const houseMarkup = cardMarkup(cards.find(card => card.id === 'wooden_house'), 0);
+  assert.doesNotMatch(houseMarkup, /aria-label="Dano"/);
+  assert.doesNotMatch(houseMarkup, /aria-label="Movimento"/);
+  assert.doesNotMatch(houseMarkup, /class="card-ability"/);
+  const towerMarkup = cardMarkup(cards.find(card => card.id === 'tower'), 0);
+  assert.doesNotMatch(towerMarkup, /Aperte F/);
 });
 
 test('carta com buff exibe o custo efetivo e o desconto aplicado', () => {

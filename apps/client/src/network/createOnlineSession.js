@@ -89,6 +89,7 @@ export function createOnlineSession({
       attackedThisTurn: Boolean(data.attackedThisTurn),
       bonusMoves: data.bonusMoves ?? 0,
       bonusAttacks: data.bonusAttacks ?? 0,
+      bonusActions: data.bonusActions ?? 0,
       attackPenalty: data.attackPenalty ?? 0,
       movementPenalty: data.movementPenalty ?? 0,
       movementPenaltyTurns: data.movementPenaltyTurns ?? 0,
@@ -232,8 +233,8 @@ export function createOnlineSession({
     if (!me || !enemy) return;
     const seatOne = payload.state.players.find(player => player.seat === 1);
     const seatTwo = payload.state.players.find(player => player.seat === 2);
-    alliedKeep.scale.set(seatOne?.baseLevel >= 2 ? 5 / 3 : 1, 1, 1);
-    enemyKeep.scale.set(seatTwo?.baseLevel >= 2 ? 5 / 3 : 1, 1, 1);
+    alliedKeep.scale.set(1, 1, 1);
+    enemyKeep.scale.set(1, 1, 1);
     setResource('#self-energy', me.energy, me.maxEnergy ?? GAME_CONFIG.maxEnergy);
     setResource('#self-health', me.baseHp, GAME_CONFIG.startingBaseHp);
     devController.setKingdomProgressHud(me.citizens ?? 0, me.baseLevel ?? 1, enemy.baseLevel ?? 1);

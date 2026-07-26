@@ -53,9 +53,12 @@ export function createAbilityController(options) {
       }
       if (unit.userData.cardId === 'goblin_tower') {
         const ownTurn = (state.onlineState?.state.activeSeat ?? state.activePlayer) === unit.userData.ownerSeat;
+        const hasGoblinInHand = !state.onlineState
+          || state.onlineState.self?.hand?.some(instance => instance.cardId === 'goblin');
         setAbilityBadgeState(unit, {
           remaining: 0,
           enabled: Boolean(owned && ownTurn && !unit.userData.actionUsed && !unit.userData.underConstruction
+            && hasGoblinInHand
             && (!me || me.energy >= CARD_BY_ID.goblin_tower.ability.cost)),
         });
       }
@@ -86,16 +89,7 @@ export function createAbilityController(options) {
   });
   const goblinTower = createGoblinTowerAbilityController({ ...options, syncAbilityBadges });
 
-  function activateTowerAbility() {
-    const selected = state.selected;
-    const tower = relations.towerForArcher(selected);
-    const owned = state.devMode
-      ? selected?.userData.ownerSeat === state.activePlayer
-      : selected?.userData.ownerSeat === state.selfSeat;
-    const me = state.onlineState?.state.players.find(player => player.seat === state.selfSeat);
-    const instant = CARD_BY_ID.tower.instant;
-    const ready = (selected?.userData.instantReadyTurn ?? 0) <= currentTurnIndex();
-    if (tower?.userData.cardId !== 'tower' || !owned || !ready || Boolean(me && me.energy < instant.cost)) return;
+  function performTowerAbility(selected, instant) {
     if (state.onlineState) {
       callbacks.sendOnlineAction?.({ type: 'use_instant', unitId: selected.userData.serverUnitId });
       return;
@@ -120,6 +114,41 @@ export function createAbilityController(options) {
     selected.userData.instantReadyTurn = currentTurnIndex() + (instant.cooldownTurns ?? 2);
     syncInstantCommand();
     syncAbilityBadges();
+  }
+
+  function confirmTowerAbility(onConfirm) {
+    const modal = document.querySelector('#tower-ability-confirm');
+    const accept = document.querySelector('#tower-ability-accept');
+    const cancel = document.querySelector('#tower-ability-cancel');
+    if (!modal || !accept || !cancel) {
+      onConfirm();
+      return;
+    }
+    modal.hidden = false;
+    accept.focus();
+    const close = confirmed => {
+      modal.hidden = true;
+      accept.removeEventListener('click', acceptHandler);
+      cancel.removeEventListener('click', cancelHandler);
+      if (confirmed) onConfirm();
+    };
+    const acceptHandler = () => close(true);
+    const cancelHandler = () => close(false);
+    accept.addEventListener('click', acceptHandler);
+    cancel.addEventListener('click', cancelHandler);
+  }
+
+  function activateTowerAbility() {
+    const selected = state.selected;
+    const tower = relations.towerForArcher(selected);
+    const owned = state.devMode
+      ? selected?.userData.ownerSeat === state.activePlayer
+      : selected?.userData.ownerSeat === state.selfSeat;
+    const me = state.onlineState?.state.players.find(player => player.seat === state.selfSeat);
+    const instant = CARD_BY_ID.tower.instant;
+    const ready = (selected?.userData.instantReadyTurn ?? 0) <= currentTurnIndex();
+    if (tower?.userData.cardId !== 'tower' || !owned || !ready || Boolean(me && me.energy < instant.cost)) return;
+    confirmTowerAbility(() => performTowerAbility(selected, instant));
   }
 
   function activateSelectedAbility() {

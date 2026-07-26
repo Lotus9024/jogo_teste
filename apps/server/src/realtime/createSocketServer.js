@@ -287,7 +287,7 @@ function publicState(room, viewer, spectator = false) {
           lastPlayedGoblinTroopCardId: privatePlayer?.lastPlayedGoblinTroopCardId ?? null,
           pendingMageAltarChoices: privatePlayer?.pendingMageAltarChoices ?? 0,
           deckChoices: (privatePlayer?.pendingMageAltarChoices ?? 0) > 0
-            ? [...new Set(privatePlayer.deck)]
+            ? [...new Set(privatePlayer.deckCardIds)]
             : []
         },
     state: {

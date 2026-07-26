@@ -47,6 +47,10 @@ export function damageUnit(state, target, damage) {
   target.hp -= damage - absorbed;
   if (target.hp > 0) return false;
   state.units.splice(state.units.indexOf(target), 1);
+  if (['goblin_altar', 'mage_altar'].includes(target.cardId)) {
+    const owner = state.players.find(player => player.seat === target.ownerSeat);
+    if (owner?.activeAltarCardId === target.cardId) owner.activeAltarCardId = null;
+  }
   if (['tower', 'royal_tower'].includes(target.cardId)) {
     for (let index = state.units.length - 1; index >= 0; index -= 1) {
       if (state.units[index].mountedOnTowerId === target.id) state.units.splice(index, 1);

@@ -6,6 +6,7 @@ export function createUnitPointerHandlers({
   boardCoordinates, movementOverlay, actions, abilities, relations, interaction, callbacks,
 }) {
   const hoverCard = document.querySelector('#hover-card');
+  let rangePreviewUnit = null;
 
   function pick(event) {
     if (state.justDragged) {
@@ -68,7 +69,8 @@ export function createUnitPointerHandlers({
         return;
       }
     }
-    const unit = interaction.unitAtPointer(event);
+    let unit = interaction.unitAtPointer(event);
+    unit = relations.archerForTower(unit) ?? unit;
     const destination = interaction.boardCellAtPointer(event);
     if (abilities.isGoblinTowerAiming() && state.selected?.userData.cardId === 'goblin_tower' && destination) {
       abilities.chooseGoblinCell(destination);
@@ -117,7 +119,7 @@ export function createUnitPointerHandlers({
     }
     if (state.onlineState && (unit.userData.ownerSeat !== state.selfSeat
       || state.onlineState.state.activeSeat !== state.selfSeat
-      || (unit.userData.actionUsed && !(unit.userData.bonusMoves > 0)))) return;
+      || (unit.userData.actionUsed && !(unit.userData.bonusMoves > 0) && !(unit.userData.bonusActions > 0)))) return;
     event.preventDefault();
     event.stopPropagation();
     cameraTransition.cancel({ restoreControls: false });
@@ -188,7 +190,16 @@ export function createUnitPointerHandlers({
     if (!object) {
       hoverCard.classList.remove('visible');
       hoverCard.setAttribute('aria-hidden', 'true');
+      if (rangePreviewUnit) {
+        rangePreviewUnit = null;
+        if (state.selected) movementOverlay.show(state.selected);
+        else movementOverlay.clear();
+      }
       return;
+    }
+    if (object.userData.ownerSeat !== state.selfSeat && rangePreviewUnit !== object) {
+      rangePreviewUnit = object;
+      movementOverlay.previewRange(object);
     }
     hoverCard.innerHTML = cardMarkup(cards[object.userData.cardIndex], object.userData.cardIndex);
     const preview = hoverCard.firstElementChild;
@@ -199,9 +210,8 @@ export function createUnitPointerHandlers({
     if (object.userData.underConstruction) {
       const remaining = Math.max(1,
         (object.userData.buildReadyRound ?? abilities.currentRound() + 1) - abilities.currentRound());
-      preview.querySelector('.card-ability strong').textContent = 'EM CONSTRUÇÃO';
-      preview.querySelector('.ability-cost').textContent = `${remaining}R`;
-      preview.querySelector('.card-ability p').textContent = `Faltam ${remaining} rodada${remaining === 1 ? '' : 's'} para a conclusão.`;
+      const buildValue = preview.querySelector('[data-stat="build"]');
+      if (buildValue) buildValue.textContent = `${remaining}R`;
     }
     hoverCard.style.left = `${Math.min(event.clientX + 18, innerWidth - 262)}px`;
     hoverCard.style.top = `${Math.min(event.clientY + 18, innerHeight - 422)}px`;
@@ -216,7 +226,12 @@ export function createUnitPointerHandlers({
     renderer.domElement.addEventListener('pointermove', showHover);
     renderer.domElement.addEventListener('pointerup', finishDrag, true);
     renderer.domElement.addEventListener('pointercancel', finishDrag, true);
-    renderer.domElement.addEventListener('pointerleave', () => hoverCard.classList.remove('visible'));
+    renderer.domElement.addEventListener('pointerleave', () => {
+      hoverCard.classList.remove('visible');
+      rangePreviewUnit = null;
+      if (state.selected) movementOverlay.show(state.selected);
+      else movementOverlay.clear();
+    });
   }
 
   return { mount };

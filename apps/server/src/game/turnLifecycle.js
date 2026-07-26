@@ -53,6 +53,7 @@ export function endTurn(state) {
     unit.abilityUsed = false;
     unit.bonusMoves = 0;
     unit.bonusAttacks = 0;
+    unit.bonusActions = 0;
     unit.shield = 0;
   });
   state.units.forEach(unit => {

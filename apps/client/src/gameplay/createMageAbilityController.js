@@ -33,12 +33,13 @@ export function createMageAbilityController({
       z: Math.round((state.selected.position.z + half) / tile),
     };
     const chosen = new Set(fireCells.map(cell => cellKey(cell.x, cell.z)));
-    for (let dx = -4; dx <= 4; dx += 1) {
-      for (let dz = -4; dz <= 4; dz += 1) {
+    const range = CARD_BY_ID.mage.attackRange;
+    for (let dx = -range; dx <= range; dx += 1) {
+      for (let dz = -range; dz <= range; dz += 1) {
         const distance = Math.abs(dx) + Math.abs(dz);
         const x = origin.x + dx;
         const z = origin.z + dz;
-        if (distance < 1 || distance > 4 || x < 0 || x >= GAME_CONFIG.boardSize || z < 0 || z >= GAME_CONFIG.boardSize) continue;
+        if (distance < 1 || distance > range || x < 0 || x >= GAME_CONFIG.boardSize || z < 0 || z >= GAME_CONFIG.boardSize) continue;
         const marker = new THREE.Mesh(geometry, chosen.has(cellKey(x, z)) ? chosenMaterial : targetMaterial);
         marker.rotation.x = -Math.PI / 2;
         marker.position.set(x * tile - half, 0.082, z * tile - half);
@@ -63,7 +64,7 @@ export function createMageAbilityController({
     };
     const distance = Math.abs(destination.x - origin.x) + Math.abs(destination.z - origin.z);
     if (distance < 1 || distance > CARD_BY_ID.mage.attackRange) {
-      callbacks.showGameError?.('Escolha uma casa a até 4 quadrados do Mago.');
+      callbacks.showGameError?.(`Escolha uma casa a até ${CARD_BY_ID.mage.attackRange} quadrados do Mago.`);
       return;
     }
     const index = fireCells.findIndex(cell => cell.x === destination.x && cell.z === destination.z);

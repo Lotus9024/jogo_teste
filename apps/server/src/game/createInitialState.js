@@ -9,6 +9,11 @@ const CARDS_BY_RARITY = Object.freeze({
 });
 
 const BASE_CARD_WEIGHT = 100;
+const ALTAR_CARD_IDS = new Set(['goblin_altar', 'mage_altar']);
+
+function cardCanBeReceived(card, player) {
+  return !ALTAR_CARD_IDS.has(card.id) || !player.activeAltarCardId;
+}
 
 function cardWeight(card, player, round) {
   if (card.id === 'operator') {
@@ -22,8 +27,8 @@ function cardWeight(card, player, round) {
 
 export function weightedCardForRarity(rarity, player, round = 1, random = randomInt) {
   const allowed = new Set(player.deckCardIds?.length ? player.deckCardIds : DEFAULT_DECK_CARD_IDS);
-  const rarityPool = CARDS_BY_RARITY[rarity].filter(card => allowed.has(card.id));
-  const fallbackPool = CARD_DEFINITIONS.filter(card => allowed.has(card.id));
+  const rarityPool = CARDS_BY_RARITY[rarity].filter(card => allowed.has(card.id) && cardCanBeReceived(card, player));
+  const fallbackPool = CARD_DEFINITIONS.filter(card => allowed.has(card.id) && cardCanBeReceived(card, player));
   const pool = rarityPool.length ? rarityPool : fallbackPool;
   const weighted = pool.map(card => ({ card, weight: cardWeight(card, player, round) }));
   const total = weighted.reduce((sum, item) => sum + item.weight, 0);
@@ -61,16 +66,19 @@ export function drawCard(player, { round = 1, random = randomInt } = {}) {
   const rarity = rarityForRoll(level, random(sides));
   const cardId = weightedCardForRarity(rarity, player, round, random);
   player.hand.push({ instanceId: randomUUID(), cardId });
+  if (ALTAR_CARD_IDS.has(cardId)) player.activeAltarCardId = cardId;
   if (cardId === 'wooden_house') player.hasDrawnHouse = true;
   return true;
 }
 
 export function grantRandomCard(player, predicate, random = randomInt) {
   const allowed = new Set(player.deckCardIds?.length ? player.deckCardIds : DEFAULT_DECK_CARD_IDS);
-  const preferred = CARD_DEFINITIONS.filter(card => allowed.has(card.id) && predicate(card));
-  const pool = preferred.length ? preferred : CARD_DEFINITIONS.filter(predicate);
+  const preferred = CARD_DEFINITIONS.filter(card => allowed.has(card.id) && predicate(card) && cardCanBeReceived(card, player));
+  const pool = preferred.length ? preferred : CARD_DEFINITIONS.filter(card => predicate(card) && cardCanBeReceived(card, player));
   if (!pool.length) return false;
-  player.hand.push({ instanceId: randomUUID(), cardId: pool[random(pool.length)].id });
+  const cardId = pool[random(pool.length)].id;
+  player.hand.push({ instanceId: randomUUID(), cardId });
+  if (ALTAR_CARD_IDS.has(cardId)) player.activeAltarCardId = cardId;
   return true;
 }
 
@@ -80,7 +88,7 @@ export function createInitialState(players) {
     id: player.id, name: player.name, seat: player.seat, connected: true,
     baseHp: GAME_CONFIG.startingBaseHp, energy: GAME_CONFIG.startingEnergy, maxEnergy: GAME_CONFIG.maxEnergy,
     citizens: 0, baseLevel: 1, hasDrawnHouse: false, pendingMageAltarChoices: 0,
-    lastPlayedGoblinTroopCardId: null, goblinSpankingTurn: null,
+    lastPlayedGoblinTroopCardId: null, goblinSpankingTurn: null, activeAltarCardId: null,
     deckCardIds: [...(player.deckCardIds?.length ? player.deckCardIds : DEFAULT_DECK_CARD_IDS)],
     hand: [], deck: createDeck(randomInt, 1, GAME_CONFIG.deckSize, player.deckCardIds?.length ? player.deckCardIds : DEFAULT_DECK_CARD_IDS), discard: []
   }));

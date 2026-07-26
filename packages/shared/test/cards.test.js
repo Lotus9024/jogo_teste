@@ -57,7 +57,7 @@ test('canhão usa frente relativa ao dono e alcance de três a seis casas', () =
 test('canhão separa dano direto do dano em área', () => {
   assert.equal(CARD_BY_ID.cannon.hp, 1);
   assert.equal(CARD_BY_ID.cannon.damage, 3);
-  assert.equal(CARD_BY_ID.cannon.cost, 8);
+  assert.equal(CARD_BY_ID.cannon.cost, 7);
   assert.equal(CARD_BY_ID.cannon.areaDamage, 1);
   assert.equal(CARD_BY_ID.cannon.areaRadius, 1);
   assert.match(CARD_BY_ID.cannon.description, /3 de dano central e 1 de dano em área/i);
@@ -128,7 +128,7 @@ test('Operador e Cidadão contam como cidadãos enquanto permanecem na arena', (
 test('Mago é raro e expõe fogo e ácido com os atributos definidos', () => {
   assert.deepEqual(
     { hp: CARD_BY_ID.mage.hp, damage: CARD_BY_ID.mage.damage, move: CARD_BY_ID.mage.move, cost: CARD_BY_ID.mage.cost, range: CARD_BY_ID.mage.attackRange, cells: CARD_BY_ID.mage.maxFireCells, rarity: CARD_BY_ID.mage.rarityClass },
-    { hp: 2, damage: 2, move: 1, cost: 6, range: 4, cells: 2, rarity: 'rare' }
+    { hp: 2, damage: 2, move: 1, cost: 6, range: 3, cells: 2, rarity: 'rare' }
   );
   assert.match(CARD_BY_ID.mage.description, /sem ser bloqueado/i);
   assert.deepEqual(
@@ -233,7 +233,7 @@ test('cartas reais e Nevasca expõem os atributos e regras definidos', () => {
       cost: CARD_BY_ID.royal_warrior.cost,
       requiredCitizens: CARD_BY_ID.royal_warrior.requiredCitizens,
     },
-    { hp: 3, damage: 5, move: 2, cost: 8, requiredCitizens: 10 },
+    { hp: 3, damage: 5, move: 2, cost: 7, requiredCitizens: 10 },
   );
   assert.deepEqual(
     {
@@ -249,7 +249,7 @@ test('cartas reais e Nevasca expõem os atributos e regras definidos', () => {
     {
       resistance: 7,
       damage: 5,
-      cost: 9,
+      cost: 8,
       buildRounds: 3,
       requiredCitizens: 12,
       adjacentArcherRangeBonus: 1,

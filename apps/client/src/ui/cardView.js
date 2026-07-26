@@ -12,8 +12,9 @@ export const cards = CARD_DEFINITIONS.map(card => {
     categoryLabel: CARD_CATEGORY_LABELS[card.category],
     ability: featuredAbility.name,
     abilityCost: featuredAbility.cost,
+    hasAbility: featuredAbility.enabled,
     abilityText: featuredAbility.enabled
-      ? `${featuredAbility.description} Aperte F selecionando a tropa para utilizar.`
+      ? `${featuredAbility.description}${card.id === 'tower' ? '' : ' Aperte F selecionando a carta para utilizar.'}`
       : featuredAbility.description,
     abilityKind: card.instant.enabled ? 'instant' : 'normal'
   };
@@ -23,22 +24,30 @@ const bootIcon = '<svg class="stat-boot" viewBox="0 0 24 24"><path d="M5 2h8v9.5
 const hourglassIcon = '<span aria-hidden="true">⌛</span>';
 
 function combatStats(card) {
+  const stats = [];
+  const add = (label, icon, value, attribute = '') => stats.push(`<span aria-label="${label}"><small aria-hidden="true">${icon}</small><b${attribute}>${value}</b></span>`);
   if (card.type === 'terrain') {
-    const finalLabel = card.buildRounds ? 'Construção' : 'Permanente';
-    const finalIcon = card.buildRounds ? hourglassIcon : '<span aria-hidden="true">∞</span>';
-    const finalValue = card.buildRounds ? `${card.buildRounds}R` : '∞';
-    return `<span aria-label="Vida"><small aria-hidden="true">♥</small><b>—</b></span><span aria-label="Dano"><small aria-hidden="true">⚔</small><b>—</b></span><span aria-label="${finalLabel}"><small aria-hidden="true">${finalIcon}</small><b>${finalValue}</b></span>`;
+    if (card.buildRounds > 0) add('Construção', hourglassIcon, `${card.buildRounds}R`);
+    return stats.join('');
   }
   if (card.type === 'spell') {
-    return `<span aria-label="Vida"><small aria-hidden="true">♥</small><b>—</b></span><span aria-label="Dano"><small aria-hidden="true">⚔</small><b>${card.damage}</b></span><span aria-label="Alcance"><small aria-hidden="true">✦</small><b>∞</b></span>`;
+    if (card.damage > 0) add('Dano', '⚔', card.damage);
+    add('Alcance', '✦', '∞');
+    return stats.join('');
   }
-  const needsConstruction = Boolean(card.buildRounds);
-  const damage = card.type === 'construction' && card.damage <= 0 ? '—' : card.damage;
-  const lastLabel = needsConstruction ? 'Construção' : 'Movimento';
-  const lastIcon = needsConstruction ? hourglassIcon : bootIcon;
-  const lastValue = needsConstruction ? `${card.buildRounds}R` : card.move;
   const resistanceLabel = ['construction', 'machine'].includes(card.type) ? 'Resistência' : 'Vida';
-  return `<span aria-label="${resistanceLabel}"><small aria-hidden="true">♥</small><b data-stat="hp">${card.hp}</b></span><span aria-label="Dano"><small aria-hidden="true">⚔</small><b>${damage}</b></span><span aria-label="${lastLabel}"><small aria-hidden="true">${lastIcon}</small><b>${lastValue}</b></span>`;
+  if (Number.isFinite(card.hp) && card.hp > 0) add(resistanceLabel, '♥', card.hp, ' data-stat="hp"');
+  if (card.damage > 0) add('Dano', '⚔', card.damage);
+  if (card.buildRounds > 0) add('Construção', hourglassIcon, `${card.buildRounds}R`, ' data-stat="build"');
+  else if (card.move > 0) add('Movimento', bootIcon, card.move);
+  return stats.join('');
+}
+
+function abilityMarkup(card, preview = false) {
+  if (!card.hasAbility) return '';
+  const className = preview ? 'preview-ability' : 'card-ability';
+  const costClass = preview ? 'preview-ability-cost' : 'ability-cost';
+  return `<span class="${className}" aria-label="Habilidade ${card.ability}"><span><strong>${card.ability}</strong></span><b class="${costClass}">${card.abilityCost}</b><p>${card.abilityText}</p></span>`;
 }
 
 export function cardCostText(card) {
@@ -70,7 +79,7 @@ export function cardMarkup(card, index, { level = null } = {}) {
     <span class="card-art">${cardIconMarkup(card)}</span>
     <span class="card-description">${card.description}</span>
     <span class="card-main-row"><span class="card-combat-stats">${combatStats(card)}</span></span>
-    <span class="card-ability" aria-label="Habilidade ${card.ability}"><span><strong>${card.ability}</strong></span><b class="ability-cost">${card.abilityCost}</b><p>${card.abilityText}</p></span>
+    ${abilityMarkup(card)}
   </button>`;
 }
 
@@ -80,7 +89,7 @@ export function showDeckPreview(element, card) {
     <div class="preview-top"><b class="preview-cost">${card.dynamicCost ? '—' : card.cost}</b><span class="preview-heading"><strong>${card.name}</strong><small>${card.categoryLabel ?? CARD_CATEGORY_LABELS[card.category]}</small></span><i class="preview-gem"></i></div>
     <div class="preview-art">${cardIconMarkup(card)}</div><p class="preview-description">${card.description}</p>
     <div class="preview-stats">${combatStats(card)}</div>
-    <div class="preview-ability" aria-label="Habilidade ${card.ability}"><strong>${card.ability}</strong><b class="preview-ability-cost">${card.abilityCost}</b><p>${card.abilityText}</p></div>`;
+    ${abilityMarkup(card, true)}`;
   element.classList.add('visible');
   element.setAttribute('aria-hidden', 'false');
 }

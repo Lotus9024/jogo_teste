@@ -43,7 +43,8 @@ export function isAttackDistanceValid(card, value) {
 export function isAttackTargetValid(card, from, to) {
   const dx = Math.abs(from.x - to.x), dz = Math.abs(from.z - to.z);
   if (card.attackType === 'straight' && dx !== 0 && dz !== 0) return false;
-  return isAttackDistanceValid(card, dx + dz);
+  const distance = card.attackType === 'any' ? Math.max(dx, dz) : dx + dz;
+  return isAttackDistanceValid(card, distance);
 }
 
 export function baseCellsForSeat(seat, boardSize = 15, baseLevel = 1) {

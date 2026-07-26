@@ -129,7 +129,7 @@ test('Mago possui círculo ácido no chão e instrução de atalho na carta', ()
   assert.ok(acid.getObjectByName('acidPuddle'));
   assert.ok(acid.getObjectByName('acidRing'));
   assert.ok(acid.children.some(part => part.userData.acidDrop));
-  assert.match(cards.find(card => card.id === 'mage').abilityText, /Aperte F selecionando a tropa/);
+  assert.match(cards.find(card => card.id === 'mage').abilityText, /Aperte F selecionando a carta/);
 });
 
 test('guarda possui identidade própria e não usa elementos de mago', () => {

@@ -9,7 +9,7 @@ test('Mago incendeia uma ou duas casas e o fogo persiste pelo turno rival', () =
     { id: 'fire-blocker', ownerSeat: 1, cardId: 'guard', x: 7, z: 7, hp: 4, shield: 0, actionUsed: false, abilityUsed: false },
     { id: 'fire-target', ownerSeat: 2, cardId: 'guard', x: 7, z: 5, hp: 4, shield: 0, actionUsed: false, abilityUsed: false }
   );
-  rooms.action(room.code, first.id, { type: 'mage_fire', unitId: 'mage-fire', cells: [{ x: 7, z: 5 }, { x: 8, z: 5 }] }, room.state.version);
+  rooms.action(room.code, first.id, { type: 'mage_fire', unitId: 'mage-fire', cells: [{ x: 7, z: 5 }, { x: 8, z: 6 }] }, room.state.version);
   assert.equal(room.state.units.find(unit => unit.id === 'fire-target').hp, 2);
   assert.equal(room.state.units.find(unit => unit.id === 'fire-blocker').hp, 4);
   assert.equal(room.state.fires.length, 2);
@@ -19,6 +19,18 @@ test('Mago incendeia uma ou duas casas e o fogo persiste pelo turno rival', () =
   rooms.action(room.code, second.id, { type: 'end_turn' }, room.state.version);
   assert.equal(room.state.units.find(unit => unit.id === 'fire-target').hp, 1);
   assert.equal(room.state.fires.length, 0);
+});
+
+test('Mago pode incendiar e causar dano à base inimiga', () => {
+  const { rooms, room, first } = match();
+  room.state.units.push({
+    id: 'mage-base', ownerSeat: 1, cardId: 'mage', x: 7, z: 5,
+    hp: 2, shield: 0, actionUsed: false, abilityUsed: false,
+  });
+  rooms.action(room.code, first.id, {
+    type: 'mage_fire', unitId: 'mage-base', cells: [{ x: 7, z: 2 }],
+  }, room.state.version);
+  assert.equal(room.state.players[1].baseHp, 8);
 });
 
 test('tropa que entra no fogo sofre um dano apenas uma vez', () => {

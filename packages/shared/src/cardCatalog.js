@@ -13,13 +13,13 @@ export const CARD_DEFINITIONS = Object.freeze([
   }),
   Object.freeze({
     id: 'guard', name: 'Guarda', description: 'Um defensor simples recém treinado, defende o seu reino com corpo e alma.',
-    hp: 3, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 5, category: 'basic', rarity: 'COMUM', rarityClass: 'common', info: 'HUMANO · GUARDIÃO', glyph: '♜',
+    hp: 3, damage: 1, move: 1, movementType: 'any', attackType: 'any', minAttackRange: 1, attackRange: 1, cost: 5, category: 'basic', rarity: 'COMUM', rarityClass: 'common', info: 'HUMANO · GUARDIÃO', glyph: '♜',
     ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
     id: 'henry', name: 'Henry', description: 'Entra podendo agir e pode se movimentar e atacar, ou vice-versa, no mesmo turno.\nEle entra com Desordem: ao lado de uma construção Básica sua, retira 1 de resistência dela no início dos seus próximos turnos.',
-    hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 4, adjacentConstructionDamage: 1, category: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', family: 'goblin', info: 'GOBLIN · ÁGIL', glyph: '⚡',
+    hp: 1, damage: 1, move: 1, movementType: 'any', attackType: 'any', minAttackRange: 1, attackRange: 1, cost: 4, adjacentConstructionDamage: 1, category: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', family: 'goblin', info: 'GOBLIN · ÁGIL', glyph: '⚡',
     ability: Object.freeze({ name: 'Agilidade', cost: '—', description: 'Pode realizar um movimento e um ataque no mesmo turno, em qualquer ordem. Entra em campo pronto para agir.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
@@ -55,7 +55,7 @@ export const CARD_DEFINITIONS = Object.freeze([
   }),
   Object.freeze({
     id: 'cannon', name: 'Canhão', description: 'Exige um Operador posicionado exatamente atrás para se mover ou disparar.\nAtinge apenas de 3 a 6 blocos de distância, causando 3 de dano central e 1 de dano em área.',
-    hp: 1, damage: 3, areaDamage: 1, move: 1, movementType: 'forward', minAttackRange: 3, attackRange: 6, areaRadius: 1, cost: 8, buildRounds: 2, type: 'machine', category: 'basic', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'MÁQUINA · CERCO', glyph: '◉',
+    hp: 1, damage: 3, areaDamage: 1, move: 1, movementType: 'forward', minAttackRange: 3, attackRange: 6, areaRadius: 1, cost: 7, buildRounds: 2, type: 'machine', category: 'basic', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'MÁQUINA · CERCO', glyph: '◉',
     ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'O Canhão precisa de um Operador exatamente uma casa atrás.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
@@ -86,7 +86,7 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'goblin_swarm', name: 'Enxame Goblin', description: 'Três Goblins surgem em posições aleatórias da sua área de lançamento.\nEles entram com Desordem, mas só retiram resistência de construções a partir do seu próximo turno.',
+    id: 'goblin_swarm', name: 'Enxame Goblin', description: 'Três Goblins surgem em posições aleatórias da sua área de lançamento.\nEles entram com Desordem, mas só retiram resistência de construções no segundo turno seu após o surgimento.',
     hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 4, summonCount: 3, summonsCardId: 'goblin', type: 'summon', category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'GOBLIN · ENXAME', glyph: '♟',
     ability: Object.freeze({ name: 'Enxame', cost: '—', description: 'Ao ser lançada, esta carta se transforma em três Goblins. Cada um aplica Desordem separadamente.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
@@ -94,7 +94,7 @@ export const CARD_DEFINITIONS = Object.freeze([
   Object.freeze({
     id: 'goblin_bomber', name: 'Goblin Bombardeiro', description: 'Ele entra com Desordem: no início de cada turno seu, retira 1 de resistência de cada construção Básica sua diretamente ao lado.',
     hp: 1, damage: 1, move: 1, movementType: 'straight', minAttackRange: 1, attackRange: 1, cost: 4, adjacentConstructionDamage: 1, category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'GOBLIN · BOMBARDEIRO', glyph: '✹',
-    ability: Object.freeze({ name: 'Carga explosiva', cost: 0, chargeDistance: 5, troopDamage: 3, constructionDamage: 4, radius: 1, description: 'Corre 5 blocos para a frente e explode. Causa 3 de dano em tropas e 4 em construções no centro e ao redor. O Goblin morre. Enquanto aguarda, também aplica Desordem às construções aliadas diretamente ao lado.', enabled: true }),
+    ability: Object.freeze({ name: 'Carga explosiva', cost: 2, chargeDistance: 4, troopDamage: 3, constructionDamage: 4, radius: 1, description: 'Corre 4 blocos para a frente e explode. Causa 3 de dano em tropas e 4 em construções no centro e ao redor. O Goblin morre. Enquanto aguarda, também aplica Desordem às construções aliadas diretamente ao lado.', enabled: true }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
@@ -112,30 +112,30 @@ export const CARD_DEFINITIONS = Object.freeze([
   Object.freeze({
     id: 'goblin_tower', name: 'Torre Goblin', description: 'Goblins que nascem ao lado ganham +1 de vida.\nNecessita de 2 Goblins seus na arena e fica 1 de energia mais barata por cada Goblin seu em jogo, até o custo mínimo de 5.',
     hp: 5, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 10, minimumCost: 5, requiredGoblinTroops: 2, goblinDiscount: 1, buildRounds: 1, type: 'construction', category: 'goblin', family: 'goblin', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · GOBLIN', glyph: '♜',
-    ability: Object.freeze({ name: 'Reforço Goblin', cost: 2, description: 'Consome um Goblin do seu baralho e o invoca em qualquer casa livre da arena. Ele nasce sem poder agir neste turno.', enabled: true }),
+    ability: Object.freeze({ name: 'Reforço Goblin', cost: 4, description: 'Necessita de um Goblin na sua mão. Consome essa carta e invoca o Goblin em qualquer casa livre da arena, exceto na área da base inimiga. Ele nasce sem poder agir neste turno.', enabled: true }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'mage', name: 'Mago', description: 'Atira fogo que causa dano contínuo em qualquer lugar do alcance sem ser bloqueado.\nO Ácido atinge todas as cartas ao redor, inclusive as suas.',
-    hp: 2, damage: 2, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 4, maxFireCells: 2, cost: 6, category: 'mage', family: 'mage', rarity: 'RARA', rarityClass: 'rare', info: 'MAGO · CONJURADOR', glyph: '✦',
+    id: 'mage', name: 'Mago', description: 'Atira fogo em até duas casas a no máximo 3 blocos de distância, sem ser bloqueado. O fogo também pode atingir a base inimiga.\nO Ácido atinge todas as cartas ao redor, menos o próprio Mago.',
+    hp: 2, damage: 2, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 3, maxFireCells: 2, cost: 6, category: 'mage', family: 'mage', rarity: 'RARA', rarityClass: 'rare', info: 'MAGO · CONJURADOR', glyph: '✦',
     ability: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'O fogo é conjurado pelo ícone acima do Mago.', enabled: false }),
     instant: Object.freeze({ name: 'Ácido (Instantâneo)', cost: 4, cooldownTurns: 2, damage: 3, radius: 1, description: 'Jogue um ácido em volta do Mago. Todas as cartas em volta tomam 3 de dano, inclusive as suas.', enabled: true })
   }),
   Object.freeze({
-    id: 'goblin_altar', name: 'Altar Goblin', description: 'Cartas Goblin custam 1 a menos, podendo custar no mínimo 1, e ao concluir a construção você recebe uma carta Goblin aleatória.\nÉ necessário ter 2 tropas Goblin na área da sua base.',
+    id: 'goblin_altar', name: 'Altar Goblin', description: 'Cartas Goblin custam 1 a menos, podendo custar no mínimo 1, e ao concluir a construção você recebe uma carta Goblin aleatória.\nÉ necessário ter 2 tropas Goblin na área da sua base. Você pode ter apenas um Altar no Deck e só volta a recebê-lo depois que ele for perdido.',
     hp: 1, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 5, buildRounds: 1, type: 'construction', category: 'goblin', family: 'goblin', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · GOBLIN', glyph: '♨',
-    ability: Object.freeze({ name: 'Marcha Goblin', cost: 5, range: 6, cooldownTurns: 2, description: 'Goblins no raio de 6 casas podem se mover e atacar uma vez adicional neste turno.', enabled: true }),
+    ability: Object.freeze({ name: 'Marcha Goblin', cost: 4, range: 6, cooldownTurns: 2, description: 'Goblins no raio de 6 casas recebem +1 ação neste turno. A ação extra pode ser usada para mover ou atacar.', enabled: true }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'mage_altar', name: 'Altar Mago', description: 'Cartas Mago custam 1 a menos, podendo custar no mínimo 1, e ao concluir a construção você escolhe qualquer carta do seu baralho para comprar.\nNão pode ser lançado enquanto você controlar um Goblin na arena.',
+    id: 'mage_altar', name: 'Altar Mago', description: 'Cartas Mago custam 1 a menos, podendo custar no mínimo 1, e ao concluir a construção você escolhe qualquer carta do seu Deck para comprar.\nNão pode ser lançado enquanto você controlar um Goblin na arena. Você pode ter apenas um Altar no Deck e só volta a recebê-lo depois que ele for perdido.',
     hp: 1, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 6, buildRounds: 1, type: 'construction', category: 'mage', family: 'mage', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · MAGO', glyph: '✧',
     ability: Object.freeze({ name: 'Selo enfraquecedor', cost: 7, cooldownTurns: 2, durationTurns: 2, description: 'Todos os Goblins da arena recebem -1 de ataque por 2 turnos.', enabled: true }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
     id: 'builder_area', name: 'Área de construtor', description: 'Concede +1 de energia por turno e +1 de resistência às suas construções.\nO efeito é anulado enquanto houver uma carta Goblin ou Mago na área da sua base.',
-    hp: 1, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 7, buildRounds: 1, type: 'construction', category: 'basic', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'CONSTRUÇÃO · SUPORTE', glyph: '⌂',
+    hp: 1, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 5, buildRounds: 1, type: 'construction', category: 'basic', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'CONSTRUÇÃO · SUPORTE', glyph: '⌂',
     ability: Object.freeze({ name: 'Oficina do reino', cost: '—', description: 'O bônus de energia não acumula; a resistência acumula para cada Área de construtor ativa.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
@@ -147,13 +147,13 @@ export const CARD_DEFINITIONS = Object.freeze([
   }),
   Object.freeze({
     id: 'royal_warrior', name: 'Guerreiro Real', description: 'Todos os Guerreiros do seu reino ganham +1 de vida.\nNecessita de 10 cidadãos e não pode ser conjurado enquanto houver Magos ou Goblins seus na arena.',
-    hp: 3, damage: 5, move: 2, movementType: 'straight', attackType: 'straight', minAttackRange: 1, attackRange: 2, cost: 8, requiredCitizens: 10, forbidsMageAndGoblin: true, royalWarriorBlessing: 1, category: 'basic', rarity: 'RARA', rarityClass: 'rare', info: 'HUMANO · GUERREIRO REAL', glyph: '♛',
+    hp: 3, damage: 5, move: 2, movementType: 'straight', attackType: 'straight', minAttackRange: 1, attackRange: 2, cost: 7, requiredCitizens: 10, forbidsMageAndGoblin: true, royalWarriorBlessing: 1, category: 'basic', rarity: 'RARA', rarityClass: 'rare', info: 'HUMANO · GUERREIRO REAL', glyph: '♛',
     ability: Object.freeze({ name: 'Sangue da coroa', cost: '—', description: 'Ao entrar na arena, todos os Guerreiros aliados, inclusive ele, recebem +1 de vida máxima e recuperam 1 de vida.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
     id: 'royal_tower', name: 'Torre Real', description: 'Quando a construção termina, todas as construções do seu reino ganham +3 de vida.\nArqueiros ao redor ganham +1 de alcance; um Arqueiro montado também ganha +1 de dano.\nNecessita de 12 cidadãos e não pode ser construída enquanto houver Magos ou Goblins seus na arena. Caso seja destruída, o Arqueiro montado também é.',
-    hp: 7, damage: 5, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 9, buildRounds: 3, type: 'construction', requiredCitizens: 12, forbidsMageAndGoblin: true, royalConstructionBlessing: 3, adjacentArcherRangeBonus: 1, archerRangeBonus: 1, archerDamageBonus: 1, category: 'basic', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · TORRE REAL', glyph: '♜',
+    hp: 7, damage: 5, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 8, buildRounds: 3, type: 'construction', requiredCitizens: 12, forbidsMageAndGoblin: true, royalConstructionBlessing: 3, adjacentArcherRangeBonus: 1, archerRangeBonus: 1, archerDamageBonus: 1, category: 'basic', rarity: 'RARA', rarityClass: 'rare', info: 'CONSTRUÇÃO · TORRE REAL', glyph: '♜',
     ability: Object.freeze({ name: 'Fortificação real', cost: '—', description: 'Ao ser concluída, concede +3 de vida máxima e recupera 3 de vida de todas as construções aliadas.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),

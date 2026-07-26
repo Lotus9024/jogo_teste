@@ -61,7 +61,7 @@ test('cartas usam os atributos definidos', () => {
       tower: { hp: 5, damage: 0, move: 0, movementType: 'none', cost: 7 },
       operator: { hp: 1, damage: 0, move: 1, movementType: 'any', cost: 3 },
       citizen: { hp: 1, damage: 1, move: 1, movementType: 'any', cost: 3 },
-      cannon: { hp: 1, damage: 3, move: 1, movementType: 'forward', cost: 8 },
+      cannon: { hp: 1, damage: 3, move: 1, movementType: 'forward', cost: 7 },
       wooden_house: { hp: 1, damage: 0, move: 0, movementType: 'none', cost: 3 },
       goblin_house: { hp: 1, damage: 0, move: 0, movementType: 'none', cost: 4 },
       road: { hp: null, damage: 0, move: 0, movementType: 'none', cost: 1 },
@@ -74,10 +74,10 @@ test('cartas usam os atributos definidos', () => {
       mage: { hp: 2, damage: 2, move: 1, movementType: 'any', cost: 6 },
       goblin_altar: { hp: 1, damage: 0, move: 0, movementType: 'none', cost: 5 },
       mage_altar: { hp: 1, damage: 0, move: 0, movementType: 'none', cost: 6 },
-      builder_area: { hp: 1, damage: 0, move: 0, movementType: 'none', cost: 7 },
+      builder_area: { hp: 1, damage: 0, move: 0, movementType: 'none', cost: 5 },
       cobblestone_road: { hp: null, damage: 0, move: 0, movementType: 'none', cost: 5 },
-      royal_warrior: { hp: 3, damage: 5, move: 2, movementType: 'straight', cost: 8 },
-      royal_tower: { hp: 7, damage: 5, move: 0, movementType: 'none', cost: 9 },
+      royal_warrior: { hp: 3, damage: 5, move: 2, movementType: 'straight', cost: 7 },
+      royal_tower: { hp: 7, damage: 5, move: 0, movementType: 'none', cost: 8 },
       blizzard: { hp: null, damage: 1, move: 0, movementType: 'none', cost: 4 }
     }
   );

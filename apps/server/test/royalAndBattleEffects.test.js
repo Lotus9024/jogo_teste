@@ -145,7 +145,7 @@ test('Bombardeiro e Torre publicam os eventos usados pelas animações', () => {
       from: [bomberMatch.room.state.effects[0].fromX, bomberMatch.room.state.effects[0].fromZ],
       to: [bomberMatch.room.state.effects[0].toX, bomberMatch.room.state.effects[0].toZ],
     },
-    { type: 'goblin_bomber_charge', from: [7, 10], to: [7, 5] },
+    { type: 'goblin_bomber_charge', from: [7, 10], to: [7, 6] },
   );
 
   const towerMatch = match();

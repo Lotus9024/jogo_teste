@@ -30,5 +30,7 @@ export function validateDeckCardIds(value, { allowDefault = false } = {}) {
       throw new Error('O Deck precisa ter exatamente 6 cartas comuns, 4 incomuns e 2 raras.');
     }
   }
+  const altarCount = ids.filter(id => ['goblin_altar', 'mage_altar'].includes(id)).length;
+  if (altarCount > 1) throw new Error('O Deck pode ter apenas um Altar.');
   return ids;
 }

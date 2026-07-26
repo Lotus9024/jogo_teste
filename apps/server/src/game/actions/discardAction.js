@@ -7,4 +7,5 @@ export function discardAction(state, player, _opponent, action) {
   if (index < 0) fail('Esta carta não está na sua mão.');
   const [instance] = player.hand.splice(index, 1);
   player.discard.push(instance.cardId);
+  if (player.activeAltarCardId === instance.cardId) player.activeAltarCardId = null;
 }

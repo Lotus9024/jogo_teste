@@ -20,11 +20,11 @@ test('Goblins na arena reduzem o custo da Torre Goblin', () => {
   assert.equal(tower.buildReadyRound, 2);
 });
 
-test('Torre Goblin consome um Goblin do baralho e o invoca sem ação', () => {
+test('Torre Goblin consome um Goblin da mão e o invoca sem ação', () => {
   const { rooms, room, first } = match();
   const player = room.state.players[0];
   player.energy = 10;
-  player.deck = ['guard', 'goblin', 'warrior'];
+  player.hand = [{ instanceId: 'hand-goblin', cardId: 'goblin' }];
   room.state.units.push({
     id: 'goblin-tower', ownerSeat: 1, cardId: 'goblin_tower', x: 7, z: 7,
     hp: 5, maxHp: 5, actionUsed: false, abilityUsed: false, underConstruction: false,
@@ -32,18 +32,20 @@ test('Torre Goblin consome um Goblin do baralho e o invoca sem ação', () => {
   rooms.action(room.code, first.id, { type: 'summon_goblin', unitId: 'goblin-tower', x: 7, z: 6 }, room.state.version);
   const goblin = room.state.units.find(unit => unit.cardId === 'goblin');
   assert.deepEqual({ hp: goblin.hp, maxHp: goblin.maxHp, actionUsed: goblin.actionUsed }, { hp: 2, maxHp: 2, actionUsed: true });
-  assert.deepEqual(player.deck, ['guard', 'warrior']);
-  assert.equal(player.energy, 8);
+  assert.equal(player.hand.length, 0);
+  assert.equal(player.energy, 6);
   assert.equal(room.state.units[0].actionUsed, true);
   assert.throws(() => rooms.action(room.code, first.id, { type: 'summon_goblin', unitId: 'goblin-tower', x: 5, z: 5 }, room.state.version), /indisponível/);
 });
 
-test('Torre Goblin exige um Goblin no baralho e uma casa livre', () => {
+test('Torre Goblin exige um Goblin na mão e recusa a área da base inimiga', () => {
   const { rooms, room, first } = match();
   const player = room.state.players[0];
-  player.deck = ['guard'];
+  player.hand = [{ instanceId: 'guard', cardId: 'guard' }];
   room.state.units.push({ id: 'tower', ownerSeat: 1, cardId: 'goblin_tower', x: 7, z: 7, hp: 5, actionUsed: false, underConstruction: false });
-  assert.throws(() => rooms.action(room.code, first.id, { type: 'summon_goblin', unitId: 'tower', x: 5, z: 5 }, room.state.version), /Goblin no baralho/);
+  assert.throws(() => rooms.action(room.code, first.id, { type: 'summon_goblin', unitId: 'tower', x: 5, z: 5 }, room.state.version), /Goblin na mão/);
+  player.hand.push({ instanceId: 'goblin', cardId: 'goblin' });
+  assert.throws(() => rooms.action(room.code, first.id, { type: 'summon_goblin', unitId: 'tower', x: 7, z: 3 }, room.state.version), /área da base inimiga/);
 });
 
 test('Espanquem libera os Goblins existentes e os novos durante o turno', () => {

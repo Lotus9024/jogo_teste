@@ -9,3 +9,11 @@
 #mage-altar-choice-cards button b{font:28px Cinzel}
 #mage-altar-choice-cards button span{font:600 11px Cinzel;text-align:center}
 #mage-altar-choice-cards button small{font-size:8px}
+.ability-confirm{position:fixed;z-index:120;inset:0;display:grid;place-items:center;padding:24px;background:rgba(2,4,4,.72);backdrop-filter:blur(6px)}
+.ability-confirm[hidden]{display:none}
+.ability-confirm>div{width:min(390px,100%);padding:25px;border:1px solid #725b35;border-radius:12px;background:linear-gradient(145deg,#20251f,#080b09 72%);box-shadow:0 28px 80px #000;color:#d8cfbc;text-align:center}
+.ability-confirm h2{margin:0 0 22px;font:600 20px Cinzel}
+.ability-confirm>div>div{display:flex;justify-content:center;gap:16px}
+.ability-confirm button{width:58px;height:46px;border:1px solid #6d5540;border-radius:8px;background:#161917;color:#d8cfbc;font:700 24px Cinzel;cursor:pointer}
+#tower-ability-accept{border-color:#518f5a;background:#173a21;color:#8fe29a}
+#tower-ability-cancel{border-color:#8f514a;background:#3b1c19;color:#e49a90}

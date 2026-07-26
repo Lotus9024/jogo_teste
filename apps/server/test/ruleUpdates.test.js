@@ -35,7 +35,7 @@ test('perder cidadãos reduz o castelo ao nível um', () => {
   assert.deepEqual({ level: player.baseLevel, maxEnergy: player.maxEnergy, energy: player.energy }, { level: 1, maxEnergy: 10, energy: 10 });
 });
 
-test('Altar Goblin exige duas tropas na área da base e concede movimento extra', () => {
+test('Altar Goblin exige duas tropas na área da base e concede uma ação extra', () => {
   const { rooms, room, first } = match();
   const player = room.state.players[0];
   player.hand = [{ instanceId: randomUUID(), cardId: 'goblin_altar' }];
@@ -56,9 +56,9 @@ test('Altar Goblin exige duas tropas na área da base e concede movimento extra'
   room.state.units.find(unit => unit.id === 'base-goblin').actionUsed = true;
   rooms.action(room.code, first.id, { type: 'use_ability', unitId: altar.id }, room.state.version);
   const goblin = room.state.units.find(unit => unit.id === 'base-goblin');
-  assert.equal(goblin.bonusMoves, 1);
+  assert.equal(goblin.bonusActions, 1);
   rooms.action(room.code, first.id, { type: 'move', unitId: goblin.id, x: 6, z: 10 }, room.state.version);
-  assert.deepEqual({ x: goblin.x, z: goblin.z, bonusMoves: goblin.bonusMoves }, { x: 6, z: 10, bonusMoves: 0 });
+  assert.deepEqual({ x: goblin.x, z: goblin.z, bonusActions: goblin.bonusActions }, { x: 6, z: 10, bonusActions: 0 });
 });
 
 test('Altar Mago reduz o ataque dos Goblins por dois turnos', () => {

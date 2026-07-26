@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { CARD_BY_ID, forwardDeltaForSeat, goblinSpawnHp, gridCellsBetween, isGoblinTroop } from '@tronos/shared/cards';
 import { damageUnit, fireTowerVolley, mountedTower } from '../combat.js';
 import { pushBattleEffect } from '../battleEffects.js';
-import { fail, inBase, integer, turnIndex, unitAt, validCell } from '../gameQueries.js';
+import { deploymentCell, fail, inBase, integer, turnIndex, unitAt, validCell } from '../gameQueries.js';
 import { requireTurn } from '../turnLifecycle.js';
 
 export function useAbilityAction(state, player, _opponent, action) {
@@ -18,8 +18,7 @@ export function useAbilityAction(state, player, _opponent, action) {
       && isGoblinTroop(item.cardId)
       && Math.abs(item.x - unit.x) + Math.abs(item.z - unit.z) <= ability.range)
       .forEach(item => {
-        item.bonusMoves = (item.bonusMoves ?? 0) + 1;
-        item.bonusAttacks = (item.bonusAttacks ?? 0) + 1;
+        item.bonusActions = (item.bonusActions ?? 0) + 1;
       });
   }
   if (card.id === 'mage_altar') {
@@ -38,7 +37,7 @@ export function useAbilityAction(state, player, _opponent, action) {
       id: randomUUID(), ownerSeat: player.seat, cardId: 'goblin', ...spawn, hp, maxHp: hp, shield: 0,
       actionUsed: true, movedThisTurn: false, attackedThisTurn: false,
       abilityUsed: false, abilityReadyTurn: 0, instantUsedRound: 0, instantReadyTurn: 0,
-      empowered: false, mountedOnTowerId: null, bonusMoves: 0, bonusAttacks: 0,
+      empowered: false, mountedOnTowerId: null, bonusMoves: 0, bonusAttacks: 0, bonusActions: 0,
       attackPenalty: 0, attackPenaltyUntilTurn: 0, underConstruction: false, buildReadyRound: null
     });
   }
@@ -111,25 +110,30 @@ export function useInstantAction(state, player, _opponent, action) {
   unit.instantReadyTurn = turnIndex(state) + (instant.cooldownTurns ?? 2);
 }
 
-export function summonGoblinAction(state, player, _opponent, action) {
+export function summonGoblinAction(state, player, opponent, action) {
   requireTurn(state, player);
   const tower = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Torre Goblin inválida.');
   const card = CARD_BY_ID[tower.cardId];
   if (card.id !== 'goblin_tower' || tower.underConstruction || tower.actionUsed) fail('Habilidade indisponível.');
   const x = integer(action.x), z = integer(action.z);
-  if (!validCell(x, z) || inBase(x, z, state) || unitAt(state, x, z)) fail('Escolha uma casa livre da arena.');
-  const goblinIndex = player.deck.findIndex(cardId => cardId === 'goblin');
-  if (goblinIndex < 0) fail('É necessário ter um Goblin no baralho.');
+  if (!validCell(x, z) || inBase(x, z, state) || deploymentCell(opponent.seat, x, z, state) || unitAt(state, x, z)) {
+    fail('Escolha uma casa livre fora da área da base inimiga.');
+  }
+  const goblinIndex = player.hand.findIndex(instance => instance.cardId === 'goblin');
+  if (goblinIndex < 0) fail('É necessário ter um Goblin na mão.');
   if (player.energy < card.ability.cost) fail('Energia insuficiente.');
-  player.deck.splice(goblinIndex, 1);
+  player.hand.splice(goblinIndex, 1);
   player.energy -= card.ability.cost;
   const hp = goblinSpawnHp(player.seat, x, z, state.units, 'goblin');
   state.units.push({
     id: randomUUID(), ownerSeat: player.seat, cardId: 'goblin', x, z, hp, maxHp: hp, shield: 0,
     actionUsed: true, abilityUsed: false, abilityReadyTurn: 0, instantUsedRound: 0,
     instantReadyTurn: 0, empowered: false, mountedOnTowerId: null,
+    movedThisTurn: false, attackedThisTurn: false, bonusMoves: 0, bonusAttacks: 0, bonusActions: 0,
+    attackPenalty: 0, attackPenaltyUntilTurn: 0,
     underConstruction: false, buildReadyRound: null
   });
   tower.actionUsed = true;
   tower.abilityUsed = true;
+  tower.abilityReadyTurn = turnIndex(state) + (card.ability.cooldownTurns ?? 2);
 }

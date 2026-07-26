@@ -20,6 +20,12 @@ export function gameHudTemplate() {
           <div id="mage-altar-choice-cards"></div>
         </div>
       </section>
+      <section id="tower-ability-confirm" class="ability-confirm" role="dialog" aria-modal="true" aria-labelledby="tower-ability-confirm-title" hidden>
+        <div>
+          <h2 id="tower-ability-confirm-title">Usar habilidade da torre?</h2>
+          <div><button id="tower-ability-cancel" type="button" aria-label="Cancelar">×</button><button id="tower-ability-accept" type="button" aria-label="Confirmar">✓</button></div>
+        </div>
+      </section>
       <div class="base-health enemy-base-tag" role="img" aria-label="Vida do castelo inimigo: ${GAME_CONFIG.startingBaseHp} de ${GAME_CONFIG.startingBaseHp}"><b id="enemy-base-level">LV 1</b><i style="width:100%"></i></div>
       <section class="card-dock" aria-label="Mão de cartas">
         <b id="hand-count" class="sr-only">7 CARTAS</b>

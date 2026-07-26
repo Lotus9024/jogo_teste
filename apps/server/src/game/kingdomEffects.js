@@ -29,6 +29,7 @@ export function builderEnergyBonus(state, seat) {
 export function damageAlliedConstructionsBesideGoblins(state, seat) {
   const disruptiveGoblins = state.units.filter(unit => unit.ownerSeat === seat
     && !unit.underConstruction
+    && (unit.disorderReadyTurn ?? 0) <= ((state.round - 1) * 2 + (state.activeSeat === 2 ? 1 : 0))
     && (CARD_BY_ID[unit.cardId]?.adjacentConstructionDamage ?? 0) > 0);
 
   const targets = [...state.units].filter(unit => {

@@ -14,11 +14,19 @@ export function mageFireAction(state, player, _opponent, action) {
   if (new Set(cells.map(cell => `${cell.x}:${cell.z}`)).size !== cells.length) fail('Escolha casas diferentes para o fogo.');
   if (cells.some(cell => !validCell(cell.x, cell.z) || distance(unit, cell) < card.minAttackRange || distance(unit, cell) > card.attackRange)) fail('Casa de fogo fora do alcance.');
   state.fires ??= [];
+  const opponent = state.players.find(item => item.seat !== player.seat);
+  const enemyBase = new Set(baseCells(opponent.seat, state).map(cell => `${cell.x}:${cell.z}`));
   for (const cell of cells) {
     const fire = { id: randomUUID(), ownerSeat: player.seat, casterUnitId: unit.id, x: cell.x, z: cell.z, damagedUnitIds: [] };
     state.fires.push(fire);
     const target = unitAt(state, cell.x, cell.z);
     if (target) damageUnit(state, target, card.damage);
+    if (enemyBase.has(`${cell.x}:${cell.z}`)) opponent.baseHp = Math.max(0, opponent.baseHp - card.damage);
+  }
+  if (!opponent.baseHp) {
+    state.phase = 'finished';
+    state.winnerSeat = player.seat;
+    state.turnEndsAt = null;
   }
   unit.actionUsed = true;
 }
@@ -28,8 +36,11 @@ export function attackAction(state, player, opponent, action) {
   const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
   const card = attackCard(state, unit, CARD_BY_ID[unit.cardId]);
   if (card.id === 'mage') fail('Escolha uma ou duas casas para conjurar o fogo.');
-  const usingBonusAttack = card.id !== 'henry' && unit.actionUsed && isGoblinTroop(card.id) && (unit.bonusAttacks ?? 0) > 0;
-  if (card.id === 'henry' && unit.attackedThisTurn) fail('Esta unidade já atacou neste turno.');
+  const bonusActionAvailable = isGoblinTroop(card.id) && (unit.bonusActions ?? 0) > 0;
+  const usingBonusAttack = card.id !== 'henry' && unit.actionUsed
+    && isGoblinTroop(card.id) && ((unit.bonusAttacks ?? 0) > 0 || bonusActionAvailable);
+  const usingHenryBonus = card.id === 'henry' && unit.attackedThisTurn && bonusActionAvailable;
+  if (card.id === 'henry' && unit.attackedThisTurn && !usingHenryBonus) fail('Esta unidade já atacou neste turno.');
   if (card.id !== 'henry' && unit.actionUsed && !usingBonusAttack) fail('Esta unidade já agiu neste turno.');
   if (unit.underConstruction) fail('A construção ainda não foi concluída.');
   if (card.damage <= 0 || card.attackRange <= 0) fail('Esta carta não pode atacar.');
@@ -44,9 +55,15 @@ export function attackAction(state, player, opponent, action) {
 
   unit.empowered = false;
   if (card.id === 'henry') {
-    unit.attackedThisTurn = true;
-    unit.actionUsed = Boolean(unit.movedThisTurn);
-  } else if (usingBonusAttack) unit.bonusAttacks -= 1;
+    if (usingHenryBonus) unit.bonusActions -= 1;
+    else {
+      unit.attackedThisTurn = true;
+      unit.actionUsed = Boolean(unit.movedThisTurn);
+    }
+  } else if (usingBonusAttack) {
+    if ((unit.bonusAttacks ?? 0) > 0) unit.bonusAttacks -= 1;
+    else unit.bonusActions -= 1;
+  }
   else unit.actionUsed = true;
 }
 

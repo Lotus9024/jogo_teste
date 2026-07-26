@@ -78,6 +78,7 @@ export function createCardUnit(card, cardIndex) {
     abilityUsed: false,
     movedThisTurn: false,
     attackedThisTurn: false,
+    bonusActions: 0,
     abilityReadyTurn: 0,
     instantReadyTurn: 0,
     description: card.abilityText

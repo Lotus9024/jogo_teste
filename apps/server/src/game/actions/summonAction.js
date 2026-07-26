@@ -80,7 +80,8 @@ export function summonAction(state, player, _opponent, action) {
         id: randomUUID(), ownerSeat: player.seat, cardId: card.summonsCardId, ...selected, hp, maxHp: hp, shield: 0,
         actionUsed: !entersReady, movedThisTurn: false, attackedThisTurn: false,
         abilityUsed: false, abilityReadyTurn: 0, instantUsedRound: 0, instantReadyTurn: 0,
-        empowered: false, mountedOnTowerId: null, bonusMoves: 0, bonusAttacks: 0,
+        empowered: false, mountedOnTowerId: null, bonusMoves: 0, bonusAttacks: 0, bonusActions: 0,
+        disorderReadyTurn: turnIndex(state) + 4,
         attackPenalty: 0, attackPenaltyUntilTurn: 0, underConstruction: false, buildReadyRound: null
       });
     }
@@ -97,7 +98,8 @@ export function summonAction(state, player, _opponent, action) {
     id: randomUUID(), ownerSeat: player.seat, cardId: summonedCard.id, x, z, hp, maxHp: hp, shield: 0,
     actionUsed: goblinEntersReady ? false : clonedCard ? true : card.id !== 'henry', movedThisTurn: false, attackedThisTurn: false,
     abilityUsed: false, abilityReadyTurn: 0, instantUsedRound: 0, instantReadyTurn: 0, empowered: false, mountedOnTowerId: tower?.id ?? null,
-    bonusMoves: 0, bonusAttacks: 0, attackPenalty: 0, attackPenaltyUntilTurn: 0, isGoblinClone: Boolean(clonedCard), clonedFromCardId: clonedCardId, cloneDamageBonus: 0,
+    bonusMoves: 0, bonusAttacks: 0, bonusActions: 0, disorderReadyTurn: 0,
+    attackPenalty: 0, attackPenaltyUntilTurn: 0, isGoblinClone: Boolean(clonedCard), clonedFromCardId: clonedCardId, cloneDamageBonus: 0,
     movementPenalty: 0, movementPenaltyTurns: 0,
     underConstruction: Boolean(card.buildRounds), buildReadyRound: card.buildRounds ? state.round + card.buildRounds : null
   };

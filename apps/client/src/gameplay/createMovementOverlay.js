@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { forwardDeltaForSeat, gridCellsBetween, isAttackTargetValid, isCannonTargetValid, isGoblinTroop, movementDistance, roadAttackBonus, roadMovementBonus } from '@tronos/shared/cards';
+import { CARD_BY_ID, forwardDeltaForSeat, gridCellsBetween, isAttackTargetValid, isCannonTargetValid, isGoblinTroop, movementDistance, roadAttackBonus, roadMovementBonus } from '@tronos/shared/cards';
 import { isMountedArcher, setAttackHighlight } from './unitState.js';
 
 export function createMovementOverlay({
@@ -28,13 +28,13 @@ export function createMovementOverlay({
     app.dataset.attackTiles = '0';
   }
 
-  function addMarker(x, z, material) {
+  function addMarker(x, z, material, interactive = true) {
     const marker = new THREE.Mesh(geometry, material);
     marker.rotation.x = -Math.PI / 2;
     marker.position.set(x * tile - half, 0.076, z * tile - half);
     scene.add(marker);
     markers.push(marker);
-    interactiveCells.add(`${x}:${z}`);
+    if (interactive) interactiveCells.add(`${x}:${z}`);
   }
 
   function lineBlocked(from, to, excludedUnit) {
@@ -69,7 +69,8 @@ export function createMovementOverlay({
       && unit.userData.ownerSeat === selfSeat
       && onlineState.state.activeSeat === selfSeat
       && (!unit.userData.actionUsed || (isGoblinTroop(unit.userData.cardId)
-        && ((unit.userData.bonusMoves ?? 0) > 0 || (unit.userData.bonusAttacks ?? 0) > 0)));
+        && ((unit.userData.bonusMoves ?? 0) > 0 || (unit.userData.bonusAttacks ?? 0) > 0
+          || (unit.userData.bonusActions ?? 0) > 0)));
     if (!devMode && !onlineAllowed) return;
 
     const originX = Math.round((unit.position.x + half) / tile);
@@ -80,8 +81,10 @@ export function createMovementOverlay({
         + roadMovementBonus(originX, originZ, getRoads(), unit.userData.cardId)
         - (unit.userData.movementPenalty ?? 0),
     );
-    const movementAvailable = unit.userData.cardId !== 'henry' || !unit.userData.movedThisTurn || (unit.userData.bonusMoves ?? 0) > 0;
-    const attackAvailable = unit.userData.cardId !== 'henry' || !unit.userData.attackedThisTurn;
+    const movementAvailable = unit.userData.cardId !== 'henry' || !unit.userData.movedThisTurn
+      || (unit.userData.bonusMoves ?? 0) > 0 || (unit.userData.bonusActions ?? 0) > 0;
+    const attackAvailable = unit.userData.cardId !== 'henry' || !unit.userData.attackedThisTurn
+      || (unit.userData.bonusAttacks ?? 0) > 0 || (unit.userData.bonusActions ?? 0) > 0;
     const attackStats = {
       ...unit.userData,
       attackRange: unit.userData.attackRange
@@ -147,5 +150,54 @@ export function createMovementOverlay({
     app.dataset.attackTiles = String(attackMarkerCount);
   }
 
-  return { clear, show, isInteractiveCell: (x, z) => interactiveCells.has(`${x}:${z}`) };
+  function previewRange(unit) {
+    clear();
+    if (!unit) return;
+    const origin = {
+      x: Math.round((unit.position.x + half) / tile),
+      z: Math.round((unit.position.z + half) / tile),
+    };
+    const card = CARD_BY_ID[unit.userData.cardId];
+    if (!card) return;
+    const cells = [];
+    if (card.id === 'tower') {
+      for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        for (let step = 1; step <= card.instant.range; step += 1) cells.push({ x: origin.x + dx * step, z: origin.z + dz * step });
+      }
+    } else if (card.id === 'goblin_altar') {
+      for (let dx = -card.ability.range; dx <= card.ability.range; dx += 1) {
+        for (let dz = -card.ability.range; dz <= card.ability.range; dz += 1) {
+          if (Math.abs(dx) + Math.abs(dz) <= card.ability.range) cells.push({ x: origin.x + dx, z: origin.z + dz });
+        }
+      }
+    } else {
+      const stats = {
+        ...unit.userData,
+        attackRange: unit.userData.attackRange
+          + adjacentRoyalTowerRangeBonus(unit, origin)
+          + roadAttackBonus(origin.x, origin.z, getRoads(), unit.userData.cardId),
+      };
+      const range = card.id === 'mage' ? card.attackRange : stats.attackRange;
+      for (let dx = -range; dx <= range; dx += 1) {
+        for (let dz = -range; dz <= range; dz += 1) {
+          const target = { x: origin.x + dx, z: origin.z + dz };
+          if (card.id === 'mage'
+            ? Math.abs(dx) + Math.abs(dz) >= card.minAttackRange && Math.abs(dx) + Math.abs(dz) <= range
+            : isAttackTargetValid(stats, origin, target)) cells.push(target);
+        }
+      }
+    }
+    const seen = new Set();
+    cells.filter(cell => cell.x >= 0 && cell.x < 15 && cell.z >= 0 && cell.z < 15)
+      .filter(cell => {
+        const key = `${cell.x}:${cell.z}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .forEach(cell => addMarker(cell.x, cell.z, attackMaterial, false));
+    app.dataset.attackTiles = String(seen.size);
+  }
+
+  return { clear, show, previewRange, isInteractiveCell: (x, z) => interactiveCells.has(`${x}:${z}`) };
 }

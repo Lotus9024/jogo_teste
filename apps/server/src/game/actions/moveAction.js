@@ -7,7 +7,8 @@ export function moveAction(state, player, _opponent, action) {
   requireTurn(state, player);
   const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
   const x = integer(action.x), z = integer(action.z), card = CARD_BY_ID[unit.cardId];
-  const bonusMoveAvailable = isGoblinTroop(card.id) && (unit.bonusMoves ?? 0) > 0;
+  const bonusMoveAvailable = isGoblinTroop(card.id)
+    && ((unit.bonusMoves ?? 0) > 0 || (unit.bonusActions ?? 0) > 0);
   const normalMoveUsed = card.id === 'henry' ? unit.movedThisTurn : unit.actionUsed;
   const usingBonusMove = normalMoveUsed && bonusMoveAvailable;
   if (normalMoveUsed && !usingBonusMove) fail(card.id === 'henry' ? 'Esta unidade já se movimentou neste turno.' : 'Esta unidade já agiu neste turno.');
@@ -28,7 +29,10 @@ export function moveAction(state, player, _opponent, action) {
   unit.x = x;
   unit.z = z;
   unit.mountedOnTowerId = tower?.id ?? null;
-  if (usingBonusMove) unit.bonusMoves -= 1;
+  if (usingBonusMove) {
+    if ((unit.bonusMoves ?? 0) > 0) unit.bonusMoves -= 1;
+    else unit.bonusActions -= 1;
+  }
   else if (card.id === 'henry') {
     unit.movedThisTurn = true;
     unit.actionUsed = Boolean(unit.attackedThisTurn);

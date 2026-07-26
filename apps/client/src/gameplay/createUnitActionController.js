@@ -30,7 +30,7 @@ export function createUnitActionController(options) {
         && !state.onlineState.self?.spectator
         && unit.userData.ownerSeat === state.selfSeat
         && state.onlineState.state.activeSeat === state.selfSeat
-        && (!unit.userData.actionUsed || unit.userData.bonusMoves > 0)));
+        && (!unit.userData.actionUsed || unit.userData.bonusMoves > 0 || unit.userData.bonusActions > 0)));
   }
 
   function mountArcherLocally(unit, tower) {
