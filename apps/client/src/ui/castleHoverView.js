@@ -62,6 +62,7 @@ export function castleProgressView({ level = 1, citizens = 0, completedRoads = 0
 }
 
 export function castleHoverMarkup({
+  ownerSeat = 1,
   kingdomName,
   rulerName,
   castleName,
@@ -75,6 +76,7 @@ export function castleHoverMarkup({
   const safeHp = Math.max(0, Number(hp) || 0);
   const safeMaxHp = Math.max(1, Number(maxHp) || GAME_CONFIG.startingBaseHp);
   const hpPercent = Math.min(100, safeHp / safeMaxHp * 100);
+  const safeOwnerSeat = Math.min(4, Math.max(1, Math.round(Number(ownerSeat) || 1)));
   const requirements = progress.requirements.map(requirement => `
     <li class="${requirement.met ? 'met' : ''}">
       <i aria-hidden="true">${requirement.met ? '✓' : '◇'}</i>
@@ -90,7 +92,7 @@ export function castleHoverMarkup({
     </li>`).join('');
 
   return `
-    <article class="castle-hover-card">
+    <article class="castle-hover-card" data-kingdom-seat="${safeOwnerSeat}">
       <header>
         <span>REINO</span>
         <b>NÍVEL ${progress.currentLevel}</b>

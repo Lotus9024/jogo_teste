@@ -62,6 +62,7 @@ export function createUnitPointerHandlers({
     const citizens = onlinePlayer?.citizens
       ?? citizensForSeat(seat, localUnitData(), roads, GAME_CONFIG.boardSize, level, playerCount);
     castleHover.innerHTML = castleHoverMarkup({
+      ownerSeat: seat,
       kingdomName: object.userData.kingdomName,
       rulerName: onlinePlayer?.name ?? object.userData.rulerName,
       castleName: object.userData.name,

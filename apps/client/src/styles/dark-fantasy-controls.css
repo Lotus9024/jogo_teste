@@ -442,25 +442,58 @@ textarea:focus {
 }
 
 .castle-hover-card {
+  --castle-accent-rgb: 181, 105, 235;
+  --castle-bright: #dcb0fa;
+  --castle-title: #f1e7f8;
+  --castle-surface-rgb: 72, 30, 101;
   position: relative;
   overflow: hidden;
   padding: 18px;
-  border: 1px solid rgba(181, 105, 235, .56);
+  border: 1px solid rgba(var(--castle-accent-rgb), .62);
   border-radius: 10px;
   background:
-    radial-gradient(circle at 82% 0, rgba(129, 55, 180, .26), transparent 37%),
-    linear-gradient(150deg, rgba(24, 12, 35, .985), rgba(7, 5, 11, .995) 70%);
+    radial-gradient(circle at 82% 0, rgba(var(--castle-accent-rgb), .24), transparent 37%),
+    linear-gradient(150deg, rgba(var(--castle-surface-rgb), .33), rgba(7, 5, 11, .995) 70%);
   box-shadow:
+    0 0 24px rgba(var(--castle-accent-rgb), .12),
     0 22px 55px rgba(0, 0, 0, .76),
-    inset 0 0 0 2px rgba(220, 175, 250, .025);
+    inset 0 0 0 2px rgba(var(--castle-accent-rgb), .04);
   color: #e6d9ee;
+}
+
+.castle-hover-card[data-kingdom-seat="1"] {
+  --castle-accent-rgb: 54, 126, 255;
+  --castle-bright: #aecbff;
+  --castle-title: #e5efff;
+  --castle-surface-rgb: 13, 39, 80;
+}
+
+.castle-hover-card[data-kingdom-seat="2"] {
+  --castle-accent-rgb: 214, 64, 80;
+  --castle-bright: #ffb3bb;
+  --castle-title: #ffe7e9;
+  --castle-surface-rgb: 72, 17, 29;
+}
+
+.castle-hover-card[data-kingdom-seat="3"] {
+  --castle-accent-rgb: 53, 171, 105;
+  --castle-bright: #abe3c4;
+  --castle-title: #e4f7ec;
+  --castle-surface-rgb: 15, 59, 37;
+}
+
+.castle-hover-card[data-kingdom-seat="4"] {
+  --castle-accent-rgb: 211, 159, 55;
+  --castle-bright: #f2d795;
+  --castle-title: #fff4d8;
+  --castle-surface-rgb: 69, 48, 14;
 }
 
 .castle-hover-card::before {
   content: "";
   position: absolute;
   inset: 5px;
-  border: 1px solid rgba(166, 92, 218, .12);
+  border: 1px solid rgba(var(--castle-accent-rgb), .18);
   border-radius: 6px;
   pointer-events: none;
 }
@@ -475,25 +508,25 @@ textarea:focus {
 
 .castle-hover-card header span,
 .castle-hover-card section > small {
-  color: #ae7bce;
+  color: var(--castle-bright);
   font: 600 7px Cinzel;
   letter-spacing: .18em;
 }
 
 .castle-hover-card header b {
   padding: 4px 7px;
-  border: 1px solid rgba(187, 112, 237, .38);
-  background: rgba(91, 37, 128, .22);
-  color: #dcb0fa;
+  border: 1px solid rgba(var(--castle-accent-rgb), .46);
+  background: rgba(var(--castle-surface-rgb), .5);
+  color: var(--castle-bright);
   font: 600 8px Cinzel;
   letter-spacing: .08em;
 }
 
 .castle-hover-card h3 {
   margin: 12px 0 4px;
-  color: #f1e7f8;
+  color: var(--castle-title);
   font: 600 20px/1.15 Cinzel;
-  text-shadow: 0 0 16px rgba(174, 88, 226, .2);
+  text-shadow: 0 0 16px rgba(var(--castle-accent-rgb), .28);
 }
 
 .castle-hover-name {
@@ -516,7 +549,7 @@ textarea:focus {
 }
 
 .castle-hover-ruler b {
-  color: #d7b4ed;
+  color: var(--castle-bright);
   font: 600 10px Cinzel;
 }
 
@@ -531,7 +564,7 @@ textarea:focus {
 }
 
 .castle-hover-health span b {
-  color: #c99ae8;
+  color: var(--castle-bright);
   font: 600 9px Cinzel;
 }
 
@@ -540,20 +573,20 @@ textarea:focus {
   height: 5px;
   margin-top: 6px;
   overflow: hidden;
-  border: 1px solid rgba(123, 69, 154, .3);
+  border: 1px solid rgba(var(--castle-accent-rgb), .34);
   background: #08050c;
 }
 
 .castle-hover-health > i em {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, #59217d, #bd70ea);
-  box-shadow: 0 0 10px rgba(185, 99, 235, .38);
+  background: linear-gradient(90deg, rgba(var(--castle-accent-rgb), .42), rgb(var(--castle-accent-rgb)));
+  box-shadow: 0 0 10px rgba(var(--castle-accent-rgb), .48);
 }
 
 .castle-hover-card section {
   padding: 13px 0 0;
-  border-top: 1px solid rgba(151, 83, 195, .18);
+  border-top: 1px solid rgba(var(--castle-accent-rgb), .2);
 }
 
 .castle-hover-card section + section {
@@ -578,7 +611,7 @@ textarea:focus {
 
 .castle-hover-card li i {
   flex: 0 0 17px;
-  color: #8752a8;
+  color: rgba(var(--castle-accent-rgb), .74);
   font-style: normal;
 }
 
@@ -600,14 +633,14 @@ textarea:focus {
 
 .castle-hover-requirements li.met i,
 .castle-hover-requirements li.met b {
-  color: #c584ec;
+  color: var(--castle-bright);
 }
 
 .castle-hover-planned {
   margin: 9px 0 0;
   padding: 10px;
-  border-left: 2px solid rgba(190, 116, 235, .48);
-  background: rgba(72, 30, 101, .12);
+  border-left: 2px solid rgba(var(--castle-accent-rgb), .56);
+  background: rgba(var(--castle-surface-rgb), .24);
   color: #a99ab3;
   font-size: 8px;
   line-height: 1.55;
@@ -616,19 +649,19 @@ textarea:focus {
 .castle-hover-roadmap li {
   align-items: flex-start;
   padding: 7px 8px;
-  border: 1px solid rgba(126, 72, 157, .14);
-  background: rgba(20, 10, 29, .38);
+  border: 1px solid rgba(var(--castle-accent-rgb), .16);
+  background: rgba(var(--castle-surface-rgb), .18);
 }
 
 .castle-hover-roadmap li.current {
-  border-color: rgba(190, 111, 238, .42);
-  background: rgba(92, 39, 127, .2);
+  border-color: rgba(var(--castle-accent-rgb), .5);
+  background: rgba(var(--castle-surface-rgb), .42);
 }
 
 .castle-hover-roadmap li.completed i,
 .castle-hover-roadmap li.current i,
 .castle-hover-roadmap li.next i {
-  color: #c47bec;
+  color: var(--castle-bright);
 }
 
 .castle-hover-roadmap li span b {
@@ -641,15 +674,15 @@ textarea:focus {
   gap: 9px;
   margin: 15px 0 0;
   padding: 12px;
-  border: 1px solid rgba(156, 89, 198, .2);
-  background: rgba(72, 30, 101, .14);
+  border: 1px solid rgba(var(--castle-accent-rgb), .24);
+  background: rgba(var(--castle-surface-rgb), .3);
   color: #b6a5c0;
   font-size: 8px;
   line-height: 1.55;
 }
 
 .castle-hover-max i {
-  color: #c47bec;
+  color: var(--castle-bright);
   font-style: normal;
 }
 

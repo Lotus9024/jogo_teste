@@ -23,6 +23,7 @@ test('castelo evoluído mostra o próximo nível sem inventar requisitos de part
 
 test('painel do castelo protege e separa os nomes do reino e do rei', () => {
   const markup = castleHoverMarkup({
+    ownerSeat: 3,
     kingdomName: '<Reino Arcano>',
     rulerName: '<Rei Arcano>',
     castleName: 'Fortaleza',
@@ -37,4 +38,10 @@ test('painel do castelo protege e separa os nomes do reino e do rei', () => {
   assert.match(markup, /NÍVEL 1/);
   assert.match(markup, /8\/10/);
   assert.match(markup, /LINHAGEM DO CASTELO/);
+  assert.match(markup, /data-kingdom-seat="3"/);
+});
+
+test('painel limita a identidade visual aos quatro reinos existentes', () => {
+  assert.match(castleHoverMarkup({ ownerSeat: 99 }), /data-kingdom-seat="4"/);
+  assert.match(castleHoverMarkup({ ownerSeat: -2 }), /data-kingdom-seat="1"/);
 });
