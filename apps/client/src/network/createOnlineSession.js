@@ -19,7 +19,6 @@ export function createOnlineSession({
   enemyKeep,
   keeps = [alliedKeep, enemyKeep],
   setPlayerCount = () => {},
-  setCastleVisualSize = () => null,
   tile,
   half,
   units,
@@ -212,7 +211,6 @@ export function createOnlineSession({
     state.selfSeat = selfSeat;
     const playerCount = Number(payload.state.board?.playerCount ?? payload.room?.capacity ?? 2);
     setPlayerCount(playerCount);
-    keeps.forEach(keep => setCastleVisualSize(keep.userData.ownerSeat, 1));
     keeps.forEach(keep => {
       const player = payload.state.players.find(item => item.seat === keep.userData.ownerSeat);
       if (!player) return;

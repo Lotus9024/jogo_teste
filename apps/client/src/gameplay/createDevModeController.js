@@ -188,8 +188,6 @@ export function createDevModeController(options) {
     callbacks.clearSnowstorms?.();
     const localRulerName = document.querySelector('#current-king-name')?.textContent?.trim();
     if (localRulerName) tools.keepForSeat(1).userData.rulerName = localRulerName;
-    tools.setVisualSize(1, 1);
-    tools.setVisualSize(2, 1);
     callbacks.setOnlinePerspective?.();
     syncTurnRoundStatus(state.activePlayer, state.round);
     syncDevKingdomHud();

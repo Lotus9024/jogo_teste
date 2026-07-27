@@ -7,12 +7,12 @@ import { updateHealthBadge } from '../ui/unitHealthBadge.js';
 
 export function createDevToolsController({
   state = {}, scene, alliedKeep, enemyKeep, units = [], hoverables = [], boardPresentation,
-  relations, interaction, handController, setCastleVisualSize = () => null, callbacks,
+  relations, interaction, handController, callbacks,
 }) {
   state.devBaseLevels ??= { 1: 1, 2: 1 };
   const kingdoms = {
-    1: { baseLevel: state.devBaseLevels?.[1] ?? 1, baseSize: 1, hp: GAME_CONFIG.startingBaseHp, manualBaseLevel: false },
-    2: { baseLevel: state.devBaseLevels?.[2] ?? 1, baseSize: 1, hp: GAME_CONFIG.startingBaseHp, manualBaseLevel: false },
+    1: { baseLevel: state.devBaseLevels?.[1] ?? 1, hp: GAME_CONFIG.startingBaseHp, manualBaseLevel: false },
+    2: { baseLevel: state.devBaseLevels?.[2] ?? 1, hp: GAME_CONFIG.startingBaseHp, manualBaseLevel: false },
   };
   const keepForSeat = seat => seat === 1 ? alliedKeep : enemyKeep;
 
@@ -40,8 +40,6 @@ export function createDevToolsController({
   function syncSettings() {
     if (!state.devMode) return;
     const kingdom = kingdoms[state.activePlayer];
-    const footprint = keepForSeat(state.activePlayer)?.userData.footprintCells ?? 3;
-    document.querySelector('#dev-base-size').textContent = `${footprint}×${footprint}`;
     document.querySelectorAll('[data-base-level]').forEach(button => {
       button.setAttribute('aria-pressed', String(Number(button.dataset.baseLevel) === kingdom.baseLevel));
     });
@@ -79,24 +77,7 @@ export function createDevToolsController({
     return kingdom.hp;
   }
 
-  function setVisualSize(seat, size) {
-    const kingdom = kingdoms[seat];
-    if (!kingdom) return null;
-    kingdom.baseSize = THREE.MathUtils.clamp(Math.round(Number(size) || 1), 1, 6);
-    const layout = setCastleVisualSize(seat, kingdom.baseSize);
-    syncSettings();
-    return layout;
-  }
-
   function mount() {
-    document.querySelector('#dev-base-size-minus').addEventListener('click', () => {
-      const kingdom = kingdoms[state.activePlayer];
-      setVisualSize(state.activePlayer, kingdom.baseSize - 1);
-    });
-    document.querySelector('#dev-base-size-plus').addEventListener('click', () => {
-      const kingdom = kingdoms[state.activePlayer];
-      setVisualSize(state.activePlayer, kingdom.baseSize + 1);
-    });
     document.querySelectorAll('[data-base-level]').forEach(button => {
       button.addEventListener('click', () => {
         setBaseLevel(state.activePlayer, Number(button.dataset.baseLevel), { manual: true });
@@ -152,5 +133,5 @@ export function createDevToolsController({
     });
   }
 
-  return { mount, syncSettings, kingdoms, keepForSeat, setBaseLevel, setVisualSize, damageBase };
+  return { mount, syncSettings, kingdoms, keepForSeat, setBaseLevel, damageBase };
 }
