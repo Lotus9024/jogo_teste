@@ -3,6 +3,7 @@ import { CARD_BY_ID, forwardDeltaForSeat, goblinSpawnHp, gridCellsBetween, isGob
 import { damageUnit, fireTowerVolley, mountedTower } from '../combat.js';
 import { pushBattleEffect } from '../battleEffects.js';
 import { deploymentCell, fail, inBase, integer, turnIndex, unitAt, validCell } from '../gameQueries.js';
+import { damageAlliedConstructionsBesideEnteringGoblin } from '../kingdomEffects.js';
 import { requireTurn } from '../turnLifecycle.js';
 
 export function useAbilityAction(state, player, _opponent, action) {
@@ -33,13 +34,15 @@ export function useAbilityAction(state, player, _opponent, action) {
     const spawn = { x: unit.x + forward.x, z: unit.z + forward.z };
     if (!validCell(spawn.x, spawn.z) || inBase(spawn.x, spawn.z, state) || unitAt(state, spawn.x, spawn.z)) fail('A Casa Goblin precisa de espaço livre à frente.');
     const hp = goblinSpawnHp(player.seat, spawn.x, spawn.z, state.units, 'goblin');
-    state.units.push({
+    const spawnedGoblin = {
       id: randomUUID(), ownerSeat: player.seat, cardId: 'goblin', ...spawn, hp, maxHp: hp, shield: 0,
       actionUsed: true, movedThisTurn: false, attackedThisTurn: false,
       abilityUsed: false, abilityReadyTurn: 0, instantUsedRound: 0, instantReadyTurn: 0,
       empowered: false, mountedOnTowerId: null, bonusMoves: 0, bonusAttacks: 0, bonusActions: 0,
       attackPenalty: 0, attackPenaltyUntilTurn: 0, underConstruction: false, buildReadyRound: null
-    });
+    };
+    state.units.push(spawnedGoblin);
+    damageAlliedConstructionsBesideEnteringGoblin(state, spawnedGoblin);
   }
   if (card.id === 'goblin_bomber') {
     const forward = forwardDeltaForSeat(player.seat);
@@ -66,6 +69,8 @@ export function useAbilityAction(state, player, _opponent, action) {
       const construction = ['construction', 'machine'].includes(targetCard?.type);
       damageUnit(state, target, construction ? ability.constructionDamage : ability.troopDamage);
     }
+    state.roads = state.roads.filter(road =>
+      Math.max(Math.abs(road.x - destination.x), Math.abs(road.z - destination.z)) > ability.radius);
     damageUnit(state, unit, unit.hp);
   }
   player.energy -= ability.cost;
@@ -125,14 +130,16 @@ export function summonGoblinAction(state, player, opponent, action) {
   player.hand.splice(goblinIndex, 1);
   player.energy -= card.ability.cost;
   const hp = goblinSpawnHp(player.seat, x, z, state.units, 'goblin');
-  state.units.push({
+  const spawnedGoblin = {
     id: randomUUID(), ownerSeat: player.seat, cardId: 'goblin', x, z, hp, maxHp: hp, shield: 0,
     actionUsed: true, abilityUsed: false, abilityReadyTurn: 0, instantUsedRound: 0,
     instantReadyTurn: 0, empowered: false, mountedOnTowerId: null,
     movedThisTurn: false, attackedThisTurn: false, bonusMoves: 0, bonusAttacks: 0, bonusActions: 0,
     attackPenalty: 0, attackPenaltyUntilTurn: 0,
     underConstruction: false, buildReadyRound: null
-  });
+  };
+  state.units.push(spawnedGoblin);
+  damageAlliedConstructionsBesideEnteringGoblin(state, spawnedGoblin);
   tower.actionUsed = true;
   tower.abilityUsed = true;
   tower.abilityReadyTurn = turnIndex(state) + (card.ability.cooldownTurns ?? 2);

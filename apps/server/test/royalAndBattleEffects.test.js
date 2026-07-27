@@ -107,7 +107,14 @@ test('Nevasca atinge tropas ao redor e reduz o movimento por dois turnos delas',
     { hp: 2, penalty: 1, turns: 2 },
   );
   assert.equal(room.state.units.find(unit => unit.id === 'safe-guard').hp, 3);
-  assert.equal(room.state.units.find(unit => unit.id === 'allied-warrior').hp, 2);
+  assert.deepEqual(
+    {
+      hp: room.state.units.find(unit => unit.id === 'allied-warrior').hp,
+      penalty: room.state.units.find(unit => unit.id === 'allied-warrior').movementPenalty,
+      turns: room.state.units.find(unit => unit.id === 'allied-warrior').movementPenaltyTurns,
+    },
+    { hp: 1, penalty: 1, turns: 2 },
+  );
   assert.equal(room.state.snowstorms.length, 1);
   assert.equal(room.state.effects[0].type, 'blizzard_cast');
 

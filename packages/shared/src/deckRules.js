@@ -1,6 +1,6 @@
 import { CARD_BY_ID, CARD_DEFINITIONS } from './cardCatalog.js';
 
-export const DECK_LIMITS = Object.freeze({ common: 6, uncommon: 4, rare: 2 });
+export const DECK_LIMITS = Object.freeze({ common: 7, uncommon: 5, rare: 3 });
 export const DECK_RARITIES = Object.freeze(Object.keys(DECK_LIMITS));
 export const DEFAULT_DECK_CARD_IDS = Object.freeze(DECK_RARITIES.flatMap(rarity =>
   CARD_DEFINITIONS
@@ -27,7 +27,7 @@ export function validateDeckCardIds(value, { allowDefault = false } = {}) {
   const counts = deckCounts(ids);
   for (const rarity of DECK_RARITIES) {
     if (counts[rarity] !== DECK_LIMITS[rarity]) {
-      throw new Error('O Deck precisa ter exatamente 6 cartas comuns, 4 incomuns e 2 raras.');
+      throw new Error('O Deck precisa ter exatamente 7 cartas comuns, 5 incomuns e 3 raras.');
     }
   }
   const altarCount = ids.filter(id => ['goblin_altar', 'mage_altar'].includes(id)).length;

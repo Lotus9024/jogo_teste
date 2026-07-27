@@ -45,8 +45,7 @@ export function applyRoyalTowerBlessing(state, tower) {
 export function castBlizzard(state, player, card, x, z) {
   const targetSeat = player.seat === 1 ? 2 : 1;
   const affected = [...state.units].filter(unit =>
-    unit.ownerSeat === targetSeat
-    && isTroop(unit.cardId)
+    isTroop(unit.cardId)
     && Math.max(Math.abs(unit.x - x), Math.abs(unit.z - z)) <= card.radius);
 
   for (const unit of affected) {

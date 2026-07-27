@@ -18,7 +18,7 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'henry', name: 'Henry', description: 'Entra podendo agir e pode se movimentar e atacar, ou vice-versa, no mesmo turno.\nEle entra com Desordem: ao lado de uma construção Básica sua, retira 1 de resistência dela no início dos seus próximos turnos.',
+    id: 'henry', name: 'Henry', description: 'Entra podendo agir e pode se movimentar e atacar, ou vice-versa, no mesmo turno.\nEle entra com Desordem: ao entrar e no início dos seus próximos turnos, retira 1 de resistência de cada construção Básica sua diretamente ao lado.',
     hp: 1, damage: 1, move: 1, movementType: 'any', attackType: 'any', minAttackRange: 1, attackRange: 1, cost: 4, adjacentConstructionDamage: 1, category: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', family: 'goblin', info: 'GOBLIN · ÁGIL', glyph: '⚡',
     ability: Object.freeze({ name: 'Agilidade', cost: '—', description: 'Pode realizar um movimento e um ataque no mesmo turno, em qualquer ordem. Entra em campo pronto para agir.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
@@ -49,7 +49,7 @@ export const CARD_DEFINITIONS = Object.freeze([
   }),
   Object.freeze({
     id: 'citizen', name: 'Cidadão', description: 'Apenas por estar na arena, conta como 1 cidadão para você.',
-    hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 3, arenaCitizens: 1, category: 'basic', rarity: 'COMUM', rarityClass: 'common', info: 'HUMANO · CIDADÃO', glyph: '☺',
+    hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 2, arenaCitizens: 1, category: 'basic', rarity: 'COMUM', rarityClass: 'common', info: 'HUMANO · CIDADÃO', glyph: '☺',
     ability: Object.freeze({ name: 'Morador do reino', cost: '—', description: 'Conta como 1 cidadão enquanto permanecer na arena.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
@@ -70,31 +70,31 @@ export const CARD_DEFINITIONS = Object.freeze([
     id: 'goblin_house', name: 'Casa Goblin', description: 'Hospeda 2 cidadãos e Goblins não retiram resistência dela.\nNão pode ser colocada ao lado de outra casa Básica.',
     hp: 1, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 4, buildRounds: 0, type: 'construction', house: true, goblinWearImmune: true, category: 'basic', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'CONSTRUÇÃO · MORADIA GOBLIN', glyph: '⌂',
     citizens: 2,
-    ability: Object.freeze({ name: 'Ninhada Goblin', cost: 1, cooldownTurns: 2, description: 'Gera um Goblin na casa à frente. A casa precisa estar livre, e o Goblin nasce sem poder agir neste turno.', enabled: true }),
+    ability: Object.freeze({ name: 'Ninhada Goblin', cost: 3, cooldownTurns: 2, description: 'Gera um Goblin na casa à frente. A casa precisa estar livre, e o Goblin nasce sem poder agir neste turno.', enabled: true }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
     id: 'road', name: 'Rua', description: 'Precisa estar na área do reino e conectada a um Castelo ou a outra Rua.\nAumenta em 1 quadrado o movimento de quem está por cima e o limite das Casas conectadas em 1 cidadão.',
-    hp: null, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 1, buildRounds: 1, type: 'terrain', road: true, movementBonus: 1, connectedHouseCitizenBonus: 1, indestructible: true, category: 'basic', rarity: 'COMUM', rarityClass: 'common', info: 'TERRENO · RUA', glyph: '═',
-    ability: Object.freeze({ name: 'Caminho do reino', cost: '—', description: 'Terreno permanente que se conecta automaticamente e não pode ser destruído.', enabled: false }),
+    hp: null, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 1, buildRounds: 1, type: 'terrain', road: true, movementBonus: 1, connectedHouseCitizenBonus: 1, category: 'basic', rarity: 'COMUM', rarityClass: 'common', info: 'TERRENO · RUA', glyph: '═',
+    ability: Object.freeze({ name: 'Caminho do reino', cost: '—', description: 'Terreno que se conecta automaticamente e pode ser destruído por efeitos que atinjam ruas.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'goblin', name: 'Goblin', description: 'Um Goblin frágil, mas que tem coragem de roubar ouro.\nEle entra com Desordem: ao lado de uma construção Básica sua, retira 1 de resistência dela no início dos seus próximos turnos.',
+    id: 'goblin', name: 'Goblin', description: 'Um Goblin frágil, mas que tem coragem de roubar ouro.\nEle entra com Desordem: ao entrar e no início dos seus próximos turnos, retira 1 de resistência de cada construção Básica sua diretamente ao lado.',
     hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 2, adjacentConstructionDamage: 1, category: 'goblin', rarity: 'COMUM', rarityClass: 'common', family: 'goblin', info: 'GOBLIN · SAQUEADOR', glyph: '♟',
-    ability: Object.freeze({ name: 'Desordem', cost: '—', description: 'No início de cada turno seu, causa 1 de dano a cada construção sua diretamente ao lado.', enabled: false }),
+    ability: Object.freeze({ name: 'Desordem', cost: '—', description: 'Ao entrar e no início de cada turno seu, causa 1 de dano a cada construção Básica sua diretamente ao lado.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'goblin_swarm', name: 'Enxame Goblin', description: 'Três Goblins surgem em posições aleatórias da sua área de lançamento.\nEles entram com Desordem, mas só retiram resistência de construções no segundo turno seu após o surgimento.',
-    hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 4, summonCount: 3, summonsCardId: 'goblin', type: 'summon', category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'GOBLIN · ENXAME', glyph: '♟',
+    id: 'goblin_swarm', name: 'Enxame Goblin', description: 'Três Goblins surgem em posições aleatórias da sua área de lançamento.\nEles entram com Desordem, mas só retiram resistência de construções no seu próximo turno após o surgimento.',
+    hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 6, summonCount: 3, summonsCardId: 'goblin', type: 'summon', category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'GOBLIN · ENXAME', glyph: '♟',
     ability: Object.freeze({ name: 'Enxame', cost: '—', description: 'Ao ser lançada, esta carta se transforma em três Goblins. Cada um aplica Desordem separadamente.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'goblin_bomber', name: 'Goblin Bombardeiro', description: 'Ele entra com Desordem: no início de cada turno seu, retira 1 de resistência de cada construção Básica sua diretamente ao lado.',
+    id: 'goblin_bomber', name: 'Goblin Bombardeiro', description: 'Ele entra com Desordem: ao entrar e no início de cada turno seu, retira 1 de resistência de cada construção Básica sua diretamente ao lado.',
     hp: 1, damage: 1, move: 1, movementType: 'straight', minAttackRange: 1, attackRange: 1, cost: 4, adjacentConstructionDamage: 1, category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'GOBLIN · BOMBARDEIRO', glyph: '✹',
-    ability: Object.freeze({ name: 'Carga explosiva', cost: 2, chargeDistance: 4, troopDamage: 3, constructionDamage: 4, radius: 1, description: 'Corre 4 blocos para a frente e explode. Causa 3 de dano em tropas e 4 em construções no centro e ao redor. O Goblin morre. Enquanto aguarda, também aplica Desordem às construções aliadas diretamente ao lado.', enabled: true }),
+    ability: Object.freeze({ name: 'Carga explosiva', cost: 2, chargeDistance: 4, troopDamage: 3, constructionDamage: 4, radius: 1, description: 'Corre 4 blocos para a frente e explode. Causa 3 de dano em tropas e 4 em construções no centro e ao redor, destruindo também as ruas atingidas. O Goblin morre. Enquanto aguarda, também aplica Desordem às construções aliadas diretamente ao lado.', enabled: true }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
@@ -141,8 +141,8 @@ export const CARD_DEFINITIONS = Object.freeze([
   }),
   Object.freeze({
     id: 'cobblestone_road', name: 'Estrada de Pedregulhos', description: 'Concede +2 de movimento às cartas Básicas que estiverem por cima e +2 de cidadãos às Casas conectadas.\nPrecisa estar na área do reino e conectada a um Castelo ou a outra Rua.',
-    hp: null, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 5, buildRounds: 1, type: 'terrain', road: true, movementBonus: 2, attackBonus: 0, movementCategory: 'basic', connectedHouseCitizenBonus: 2, indestructible: true, category: 'basic', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'TERRENO · ESTRADA', glyph: '▰',
-    ability: Object.freeze({ name: 'Caminho pavimentado', cost: '—', description: 'Terreno permanente. Aumenta em 2 o movimento de cartas Básicas e conecta Casas ao castelo.', enabled: false }),
+    hp: null, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 5, buildRounds: 1, type: 'terrain', road: true, movementBonus: 2, attackBonus: 0, movementCategory: 'basic', connectedHouseCitizenBonus: 2, category: 'basic', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'TERRENO · ESTRADA', glyph: '▰',
+    ability: Object.freeze({ name: 'Caminho pavimentado', cost: '—', description: 'Terreno que aumenta em 2 o movimento de cartas Básicas, conecta Casas ao castelo e pode ser destruído por efeitos que atinjam ruas.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
@@ -158,9 +158,9 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'blizzard', name: 'Nevasca', description: 'Pode ser lançada em qualquer casa da arena.\nCausa 1 de dano e faz as tropas inimigas ao redor perderem 1 de movimento durante os próximos 2 turnos delas.',
+    id: 'blizzard', name: 'Nevasca', description: 'Pode ser lançada em qualquer casa da arena.\nCausa 1 de dano e faz todas as tropas ao redor perderem 1 de movimento durante os próximos 2 turnos delas.',
     hp: null, damage: 1, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 4, type: 'spell', radius: 1, movementPenalty: 1, durationOpponentTurns: 2, category: 'mage', family: 'mage', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'FEITIÇO · NEVASCA', glyph: '❄',
-    ability: Object.freeze({ name: 'Frio paralisante', cost: '—', description: 'Causa 1 de dano e reduz em 1 o movimento das tropas inimigas ao redor por 2 turnos delas.', enabled: false }),
+    ability: Object.freeze({ name: 'Frio paralisante', cost: '—', description: 'Causa 1 de dano e reduz em 1 o movimento de todas as tropas ao redor por 2 turnos delas.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'O efeito acontece ao lançar a carta.', enabled: false })
   })
 ]);

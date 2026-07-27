@@ -26,21 +26,30 @@ export function builderEnergyBonus(state, seat) {
   return activeBuilderAreaCount(state, seat) > 0 ? 1 : 0;
 }
 
+function alliedBasicConstructionsBesideGoblin(state, goblin) {
+  return [...state.units].filter(unit => {
+    const card = CARD_BY_ID[unit.cardId];
+    return unit.ownerSeat === goblin.ownerSeat
+      && !unit.underConstruction
+      && card?.type === 'construction'
+      && card.category === 'basic'
+      && !card.goblinWearImmune
+      && Math.max(Math.abs(unit.x - goblin.x), Math.abs(unit.z - goblin.z)) === 1;
+  });
+}
+
+export function damageAlliedConstructionsBesideEnteringGoblin(state, goblin) {
+  if ((CARD_BY_ID[goblin.cardId]?.adjacentConstructionDamage ?? 0) <= 0) return;
+  alliedBasicConstructionsBesideGoblin(state, goblin).forEach(unit => damageUnit(state, unit, 1));
+}
+
 export function damageAlliedConstructionsBesideGoblins(state, seat) {
   const disruptiveGoblins = state.units.filter(unit => unit.ownerSeat === seat
     && !unit.underConstruction
     && (unit.disorderReadyTurn ?? 0) <= ((state.round - 1) * 2 + (state.activeSeat === 2 ? 1 : 0))
     && (CARD_BY_ID[unit.cardId]?.adjacentConstructionDamage ?? 0) > 0);
 
-  const targets = [...state.units].filter(unit => {
-    const card = CARD_BY_ID[unit.cardId];
-    return unit.ownerSeat === seat
-      && !unit.underConstruction
-      && card?.type === 'construction'
-      && card.category === 'basic'
-      && !card.goblinWearImmune
-      && disruptiveGoblins.some(goblin => Math.max(Math.abs(unit.x - goblin.x), Math.abs(unit.z - goblin.z)) === 1);
-  });
+  const targets = [...new Set(disruptiveGoblins.flatMap(goblin => alliedBasicConstructionsBesideGoblin(state, goblin)))];
   targets.forEach(unit => damageUnit(state, unit, 1));
 }
 

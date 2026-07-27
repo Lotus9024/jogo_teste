@@ -4,7 +4,7 @@ import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { mountableTowerAt } from '../combat.js';
 import { applyRoyalWarriorBlessing, castBlizzard, pushBattleEffect } from '../battleEffects.js';
 import { deploymentCell, fail, inBase, integer, turnIndex, unitAt, unitsAt, validCell } from '../gameQueries.js';
-import { goblinTroopsInBaseArea } from '../kingdomEffects.js';
+import { damageAlliedConstructionsBesideEnteringGoblin, goblinTroopsInBaseArea } from '../kingdomEffects.js';
 import { requireTurn } from '../turnLifecycle.js';
 
 export function summonAction(state, player, _opponent, action) {
@@ -81,7 +81,7 @@ export function summonAction(state, player, _opponent, action) {
         actionUsed: !entersReady, movedThisTurn: false, attackedThisTurn: false,
         abilityUsed: false, abilityReadyTurn: 0, instantUsedRound: 0, instantReadyTurn: 0,
         empowered: false, mountedOnTowerId: null, bonusMoves: 0, bonusAttacks: 0, bonusActions: 0,
-        disorderReadyTurn: turnIndex(state) + 4,
+        disorderReadyTurn: turnIndex(state) + 2,
         attackPenalty: 0, attackPenaltyUntilTurn: 0, underConstruction: false, buildReadyRound: null
       });
     }
@@ -104,6 +104,7 @@ export function summonAction(state, player, _opponent, action) {
     underConstruction: Boolean(card.buildRounds), buildReadyRound: card.buildRounds ? state.round + card.buildRounds : null
   };
   state.units.push(summonedUnit);
+  damageAlliedConstructionsBesideEnteringGoblin(state, summonedUnit);
   if (card.id === 'royal_warrior') applyRoyalWarriorBlessing(state, summonedUnit);
   if (clonedCard) {
     pushBattleEffect(state, {

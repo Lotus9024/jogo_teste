@@ -63,10 +63,10 @@ test('canhão separa dano direto do dano em área', () => {
   assert.match(CARD_BY_ID.cannon.description, /3 de dano central e 1 de dano em área/i);
 });
 
-test('ruas formam uma rede conectada ao castelo e não possuem vida', () => {
+test('ruas formam uma rede conectada ao castelo e não possuem vida própria', () => {
   const roads = [{ ownerSeat: 1, x: 7, z: 11 }, { ownerSeat: 1, x: 7, z: 10 }, { ownerSeat: 1, x: 2, z: 2 }, { ownerSeat: 1, x: 8, z: 11, underConstruction: true }];
   assert.equal(CARD_BY_ID.road.hp, null);
-  assert.equal(CARD_BY_ID.road.indestructible, true);
+  assert.equal(CARD_BY_ID.road.indestructible, undefined);
   assert.equal(CARD_BY_ID.road.buildRounds, 1);
   assert.deepEqual([...connectedRoadKeys(1, roads)].sort(), ['7:10', '7:11']);
   assert.equal(isRoadPlacementCell(1, 7, 9, roads), false);
@@ -123,6 +123,8 @@ test('Operador e Cidadão contam como cidadãos enquanto permanecem na arena', (
     { ownerSeat: 2, cardId: 'citizen', x: 6, z: 5, underConstruction: false },
   ];
   assert.equal(citizensForSeat(1, units, []), 2);
+  assert.equal(CARD_BY_ID.citizen.cost, 2);
+  assert.equal(CARD_BY_ID.goblin_house.ability.cost, 3);
 });
 
 test('Mago é raro e expõe fogo e ácido com os atributos definidos', () => {
@@ -213,15 +215,15 @@ test('castelo nível dois acrescenta três quadrados em cada lateral', () => {
   assert.equal(baseCellsForSeat(1, 15, 2).some(cell => cell.x === 5 && cell.z === 13), true);
 });
 
-test('Deck exige exatamente seis comuns, quatro incomuns e duas raras', () => {
+test('Deck exige exatamente sete comuns, cinco incomuns e três raras', () => {
   const validDeck = [
-    'warrior', 'guard', 'wooden_barrier', 'operator', 'citizen', 'wooden_house',
-    'henry', 'archer', 'tower', 'cannon',
-    'goblin_tower', 'mage',
+    'warrior', 'guard', 'wooden_barrier', 'operator', 'citizen', 'wooden_house', 'road',
+    'henry', 'archer', 'tower', 'cannon', 'goblin_house',
+    'goblin_tower', 'mage', 'goblin_altar',
   ];
   assert.deepEqual(validateDeckCardIds(validDeck), validDeck);
-  assert.throws(() => validateDeckCardIds(validDeck.slice(0, -1)), /exatamente 6 cartas comuns, 4 incomuns e 2 raras/);
-  assert.throws(() => validateDeckCardIds([...validDeck, 'road']), /exatamente 6 cartas comuns, 4 incomuns e 2 raras/);
+  assert.throws(() => validateDeckCardIds(validDeck.slice(0, -1)), /exatamente 7 cartas comuns, 5 incomuns e 3 raras/);
+  assert.throws(() => validateDeckCardIds([...validDeck, 'goblin']), /exatamente 7 cartas comuns, 5 incomuns e 3 raras/);
 });
 
 test('cartas reais e Nevasca expõem os atributos e regras definidos', () => {

@@ -35,6 +35,6 @@ export function validateDeckCardIds(value) {
   try {
     return validateSharedDeck(value);
   } catch {
-    throw new ValidationError('O Deck precisa ter exatamente 6 cartas comuns, 4 incomuns e 2 raras.', 'INVALID_DECK');
+    throw new ValidationError('O Deck precisa ter exatamente 7 cartas comuns, 5 incomuns e 3 raras.', 'INVALID_DECK');
   }
 }

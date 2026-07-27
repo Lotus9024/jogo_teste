@@ -14,8 +14,25 @@ test('Enxame Goblin se transforma em três Goblins sem ação', () => {
   const goblins = room.state.units.filter(unit => unit.cardId === 'goblin');
   assert.equal(goblins.length, 3);
   assert.equal(goblins.every(unit => unit.actionUsed), true);
+  assert.equal(goblins.every(unit => unit.disorderReadyTurn === 2), true);
   assert.equal(room.state.units.some(unit => unit.cardId === 'goblin_swarm'), false);
   assert.equal(player.energy, 10 - CARD_BY_ID.goblin_swarm.cost);
+});
+
+test('Desordem retira resistência imediatamente quando o Goblin entra', () => {
+  const { rooms, room, first } = match();
+  const player = room.state.players[0];
+  player.hand = [{ instanceId: 'goblin-card', cardId: 'goblin' }];
+  room.state.units.push({
+    id: 'allied-building', ownerSeat: 1, cardId: 'wooden_barrier',
+    x: 7, z: 10, hp: 3, maxHp: 3, underConstruction: false,
+  });
+
+  rooms.action(room.code, first.id, {
+    type: 'summon', cardInstanceId: 'goblin-card', x: 6, z: 10,
+  }, room.state.version);
+
+  assert.equal(room.state.units.find(unit => unit.id === 'allied-building').hp, 2);
 });
 
 test('Goblins retiram no máximo 1 de resistência de cada construção Básica adjacente por turno', () => {
@@ -115,6 +132,11 @@ test('Desordem destrói construções sem resistência restante', () => {
 
 test('Goblin Bombardeiro corre quatro casas, explode e morre', () => {
   const { rooms, room, first } = match();
+  room.state.roads.push(
+    { id: 'road-hit', cardId: 'road', ownerSeat: 1, x: 7, z: 6, underConstruction: false },
+    { id: 'stone-road-hit', cardId: 'cobblestone_road', ownerSeat: 2, x: 8, z: 6, underConstruction: false },
+    { id: 'road-safe', cardId: 'road', ownerSeat: 1, x: 10, z: 6, underConstruction: false },
+  );
   room.state.units.push(
     { id: 'bomber', ownerSeat: 1, cardId: 'goblin_bomber', x: 7, z: 10, hp: 1, actionUsed: false, underConstruction: false },
     { id: 'building', ownerSeat: 2, cardId: 'tower', x: 7, z: 6, hp: 5, actionUsed: false, underConstruction: false },
@@ -126,6 +148,7 @@ test('Goblin Bombardeiro corre quatro casas, explode e morre', () => {
   assert.equal(room.state.units.find(unit => unit.id === 'building').hp, 1);
   assert.equal(room.state.units.find(unit => unit.id === 'enemy-troop').hp, 1);
   assert.equal(room.state.units.find(unit => unit.id === 'ally-troop').hp, 1);
+  assert.deepEqual(room.state.roads.map(road => road.id), ['road-safe']);
 });
 
 test('Estrada de Pedregulhos não aumenta mais o ataque', () => {
