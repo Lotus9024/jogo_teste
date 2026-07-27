@@ -260,22 +260,23 @@ export function createMagicDust() {
   const orbit = createOrbitalStars({
     radiusX: ISLAND_RADIUS_X,
     radiusZ: ISLAND_RADIUS_Z,
-    count: 1800,
+    count: 2200,
     seed: 6412,
     verticalCenter: -2.45,
     verticalSpread: 4.8,
     radialBase: 1.055,
     radialSpread: 0.15,
     angularJitter: 0.045,
-    size: 0.115,
-    opacity: 0.54
+    size: 0.125,
+    opacity: 0.62
   });
   orbit.name = 'Órbita estelar permanente da ilha principal';
+  orbit.userData.kind = 'main-island-star-orbit';
   orbit.rotation.set(-0.035, 0, 0.045);
   const clusterOrbit = createOrbitalStars({
     radiusX: ISLAND_RADIUS_X,
     radiusZ: ISLAND_RADIUS_Z,
-    count: 960,
+    count: 1200,
     seed: 7238,
     verticalCenter: -2.5,
     verticalSpread: 6.2,
@@ -283,7 +284,7 @@ export function createMagicDust() {
     radialSpread: 0.25,
     angularJitter: 0.08,
     size: 0.066,
-    opacity: 0.36
+    opacity: 0.4
   });
   clusterOrbit.name = 'Névoa de microestrelas do aglomerado orbital';
   clusterOrbit.rotation.set(-0.02, -0.11, 0.028);

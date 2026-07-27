@@ -8,10 +8,10 @@ import {
 import { createOrbitalSparkles } from './terrain/createArcaneDetails.js';
 
 const distantSurfaceMaps = createGrainMaps({
-  color: [51, 45, 59], repeat: [7, 6], streak: 0.18, seed: 811,
+  size: 128, color: [51, 45, 59], repeat: [8, 7], streak: 0.18, seed: 811,
 });
 const distantCliffMaps = createRockMaps({
-  rock: [58, 51, 69], mineral: [92, 72, 108], repeat: [4.4, 2.5], strata: 1.05, seed: 829,
+  size: 256, rock: [58, 51, 69], mineral: [92, 72, 108], repeat: [5.2, 3.1], strata: 1.15, seed: 829,
 });
 const distantRockMaps = createRockMaps({
   rock: [64, 58, 72], mineral: [106, 91, 120], repeat: [2.8, 2.8], strata: 0.65, seed: 853,
@@ -418,6 +418,84 @@ function addSurfaceDetails(
     dryRoots.add(createDryRoot(middle, end, 0.028 + random() * 0.018, materials.root));
   }
   island.add(dryRoots);
+
+  const silhouettes = new THREE.Group();
+  silhouettes.name = 'Árvores secas e monólitos das ilhas';
+  const treeCount = compact ? 1 : 2 + Math.floor(random() * 2);
+  for (let treeIndex = 0; treeIndex < treeCount; treeIndex += 1) {
+    const angle = random() * Math.PI * 2;
+    const radial = 0.18 + random() * 0.38;
+    const base = new THREE.Vector3(
+      Math.cos(angle) * radiusX * radial,
+      0.04,
+      Math.sin(angle) * radiusZ * radial
+    );
+    const height = 0.58 + random() * (compact ? 0.32 : 0.62);
+    const crown = base.clone().add(new THREE.Vector3(
+      (random() - 0.5) * 0.12,
+      height,
+      (random() - 0.5) * 0.12
+    ));
+    silhouettes.add(createDryRoot(base, crown, 0.065 + random() * 0.025, materials.root));
+    const branchCount = compact ? 2 : 3;
+    for (let branchIndex = 0; branchIndex < branchCount; branchIndex += 1) {
+      const branchAngle = angle + branchIndex / branchCount * Math.PI * 2 + random() * 0.45;
+      const branchStart = base.clone().lerp(crown, 0.54 + branchIndex * 0.1);
+      const branchEnd = branchStart.clone().add(new THREE.Vector3(
+        Math.cos(branchAngle) * (0.22 + random() * 0.2),
+        0.18 + random() * 0.24,
+        Math.sin(branchAngle) * (0.22 + random() * 0.2)
+      ));
+      silhouettes.add(createDryRoot(branchStart, branchEnd, 0.025 + random() * 0.014, materials.root));
+    }
+  }
+
+  const monolithCount = compact ? 2 : 4;
+  for (let monolithIndex = 0; monolithIndex < monolithCount; monolithIndex += 1) {
+    const angle = monolithIndex / monolithCount * Math.PI * 2 + random() * 0.55;
+    const monolith = new THREE.Mesh(
+      new THREE.ConeGeometry(0.12 + random() * 0.1, 0.48 + random() * 0.48, 5, 2),
+      materials.ruin
+    );
+    monolith.position.set(
+      Math.cos(angle) * radiusX * (0.48 + random() * 0.2),
+      monolith.geometry.parameters.height * 0.46,
+      Math.sin(angle) * radiusZ * (0.48 + random() * 0.2)
+    );
+    monolith.rotation.set((random() - 0.5) * 0.2, random() * Math.PI, (random() - 0.5) * 0.24);
+    monolith.scale.set(0.72 + random() * 0.5, 1, 0.65 + random() * 0.45);
+    monolith.castShadow = true;
+    monolith.receiveShadow = true;
+    silhouettes.add(monolith);
+  }
+  island.add(silhouettes);
+
+  const edgeShardCount = compact ? 10 : 18;
+  const edgeShards = new THREE.InstancedMesh(
+    new THREE.TetrahedronGeometry(0.1, 0),
+    materials.strata,
+    edgeShardCount
+  );
+  edgeShards.name = 'Fragmentos minerais nas bordas';
+  edgeShards.castShadow = true;
+  edgeShards.receiveShadow = true;
+  const shardDummy = new THREE.Object3D();
+  for (let shardIndex = 0; shardIndex < edgeShardCount; shardIndex += 1) {
+    const angle = shardIndex / edgeShardCount * Math.PI * 2 + (random() - 0.5) * 0.18;
+    const size = 0.62 + random() * 0.9;
+    shardDummy.position.set(
+      Math.cos(angle) * radiusX * (0.82 + random() * 0.08),
+      -0.08 - random() * 0.42,
+      Math.sin(angle) * radiusZ * (0.82 + random() * 0.08)
+    );
+    shardDummy.rotation.set(random() * Math.PI, -angle, random() * Math.PI);
+    shardDummy.scale.set(size, size * (1.15 + random()), size);
+    shardDummy.updateMatrix();
+    edgeShards.setMatrixAt(shardIndex, shardDummy.matrix);
+  }
+  edgeShards.instanceMatrix.needsUpdate = true;
+  edgeShards.computeBoundingSphere();
+  island.add(edgeShards);
 }
 
 export function createDistantIslands() {
@@ -525,9 +603,9 @@ export function createDistantIslands() {
     const islandMaterials = Object.fromEntries(
       Object.entries(materials).map(([name, material]) => {
         const clone = material.clone();
-        clone.color.multiplyScalar(spec.light);
-        if (clone.emissive) clone.emissive.multiplyScalar(0.7 + spec.light * 0.3);
-        if ('emissiveIntensity' in clone) clone.emissiveIntensity *= 0.72 + spec.light * 0.28;
+        clone.color.multiplyScalar(0.68 + spec.light * 0.38);
+        if (clone.emissive) clone.emissive.multiplyScalar(0.86 + spec.light * 0.28);
+        if ('emissiveIntensity' in clone) clone.emissiveIntensity *= 0.88 + spec.light * 0.24;
         for (const textureProperty of ['map', 'bumpMap']) {
           if (!clone[textureProperty]) continue;
           clone[textureProperty] = clone[textureProperty].clone();
@@ -561,12 +639,12 @@ export function createDistantIslands() {
     const orbit = createOrbitalSparkles({
       radiusX: spec.radiusX,
       radiusZ: spec.radiusZ,
-      count: spec.compact ? 104 : 168,
+      count: spec.compact ? 132 : 220,
       seed: spec.seed + 701,
       verticalCenter: -spec.depth * 0.42,
       verticalSpread: spec.depth * (spec.compact ? 0.78 : 1.02),
-      size: spec.compact ? 0.052 : 0.07,
-      opacity: 0.31 + spec.light * 0.08
+      size: spec.compact ? 0.058 : 0.078,
+      opacity: 0.35 + spec.light * 0.1
     });
     orbit.name = `Órbita de estrelas da ilha ${index + 1}`;
     orbit.rotation.set(spec.tilt[0] * 0.35, spec.phase * 0.2, spec.tilt[1] * 0.35);
