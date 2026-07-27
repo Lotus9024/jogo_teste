@@ -7,7 +7,7 @@ import { updateHealthBadge } from '../ui/unitHealthBadge.js';
 
 export function createDevToolsController({
   state = {}, scene, alliedKeep, enemyKeep, units = [], hoverables = [], boardPresentation,
-  relations, interaction, handController, callbacks,
+  relations, interaction, handController, setCastleVisualSize = () => null, callbacks,
 }) {
   state.devBaseLevels ??= { 1: 1, 2: 1 };
   const kingdoms = {
@@ -25,7 +25,8 @@ export function createDevToolsController({
     const keep = keepForSeat(seat);
     if (keep) {
       keep.userData.currentLevel = kingdom.baseLevel;
-      keep.userData.role = `BASE 3×3 · NÍVEL ${kingdom.baseLevel}`;
+      const footprint = keep.userData.footprintCells ?? 3;
+      keep.userData.role = `BASE ${footprint}×${footprint} · NÍVEL ${kingdom.baseLevel}`;
       const levelDetails = keep.getObjectByName('castleLevelTwoDetails');
       if (levelDetails) levelDetails.visible = kingdom.baseLevel >= 2;
       const gateLight = keep.getObjectByName('Luz violeta do portão');
@@ -39,7 +40,8 @@ export function createDevToolsController({
   function syncSettings() {
     if (!state.devMode) return;
     const kingdom = kingdoms[state.activePlayer];
-    document.querySelector('#dev-base-size').textContent = String(kingdom.baseSize);
+    const footprint = keepForSeat(state.activePlayer)?.userData.footprintCells ?? 3;
+    document.querySelector('#dev-base-size').textContent = `${footprint}×${footprint}`;
     document.querySelectorAll('[data-base-level]').forEach(button => {
       button.setAttribute('aria-pressed', String(Number(button.dataset.baseLevel) === kingdom.baseLevel));
     });
@@ -77,18 +79,23 @@ export function createDevToolsController({
     return kingdom.hp;
   }
 
+  function setVisualSize(seat, size) {
+    const kingdom = kingdoms[seat];
+    if (!kingdom) return null;
+    kingdom.baseSize = THREE.MathUtils.clamp(Math.round(Number(size) || 1), 1, 6);
+    const layout = setCastleVisualSize(seat, kingdom.baseSize);
+    syncSettings();
+    return layout;
+  }
+
   function mount() {
     document.querySelector('#dev-base-size-minus').addEventListener('click', () => {
       const kingdom = kingdoms[state.activePlayer];
-      kingdom.baseSize = THREE.MathUtils.clamp(kingdom.baseSize - 1, 1, 6);
-      keepForSeat(state.activePlayer).scale.setScalar(0.85 + kingdom.baseSize * 0.15);
-      syncSettings();
+      setVisualSize(state.activePlayer, kingdom.baseSize - 1);
     });
     document.querySelector('#dev-base-size-plus').addEventListener('click', () => {
       const kingdom = kingdoms[state.activePlayer];
-      kingdom.baseSize = THREE.MathUtils.clamp(kingdom.baseSize + 1, 1, 6);
-      keepForSeat(state.activePlayer).scale.setScalar(0.85 + kingdom.baseSize * 0.15);
-      syncSettings();
+      setVisualSize(state.activePlayer, kingdom.baseSize + 1);
     });
     document.querySelectorAll('[data-base-level]').forEach(button => {
       button.addEventListener('click', () => {
@@ -145,5 +152,5 @@ export function createDevToolsController({
     });
   }
 
-  return { mount, syncSettings, kingdoms, keepForSeat, setBaseLevel, damageBase };
+  return { mount, syncSettings, kingdoms, keepForSeat, setBaseLevel, setVisualSize, damageBase };
 }

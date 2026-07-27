@@ -497,9 +497,27 @@ textarea:focus {
 }
 
 .castle-hover-name {
-  margin: 0 0 15px;
+  margin: 5px 0 15px;
   color: #95899e;
   font-size: 9px;
+}
+
+.castle-hover-ruler {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 9px 0 0;
+}
+
+.castle-hover-ruler small {
+  color: #8f789d;
+  font: 600 6px Cinzel;
+  letter-spacing: .14em;
+}
+
+.castle-hover-ruler b {
+  color: #d7b4ed;
+  font: 600 10px Cinzel;
 }
 
 .castle-hover-health {
@@ -568,6 +586,13 @@ textarea:focus {
   flex: 1;
 }
 
+.castle-hover-card li span small {
+  display: block;
+  margin-top: 2px;
+  color: #85798d;
+  font-size: 7px;
+}
+
 .castle-hover-requirements li b {
   color: #a998b2;
   font: 600 8px Cinzel;
@@ -576,6 +601,39 @@ textarea:focus {
 .castle-hover-requirements li.met i,
 .castle-hover-requirements li.met b {
   color: #c584ec;
+}
+
+.castle-hover-planned {
+  margin: 9px 0 0;
+  padding: 10px;
+  border-left: 2px solid rgba(190, 116, 235, .48);
+  background: rgba(72, 30, 101, .12);
+  color: #a99ab3;
+  font-size: 8px;
+  line-height: 1.55;
+}
+
+.castle-hover-roadmap li {
+  align-items: flex-start;
+  padding: 7px 8px;
+  border: 1px solid rgba(126, 72, 157, .14);
+  background: rgba(20, 10, 29, .38);
+}
+
+.castle-hover-roadmap li.current {
+  border-color: rgba(190, 111, 238, .42);
+  background: rgba(92, 39, 127, .2);
+}
+
+.castle-hover-roadmap li.completed i,
+.castle-hover-roadmap li.current i,
+.castle-hover-roadmap li.next i {
+  color: #c47bec;
+}
+
+.castle-hover-roadmap li span b {
+  color: #c9b6d4;
+  font: 600 8px Cinzel;
 }
 
 .castle-hover-max {

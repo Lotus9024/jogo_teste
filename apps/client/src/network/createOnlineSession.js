@@ -19,6 +19,7 @@ export function createOnlineSession({
   enemyKeep,
   keeps = [alliedKeep, enemyKeep],
   setPlayerCount = () => {},
+  setCastleVisualSize = () => null,
   tile,
   half,
   units,
@@ -211,10 +212,11 @@ export function createOnlineSession({
     state.selfSeat = selfSeat;
     const playerCount = Number(payload.state.board?.playerCount ?? payload.room?.capacity ?? 2);
     setPlayerCount(playerCount);
+    keeps.forEach(keep => setCastleVisualSize(keep.userData.ownerSeat, 1));
     keeps.forEach(keep => {
       const player = payload.state.players.find(item => item.seat === keep.userData.ownerSeat);
       if (!player) return;
-      keep.userData.kingdomName = player.name;
+      keep.userData.rulerName = player.name;
       keep.userData.baseHp = player.baseHp;
       keep.userData.currentLevel = player.baseLevel ?? 1;
       keep.getObjectByName('castleLevelTwoDetails').visible = (player.baseLevel ?? 1) >= 2;

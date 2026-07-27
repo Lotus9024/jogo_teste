@@ -2,6 +2,28 @@ import * as THREE from 'three';
 import { M, add } from '../core/scenePrimitives.js';
 import { createGrainMaps, createMasonryMaps, texturedStandardMaterial } from '../core/darkFantasySurfaces.js';
 
+export const CASTLE_VISUAL_SIZE_COUNT = 6;
+
+export function castleFootprintForVisualSize(size, boardSize = 15) {
+  const normalizedSize = THREE.MathUtils.clamp(Math.round(Number(size) || 1), 1, CASTLE_VISUAL_SIZE_COUNT);
+  const largestOddFootprint = boardSize % 2 === 0 ? boardSize - 1 : boardSize;
+  return Math.min(1 + normalizedSize * 2, largestOddFootprint);
+}
+
+export function castleCenterCellForFootprint(seat, footprint, boardSize = 15, playerCount = 2) {
+  const inset = Math.floor(footprint / 2);
+  const far = boardSize - 1 - inset;
+  if (playerCount <= 2) {
+    return { x: Math.floor(boardSize / 2), z: seat === 1 ? far : inset };
+  }
+  return {
+    1: { x: inset, z: far },
+    2: { x: inset, z: inset },
+    3: { x: far, z: inset },
+    4: { x: far, z: far },
+  }[seat] ?? null;
+}
+
 function createCastleMaterials(accent, enemy) {
   const masonry = createMasonryMaps({
     stone: enemy ? [55, 38, 53] : [43, 42, 58],
@@ -109,8 +131,10 @@ function createKeep(tile, accent, enemy = false) {
   const keep = new THREE.Group();
   const materials = createCastleMaterials(accent, enemy);
 
-  add(new THREE.BoxGeometry(tile * 3 - 0.06, 0.22, tile * 3 - 0.06), M.base, keep, [0, 0.02, 0]);
-  add(new THREE.BoxGeometry(tile * 3 - 0.2, 0.14, tile * 3 - 0.2), materials.dark, keep, [0, 0.18, 0]);
+  const footprint = add(new THREE.BoxGeometry(tile * 3, 0.22, tile * 3), M.base, keep, [0, 0.02, 0]);
+  footprint.name = 'Limite visual da base';
+  const innerFoundation = add(new THREE.BoxGeometry(tile * 3 - 0.12, 0.14, tile * 3 - 0.12), materials.dark, keep, [0, 0.18, 0]);
+  innerFoundation.name = 'Fundação interna do castelo';
   add(new THREE.BoxGeometry(2.82, 0.88, 0.28), materials.stone, keep, [0, 0.67, -1.34]);
   add(new THREE.BoxGeometry(0.28, 0.88, 2.82), materials.stone, keep, [-1.34, 0.67, 0]);
   add(new THREE.BoxGeometry(0.28, 0.88, 2.82), materials.stone, keep, [1.34, 0.67, 0]);
@@ -162,6 +186,8 @@ function createKeep(tile, accent, enemy = false) {
     ability: enemy ? 'Pacto de Sangue' : 'Vigia do Corvo',
     abilityUsed: false,
     entranceLocalDirection: [0, 0, 1],
+    visualSize: 1,
+    footprintCells: 3,
     description: enemy
       ? 'A cidadela alimenta suas tropas com a névoa violeta.'
       : 'As sentinelas do corvo revelam invasores nas casas vizinhas.',
@@ -176,39 +202,44 @@ export function createCastleKeeps(board, { tile, half }) {
   const fourthKeep = createKeep(tile, 0x73582d, true);
   const keeps = [alliedKeep, enemyKeep, thirdKeep, fourthKeep];
   const kingdomNames = ['Reino do Corvo Negro', 'Reino da Noite Rubra', 'Reino do Bosque', 'Reino do Sol Velado'];
+  const rulerNames = ['Rei do Corvo', 'Rainha da Noite', 'Rei do Bosque', 'Rainha do Sol Velado'];
   keeps.forEach((keep, index) => Object.assign(keep.userData, {
     ownerSeat: index + 1,
     kingdomName: kingdomNames[index],
+    rulerName: rulerNames[index],
     currentLevel: 1,
   }));
+  const boardSize = Math.round(half * 2 / tile) + 1;
+  let currentPlayerCount = 2;
 
   function faceCenter(keep) {
     keep.rotation.y = Math.atan2(-keep.position.x, -keep.position.z);
   }
 
+  function setVisualSize(seat, size = 1) {
+    const keep = keeps[seat - 1];
+    if (!keep) return null;
+    const footprint = castleFootprintForVisualSize(size, boardSize);
+    const center = castleCenterCellForFootprint(seat, footprint, boardSize, currentPlayerCount);
+    if (!center) return null;
+    const horizontalScale = footprint / 3;
+    const verticalScale = 1 + (horizontalScale - 1) * 0.16;
+    keep.scale.set(horizontalScale, verticalScale, horizontalScale);
+    keep.position.set(center.x * tile - half, 0.06, center.z * tile - half);
+    keep.userData.visualSize = THREE.MathUtils.clamp(Math.round(Number(size) || 1), 1, CASTLE_VISUAL_SIZE_COUNT);
+    keep.userData.footprintCells = footprint;
+    keep.userData.role = `BASE ${footprint}×${footprint} · NÍVEL ${keep.userData.currentLevel ?? 1}`;
+    faceCenter(keep);
+    return { footprint, center, horizontalScale };
+  }
+
   function setPlayerCount(playerCount = 2) {
-    if (playerCount <= 2) {
-      alliedKeep.position.set(0, 0.06, half - tile);
-      enemyKeep.position.set(0, 0.06, -half + tile);
-      alliedKeep.rotation.y = Math.PI;
-      enemyKeep.rotation.y = 0;
-    } else {
-      const corner = half - tile;
-      const positions = [
-        [-corner, corner],
-        [-corner, -corner],
-        [corner, -corner],
-        [corner, corner],
-      ];
-      keeps.forEach((keep, index) => {
-        keep.position.set(positions[index][0], 0.06, positions[index][1]);
-        faceCenter(keep);
-      });
-    }
+    currentPlayerCount = playerCount <= 2 ? 2 : Math.min(4, playerCount);
+    keeps.forEach((keep, index) => setVisualSize(index + 1, keep.userData.visualSize ?? 1));
     keeps.forEach((keep, index) => { keep.visible = index < playerCount; });
   }
 
   board.add(...keeps);
   setPlayerCount(2);
-  return { alliedKeep, enemyKeep, keeps, setPlayerCount };
+  return { alliedKeep, enemyKeep, keeps, setPlayerCount, setVisualSize };
 }

@@ -17,7 +17,8 @@ export function devBaseLevelForProgress({
 export function createDevModeController(options) {
   const {
     state, app, scene, tile, half, units, hoverables, roads, boardPresentation,
-    interaction, actions, abilities, handController, cameraTransition, deckBuilder, callbacks, localCardEffects,
+    interaction, actions, abilities, handController, cameraTransition, deckBuilder, setPlayerCount = () => {},
+    callbacks, localCardEffects,
   } = options;
   const toolCallbacks = {
     ...callbacks,
@@ -167,6 +168,7 @@ export function createDevModeController(options) {
     deckBuilder?.close();
     callbacks.activatePreferredGraphics?.();
     Object.assign(state, { devMode: true, onlineState: null, activePlayer: 1, round: 1, selfSeat: 1 });
+    setPlayerCount(2);
     app.dataset.mode = 'dev';
     document.querySelector('#online-lobby').classList.add('closed');
     document.querySelector('#match-state').hidden = false;
@@ -184,8 +186,10 @@ export function createDevModeController(options) {
     boardPresentation.reconcileRoads([]);
     boardPresentation.reconcileFires([]);
     callbacks.clearSnowstorms?.();
-    tools.keepForSeat(1).scale.setScalar(1);
-    tools.keepForSeat(2).scale.setScalar(1);
+    const localRulerName = document.querySelector('#current-king-name')?.textContent?.trim();
+    if (localRulerName) tools.keepForSeat(1).userData.rulerName = localRulerName;
+    tools.setVisualSize(1, 1);
+    tools.setVisualSize(2, 1);
     callbacks.setOnlinePerspective?.();
     syncTurnRoundStatus(state.activePlayer, state.round);
     syncDevKingdomHud();

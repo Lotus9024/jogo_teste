@@ -58,10 +58,12 @@ export function createUnitPointerHandlers({
     const onlinePlayer = state.onlineState?.state?.players?.find(player => player.seat === seat);
     const level = onlinePlayer?.baseLevel ?? object.userData.currentLevel ?? 1;
     const roads = boardPresentation.roads;
+    const playerCount = state.onlineState?.state?.board?.playerCount ?? 2;
     const citizens = onlinePlayer?.citizens
-      ?? citizensForSeat(seat, localUnitData(), roads, GAME_CONFIG.boardSize, level);
+      ?? citizensForSeat(seat, localUnitData(), roads, GAME_CONFIG.boardSize, level, playerCount);
     castleHover.innerHTML = castleHoverMarkup({
       kingdomName: object.userData.kingdomName,
+      rulerName: onlinePlayer?.name ?? object.userData.rulerName,
       castleName: object.userData.name,
       level,
       hp: onlinePlayer?.baseHp ?? object.userData.baseHp ?? GAME_CONFIG.startingBaseHp,

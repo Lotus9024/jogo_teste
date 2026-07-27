@@ -8,7 +8,7 @@ export function createWorld(scene, renderer, { quality = 'high' } = {}) {
   const flameOuter = new THREE.MeshBasicMaterial({ color: 0xa75ce2, toneMapped: false });
   const flameCore = new THREE.MeshBasicMaterial({ color: 0xffc985, toneMapped: false });
   const { board, N, tile, half, fireLights } = createBoard(scene, { flameOuter, flameCore });
-  const { alliedKeep, enemyKeep, keeps, setPlayerCount } = createCastleKeeps(board, { tile, half });
+  const { alliedKeep, enemyKeep, keeps, setPlayerCount, setVisualSize: setCastleVisualSize } = createCastleKeeps(board, { tile, half });
   const physicalDecks = createPhysicalDecks(scene, half);
   const { wisps, updateTerrain, setGraphicsQuality } = createWorldEnvironment(scene, renderer, {
     quality,
@@ -27,6 +27,7 @@ export function createWorld(scene, renderer, { quality = 'high' } = {}) {
     enemyKeep,
     keeps,
     setPlayerCount,
+    setCastleVisualSize,
     physicalDecks,
     wisps,
     fireLights,

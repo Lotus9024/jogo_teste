@@ -13,7 +13,7 @@ export function settingsTemplate() {
           </div>
           <div class="dev-settings" data-dev-settings hidden>
             <div class="dev-settings-heading"><small>MESA DE TESTES</small><h3>Menu de dev mode</h3><p>Estes controles afetam apenas a partida local e o reino do turno atual.</p></div>
-            <div class="dev-setting-row"><span>Tamanho visual da base</span><div class="dev-stepper"><button id="dev-base-size-minus" aria-label="Diminuir base">−1</button><output id="dev-base-size">1.00×</output><button id="dev-base-size-plus" aria-label="Aumentar base">+1</button></div></div>
+            <div class="dev-setting-row"><span>Tamanho visual da base</span><div class="dev-stepper"><button id="dev-base-size-minus" aria-label="Diminuir base">−1</button><output id="dev-base-size">3×3</output><button id="dev-base-size-plus" aria-label="Aumentar base">+1</button></div></div>
             <div class="dev-setting-row"><span>Nível da base</span><div class="dev-choice" role="group" aria-label="Nível da base"><button data-base-level="1">1</button><button data-base-level="2">2</button><button data-base-level="3">3</button><button data-base-level="4">4</button></div></div>
             <div class="dev-setting-row"><span>Nível das próximas cartas</span><div class="dev-choice" role="group" aria-label="Nível das próximas cartas"><button data-card-level="1">1</button><button data-card-level="2">2</button><button data-card-level="3">3</button><button data-card-level="4">4</button></div></div>
             <div class="dev-setting-row"><span>Construção instantânea</span><button id="dev-instant-build" class="dev-toggle" aria-pressed="false">DESLIGADO</button></div>
