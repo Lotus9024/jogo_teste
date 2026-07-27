@@ -72,6 +72,11 @@ export function createLocalCombatController({
       callbacks.showGameError?.('O Canhão precisa de um Operador exatamente atrás.');
       return;
     }
+    battleAnimations.playAttack(
+      unit,
+      originPosition.clone().set(destination.worldX, 0.06, destination.worldZ),
+      'cannon',
+    );
     [...units].filter(candidate => Math.max(
       Math.abs(Math.round((candidate.position.x + half) / tile) - destination.x),
       Math.abs(Math.round((candidate.position.z + half) / tile) - destination.z),
@@ -119,6 +124,7 @@ export function createLocalCombatController({
       callbacks.showGameError?.('Alvo fora de alcance.');
       return false;
     }
+    battleAnimations.playAttack(unit, target.position, unit.userData.cardId);
     damageEffects.show(target.position, unit.userData.damage);
     target.userData.hp -= unit.userData.damage;
     updateHealthBadge(target);
@@ -157,6 +163,7 @@ export function createLocalCombatController({
       }
     }
     const impactPosition = originPosition.clone().set(destination.worldX, 0.06, destination.worldZ);
+    battleAnimations.playAttack(unit, impactPosition, unit.userData.cardId);
     damageEffects.show(impactPosition, unit.userData.damage);
     callbacks.damageDevBase?.(baseSeat, unit.userData.damage);
     app.dataset.lastAttack = `${unit.userData.name}->base-${baseSeat}`;

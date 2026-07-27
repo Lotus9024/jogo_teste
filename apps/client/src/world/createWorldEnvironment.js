@@ -302,19 +302,24 @@ export function createWorldEnvironment(scene, renderer, { quality, fireLights, f
     [12.45, -3.7, 1.2, 0.12],
     [12.7, 4.6, 1.65, -0.06],
     [-5.4, 12.35, 0.75, 0.16],
-    [5.9, -12.35, 1.05, -0.12]
+    [5.9, -12.35, 1.05, -0.12],
+    [-9.7, -10.85, 1.12, 0.14],
+    [9.45, 10.95, 0.82, -0.1]
   ].forEach(args => addBrokenPillar(environment, ruinMaterials, ...args));
   [
     [-12.15, 1.1, -0.1],
     [-11.95, 6.8, 0.15],
     [11.95, -6.7, -0.2],
     [12.15, 1.2, 0.12],
-    [11.9, 6.1, -0.08]
+    [11.9, 6.1, -0.08],
+    [-9.65, 10.55, 0.18],
+    [9.85, -10.35, -0.14]
   ].forEach(args => addGraveStone(environment, ruinMaterials, ...args));
   [
     [-12.4, -7.2, 0.18],
     [12.45, 7.1, Math.PI + 0.12],
-    [-6.8, 12.4, Math.PI / 2 - 0.16]
+    [-6.8, 12.4, Math.PI / 2 - 0.16],
+    [6.45, -12.55, Math.PI / 2 + 0.12]
   ].forEach(args => addRuinedWall(environment, ruinMaterials, ...args));
   [
     [7.4, -12.25, -0.08],
@@ -323,7 +328,8 @@ export function createWorldEnvironment(scene, renderer, { quality, fireLights, f
   [
     [-10.55, -8.85, 0.35, 0.92],
     [10.8, 8.45, -0.42, 0.8],
-    [-10.7, 8.55, 1.1, 0.7]
+    [-10.7, 8.55, 1.1, 0.7],
+    [10.65, -8.75, -0.72, 0.66]
   ].forEach(args => addSurfaceCrystalCluster(environment, ruinMaterials, ...args));
 
   addWatchFires(scene, environment, fireLights, flameOuter, flameCore);

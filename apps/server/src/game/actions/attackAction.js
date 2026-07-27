@@ -71,6 +71,7 @@ function attackUnit(state, player, action, unit, card, damage, operator) {
   const target = state.units.find(item => item.id === action.targetUnitId && (card.id === 'cannon' || item.ownerSeat !== player.seat) && item.id !== unit.id) ?? fail('Alvo inválido.');
   if (card.id === 'cannon' ? !isCannonTargetValid(unit, target) : !isAttackTargetValid(card, unit, target)) fail('Alvo fora de alcance.');
   if (unitBlocksAttackLine(state, unit, target, card)) fail('A linha de ataque está bloqueada.');
+  emitAttackEffect(state, unit, card, target);
   if (card.id === 'cannon') {
     fireCannonAt(state, target, card);
     operator.actionUsed = true;
@@ -88,6 +89,7 @@ function attackCell(state, action, unit, card, operator) {
   const targetCell = { x: integer(action.x), z: integer(action.z) };
   if (!validCell(targetCell.x, targetCell.z) || !isCannonTargetValid(unit, targetCell)) fail('Alvo fora de alcance.');
   if (unitBlocksAttackLine(state, unit, targetCell, card)) fail('A linha de ataque está bloqueada por outra unidade.');
+  emitAttackEffect(state, unit, card, targetCell, 'cell');
   fireCannonAt(state, targetCell, card);
   operator.actionUsed = true;
 }
@@ -97,6 +99,7 @@ function attackBase(state, player, opponent, unit, card, damage, operator) {
     .filter(cell => (card.id === 'cannon' ? isCannonTargetValid(unit, cell) : isAttackTargetValid(card, unit, cell)) && !unitBlocksAttackLine(state, unit, cell, card));
   const cannonBaseCell = card.id === 'cannon' ? reachableBaseCells[0] : null;
   if (!reachableBaseCells.length) fail('Base fora de alcance ou linha de ataque bloqueada.');
+  emitAttackEffect(state, unit, card, cannonBaseCell ?? reachableBaseCells[0], 'base');
   opponent.baseHp = Math.max(0, opponent.baseHp - damage);
   if (card.id === 'cannon') {
     fireCannonAt(state, cannonBaseCell, card);
@@ -107,4 +110,18 @@ function attackBase(state, player, opponent, unit, card, damage, operator) {
     state.winnerSeat = player.seat;
     state.turnEndsAt = null;
   }
+}
+
+function emitAttackEffect(state, unit, card, target, targetKind = 'unit') {
+  state.effects.push({
+    id: randomUUID(),
+    type: 'unit_attack',
+    unitId: unit.id,
+    cardId: card.id,
+    targetKind,
+    fromX: unit.x,
+    fromZ: unit.z,
+    toX: target.x,
+    toZ: target.z,
+  });
 }

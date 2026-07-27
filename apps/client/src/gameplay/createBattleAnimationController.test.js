@@ -107,3 +107,44 @@ test('Torre lança quatro flechas físicas e a Nevasca permanece pelo prazo corr
   assert.equal(scene.getObjectByName('snowstormEffect'), undefined);
   assert.match(storm.id, /^local-snowstorm-/);
 });
+
+test('ataque corpo a corpo dá impulso à unidade e desenha o corte no alvo', () => {
+  const { scene, units, controller } = setup();
+  const warrior = new THREE.Group();
+  warrior.position.set(0, 0.06, 0);
+  warrior.userData.cardId = 'warrior';
+  units.push(warrior);
+  scene.add(warrior);
+  const initialChildren = scene.children.length;
+
+  assert.equal(controller.playAttack(warrior, new THREE.Vector3(1, 0.06, 0)), true);
+  assert.equal(scene.children.length, initialChildren + 1);
+  controller.update(0.17, 0.17);
+  assert.ok(warrior.scale.x > 1);
+
+  controller.update(0.17, 0.34);
+  assert.deepEqual(warrior.scale.toArray(), [1, 1, 1]);
+  assert.equal(scene.children.length, initialChildren);
+});
+
+test('efeito online de ataque lança um projétil quando a unidade é arqueira', () => {
+  const { scene, units, controller } = setup();
+  const archer = new THREE.Group();
+  archer.userData.cardId = 'archer';
+  archer.userData.serverUnitId = 'online-archer';
+  units.push(archer);
+  scene.add(archer);
+  const initialChildren = scene.children.length;
+
+  controller.processServerEffects([{
+    id: 'archer-attack-effect',
+    type: 'unit_attack',
+    unitId: 'online-archer',
+    cardId: 'archer',
+    toX: 8,
+    toZ: 7,
+  }]);
+  assert.equal(scene.children.length, initialChildren + 1);
+  controller.update(0.3, 0.3);
+  assert.equal(scene.children.length, initialChildren);
+});
