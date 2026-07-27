@@ -83,9 +83,9 @@ export function createUnitActionController(options) {
     };
     const occupants = unitsAtCell(destination.x, destination.z, unit);
     const target = explicitTarget ?? occupants.find(item => item !== unit) ?? null;
-    const opponentBaseSeat = unit.userData.ownerSeat === 1 ? 2 : 1;
+    const opponentBaseSeat = baseSeatAtCell(destination.x, destination.z);
     const baseTarget = (state.onlineState || state.devMode)
-      && baseSeatAtCell(destination.x, destination.z) === opponentBaseSeat;
+      && opponentBaseSeat && opponentBaseSeat !== unit.userData.ownerSeat;
     const mountable = unit.userData.cardId === 'archer'
       && ['tower', 'royal_tower'].includes(target?.userData.cardId)
       && target.userData.ownerSeat === unit.userData.ownerSeat
@@ -97,9 +97,10 @@ export function createUnitActionController(options) {
       callbacks.showGameError?.('Use CONJURAR FOGO e escolha uma ou duas casas.');
       return;
     }
-    const forward = forwardDeltaForSeat(unit.userData.ownerSeat);
+    const playerCount = state.onlineState?.state.board?.playerCount ?? 2;
+    const forward = forwardDeltaForSeat(unit.userData.ownerSeat, playerCount);
     const cannonTarget = unit.userData.cardId === 'cannon'
-      && isCannonTargetValid({ ...origin, ownerSeat: unit.userData.ownerSeat }, destination);
+      && isCannonTargetValid({ ...origin, ownerSeat: unit.userData.ownerSeat }, destination, playerCount);
     const cannonMove = unit.userData.cardId === 'cannon'
       && destination.x === origin.x + forward.x && destination.z === origin.z + forward.z;
     if (isMountedArcher(unit) && !hostileTarget && !baseTarget) {

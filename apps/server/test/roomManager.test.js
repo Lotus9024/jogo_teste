@@ -24,6 +24,45 @@ test('impede um terceiro jogador na mesma sala', () => {
   );
 });
 
+test('sala experimental aguarda todos e percorre quatro turnos por rodada', () => {
+  const rooms = new RoomManager();
+  const { room } = rooms.createAuthenticated(identity('rei-1', 'Rei Um'), {}, {
+    name: 'Confronto dos quatro reinos',
+    visibility: 'public',
+    playerCount: 4,
+  });
+  rooms.joinAuthenticated(room.code, identity('rei-2', 'Rei Dois'), {});
+  rooms.joinAuthenticated(room.code, identity('rei-3', 'Rei Três'), {});
+  assert.equal(room.state.phase, 'waiting');
+  assert.equal(rooms.directory().find(entry => entry.id === room.id).capacity, 4);
+  rooms.joinAuthenticated(room.code, identity('rei-4', 'Rei Quatro'), {});
+  assert.equal(room.state.phase, 'playing');
+  assert.equal(room.state.board.playerCount, 4);
+
+  for (let seat = 1; seat <= 4; seat += 1) {
+    assert.equal(room.state.activeSeat, seat);
+    rooms.action(room.code, room.players[seat - 1].id, { type: 'end_turn' }, room.state.version);
+  }
+  assert.equal(room.state.activeSeat, 1);
+  assert.equal(room.state.round, 2);
+});
+
+test('sala experimental de tres jogadores comeca somente com o terceiro reino', () => {
+  const rooms = new RoomManager();
+  const { room } = rooms.createAuthenticated(identity('trio-1', 'Rei Norte'), {}, {
+    name: 'Confronto dos tres reinos',
+    visibility: 'private',
+    playerCount: 3,
+  });
+  rooms.joinAuthenticated(room.code, identity('trio-2', 'Rei Leste'), {});
+  assert.equal(room.state.phase, 'waiting');
+
+  rooms.joinAuthenticated(room.code, identity('trio-3', 'Rei Sul'), {});
+  assert.equal(room.state.phase, 'playing');
+  assert.equal(room.state.board.playerCount, 3);
+  assert.deepEqual(room.state.players.map(player => player.seat), [1, 2, 3]);
+});
+
 test('diretório esconde o código privado e expõe ações seguras da sala pública', () => {
   const rooms = new RoomManager();
   const privateRoom = rooms.createAuthenticated(identity('privado', 'Rei Privado'), {}, {

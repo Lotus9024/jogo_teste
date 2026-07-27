@@ -14,24 +14,27 @@ export function mageFireAction(state, player, _opponent, action) {
   if (new Set(cells.map(cell => `${cell.x}:${cell.z}`)).size !== cells.length) fail('Escolha casas diferentes para o fogo.');
   if (cells.some(cell => !validCell(cell.x, cell.z) || distance(unit, cell) < card.minAttackRange || distance(unit, cell) > card.attackRange)) fail('Casa de fogo fora do alcance.');
   state.fires ??= [];
-  const opponent = state.players.find(item => item.seat !== player.seat);
-  const enemyBase = new Set(baseCells(opponent.seat, state).map(cell => `${cell.x}:${cell.z}`));
+  const enemies = state.players.filter(item => item.seat !== player.seat);
+  const enemyBases = new Map(enemies.flatMap(enemy =>
+    baseCells(enemy.seat, state).map(cell => [`${cell.x}:${cell.z}`, enemy])));
   for (const cell of cells) {
     const fire = { id: randomUUID(), ownerSeat: player.seat, casterUnitId: unit.id, x: cell.x, z: cell.z, damagedUnitIds: [] };
     state.fires.push(fire);
     const target = unitAt(state, cell.x, cell.z);
     if (target) damageUnit(state, target, card.damage);
-    if (enemyBase.has(`${cell.x}:${cell.z}`)) opponent.baseHp = Math.max(0, opponent.baseHp - card.damage);
+    const baseOwner = enemyBases.get(`${cell.x}:${cell.z}`);
+    if (baseOwner) baseOwner.baseHp = Math.max(0, baseOwner.baseHp - card.damage);
   }
-  if (!opponent.baseHp) {
+  const survivors = state.players.filter(item => item.baseHp > 0);
+  if (survivors.length === 1) {
     state.phase = 'finished';
-    state.winnerSeat = player.seat;
+    state.winnerSeat = survivors[0].seat;
     state.turnEndsAt = null;
   }
   unit.actionUsed = true;
 }
 
-export function attackAction(state, player, opponent, action) {
+export function attackAction(state, player, _opponent, action) {
   requireTurn(state, player);
   const unit = state.units.find(item => item.id === action.unitId && item.ownerSeat === player.seat) ?? fail('Unidade inválida.');
   const card = attackCard(state, unit, CARD_BY_ID[unit.cardId]);
@@ -50,7 +53,10 @@ export function attackAction(state, player, opponent, action) {
 
   if (action.targetUnitId) attackUnit(state, player, action, unit, card, damage, operator);
   else if (card.id === 'cannon' && Number.isInteger(action.x) && Number.isInteger(action.z)) attackCell(state, action, unit, card, operator);
-  else if (action.targetBaseSeat === opponent.seat) attackBase(state, player, opponent, unit, card, damage, operator);
+  else if (Number.isInteger(action.targetBaseSeat) && action.targetBaseSeat !== player.seat) {
+    const opponent = state.players.find(item => item.seat === action.targetBaseSeat && item.baseHp > 0) ?? fail('Base inválida.');
+    attackBase(state, player, opponent, unit, card, damage, operator);
+  }
   else fail('Alvo inválido.');
 
   unit.empowered = false;
@@ -69,7 +75,7 @@ export function attackAction(state, player, opponent, action) {
 
 function attackUnit(state, player, action, unit, card, damage, operator) {
   const target = state.units.find(item => item.id === action.targetUnitId && (card.id === 'cannon' || item.ownerSeat !== player.seat) && item.id !== unit.id) ?? fail('Alvo inválido.');
-  if (card.id === 'cannon' ? !isCannonTargetValid(unit, target) : !isAttackTargetValid(card, unit, target)) fail('Alvo fora de alcance.');
+  if (card.id === 'cannon' ? !isCannonTargetValid(unit, target, state.board?.playerCount) : !isAttackTargetValid(card, unit, target)) fail('Alvo fora de alcance.');
   if (unitBlocksAttackLine(state, unit, target, card)) fail('A linha de ataque está bloqueada.');
   emitAttackEffect(state, unit, card, target);
   if (card.id === 'cannon') {
@@ -87,7 +93,7 @@ function attackUnit(state, player, action, unit, card, damage, operator) {
 
 function attackCell(state, action, unit, card, operator) {
   const targetCell = { x: integer(action.x), z: integer(action.z) };
-  if (!validCell(targetCell.x, targetCell.z) || !isCannonTargetValid(unit, targetCell)) fail('Alvo fora de alcance.');
+  if (!validCell(targetCell.x, targetCell.z) || !isCannonTargetValid(unit, targetCell, state.board?.playerCount)) fail('Alvo fora de alcance.');
   if (unitBlocksAttackLine(state, unit, targetCell, card)) fail('A linha de ataque está bloqueada por outra unidade.');
   emitAttackEffect(state, unit, card, targetCell, 'cell');
   fireCannonAt(state, targetCell, card);
@@ -96,7 +102,7 @@ function attackCell(state, action, unit, card, operator) {
 
 function attackBase(state, player, opponent, unit, card, damage, operator) {
   const reachableBaseCells = baseCells(opponent.seat, state)
-    .filter(cell => (card.id === 'cannon' ? isCannonTargetValid(unit, cell) : isAttackTargetValid(card, unit, cell)) && !unitBlocksAttackLine(state, unit, cell, card));
+    .filter(cell => (card.id === 'cannon' ? isCannonTargetValid(unit, cell, state.board?.playerCount) : isAttackTargetValid(card, unit, cell)) && !unitBlocksAttackLine(state, unit, cell, card));
   const cannonBaseCell = card.id === 'cannon' ? reachableBaseCells[0] : null;
   if (!reachableBaseCells.length) fail('Base fora de alcance ou linha de ataque bloqueada.');
   emitAttackEffect(state, unit, card, cannonBaseCell ?? reachableBaseCells[0], 'base');
@@ -105,9 +111,10 @@ function attackBase(state, player, opponent, unit, card, damage, operator) {
     fireCannonAt(state, cannonBaseCell, card);
     operator.actionUsed = true;
   }
-  if (!opponent.baseHp) {
+  const survivors = state.players.filter(item => item.baseHp > 0);
+  if (survivors.length === 1) {
     state.phase = 'finished';
-    state.winnerSeat = player.seat;
+    state.winnerSeat = survivors[0].seat;
     state.turnEndsAt = null;
   }
 }

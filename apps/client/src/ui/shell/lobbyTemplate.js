@@ -146,6 +146,12 @@ export function lobbyTemplate() {
               <label><input type="radio" name="room-visibility" value="public" checked /><span><b>Pública</b></span></label>
               <label><input type="radio" name="room-visibility" value="private" /><span><b>Privada</b></span></label>
             </fieldset>
+            <fieldset class="nexus-player-count">
+              <legend>Jogadores</legend>
+              <label><input type="radio" name="room-player-count" value="2" checked /><span><b>2</b><small>1v1 recomendado</small></span></label>
+              <label><input type="radio" name="room-player-count" value="3" /><span><b>3</b><small>Experimental</small></span></label>
+              <label><input type="radio" name="room-player-count" value="4" /><span><b>4</b><small>Experimental</small></span></label>
+            </fieldset>
             <button type="submit" class="nexus-primary">CRIAR SALA</button>
           </form>
         </section>
@@ -166,6 +172,16 @@ export function lobbyTemplate() {
         <footer class="nexus-lobby-footer">
           <output id="lobby-error" class="lobby-error" aria-live="polite"></output>
         </footer>
+      </div>
+      <div id="experimental-mode-modal" class="nexus-confirm-modal" role="dialog" aria-modal="true" aria-labelledby="experimental-mode-title" hidden>
+        <div class="nexus-confirm-card">
+          <h2 id="experimental-mode-title">Modo experimental</h2>
+          <p>Olá, esse modo é experimental e não é balanceado. Recomendamos o 1v1. Tem certeza?</p>
+          <div>
+            <button type="button" id="cancel-experimental-mode">NÃO</button>
+            <button type="button" id="confirm-experimental-mode" class="nexus-primary">SIM</button>
+          </div>
+        </div>
       </div>
     </section>`;
 }

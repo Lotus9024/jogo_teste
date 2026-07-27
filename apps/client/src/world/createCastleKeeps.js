@@ -172,23 +172,43 @@ function createKeep(tile, accent, enemy = false) {
 export function createCastleKeeps(board, { tile, half }) {
   const alliedKeep = createKeep(tile, 0x49356f);
   const enemyKeep = createKeep(tile, 0x713154, true);
-  Object.assign(alliedKeep.userData, {
-    ownerSeat: 1,
-    kingdomName: 'Reino do Corvo Negro',
+  const thirdKeep = createKeep(tile, 0x356f53);
+  const fourthKeep = createKeep(tile, 0x73582d, true);
+  const keeps = [alliedKeep, enemyKeep, thirdKeep, fourthKeep];
+  const kingdomNames = ['Reino do Corvo Negro', 'Reino da Noite Rubra', 'Reino do Bosque', 'Reino do Sol Velado'];
+  keeps.forEach((keep, index) => Object.assign(keep.userData, {
+    ownerSeat: index + 1,
+    kingdomName: kingdomNames[index],
     currentLevel: 1,
-  });
-  Object.assign(enemyKeep.userData, {
-    ownerSeat: 2,
-    kingdomName: 'Reino da Noite Rubra',
-    currentLevel: 1,
-  });
-  alliedKeep.position.set(0, 0.06, half - tile);
-  enemyKeep.position.set(0, 0.06, -half + tile);
+  }));
 
-  // Both gates are authored on local +Z. Rotate only the southern castle so
-  // the entrances face one another across the center of the board.
-  alliedKeep.rotation.y = Math.PI;
-  enemyKeep.rotation.y = 0;
-  board.add(alliedKeep, enemyKeep);
-  return { alliedKeep, enemyKeep };
+  function faceCenter(keep) {
+    keep.rotation.y = Math.atan2(-keep.position.x, -keep.position.z);
+  }
+
+  function setPlayerCount(playerCount = 2) {
+    if (playerCount <= 2) {
+      alliedKeep.position.set(0, 0.06, half - tile);
+      enemyKeep.position.set(0, 0.06, -half + tile);
+      alliedKeep.rotation.y = Math.PI;
+      enemyKeep.rotation.y = 0;
+    } else {
+      const corner = half - tile;
+      const positions = [
+        [-corner, corner],
+        [-corner, -corner],
+        [corner, -corner],
+        [corner, corner],
+      ];
+      keeps.forEach((keep, index) => {
+        keep.position.set(positions[index][0], 0.06, positions[index][1]);
+        faceCenter(keep);
+      });
+    }
+    keeps.forEach((keep, index) => { keep.visible = index < playerCount; });
+  }
+
+  board.add(...keeps);
+  setPlayerCount(2);
+  return { alliedKeep, enemyKeep, keeps, setPlayerCount };
 }

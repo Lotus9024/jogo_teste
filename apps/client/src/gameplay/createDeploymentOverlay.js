@@ -2,9 +2,9 @@ import * as THREE from 'three';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { isDeploymentCell } from '@tronos/shared/cards';
 
-const TEAM_COLORS = Object.freeze({ 1: 0x168cff, 2: 0xff352f });
+const TEAM_COLORS = Object.freeze({ 1: 0x168cff, 2: 0xff352f, 3: 0x36c76f, 4: 0xe1a633 });
 
-export function createDeploymentOverlay({ scene, tile, half, getBaseLevel = () => 1 }) {
+export function createDeploymentOverlay({ scene, tile, half, getBaseLevel = () => 1, getPlayerCount = () => 2 }) {
   const markers = [];
   const geometry = new THREE.PlaneGeometry(tile * 0.84, tile * 0.84);
 
@@ -17,7 +17,7 @@ export function createDeploymentOverlay({ scene, tile, half, getBaseLevel = () =
 
   function show(seat, emphasized = false) {
     clear();
-    for (const markerSeat of [1, 2]) {
+    for (const markerSeat of Array.from({ length: getPlayerCount() }, (_, index) => index + 1)) {
       for (let x = 0; x < GAME_CONFIG.boardSize; x += 1) {
         for (let z = 0; z < GAME_CONFIG.boardSize; z += 1) {
           if (!isDeploymentCell(
@@ -26,6 +26,7 @@ export function createDeploymentOverlay({ scene, tile, half, getBaseLevel = () =
             z,
             GAME_CONFIG.boardSize,
             getBaseLevel(markerSeat),
+            getPlayerCount(),
           )) continue;
           const material = new THREE.MeshBasicMaterial({
             color: TEAM_COLORS[markerSeat], transparent: true, opacity: emphasized && markerSeat === seat ? 0.2 : 0.1,

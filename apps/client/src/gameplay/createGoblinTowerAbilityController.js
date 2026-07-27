@@ -21,11 +21,17 @@ export function createGoblinTowerAbilityController({
   }
 
   function validTarget(x, z) {
-    const enemySeat = state.selected?.userData.ownerSeat === 1 ? 2 : 1;
-    const enemyLevel = state.onlineState?.state.players.find(player => player.seat === enemySeat)?.baseLevel ?? 1;
+    const playerCount = state.onlineState?.state.board?.playerCount ?? 2;
+    const ownerSeat = state.selected?.userData.ownerSeat ?? 1;
+    const inEnemyKingdom = Array.from({ length: playerCount }, (_, index) => index + 1)
+      .filter(seat => seat !== ownerSeat)
+      .some(seat => {
+        const level = state.onlineState?.state.players.find(player => player.seat === seat)?.baseLevel ?? 1;
+        return isDeploymentCell(seat, x, z, GAME_CONFIG.boardSize, level, playerCount);
+      });
     return x >= 0 && x < GAME_CONFIG.boardSize && z >= 0 && z < GAME_CONFIG.boardSize
       && !baseSeatAtCell(x, z) && !unitAtCell(x, z)
-      && !isDeploymentCell(enemySeat, x, z, GAME_CONFIG.boardSize, enemyLevel);
+      && !inEnemyKingdom;
   }
 
   function showTargets() {

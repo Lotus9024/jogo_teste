@@ -204,7 +204,8 @@ async function handleMessage({
     assertOutsideRoom(session);
     const { room } = rooms.createAuthenticated(session.identity, socket, {
       visibility: message.payload.visibility,
-      name: message.payload.name
+      name: message.payload.name,
+      playerCount: message.payload.playerCount,
     });
     Object.assign(session, { role: 'player', roomCode: room.code });
     broadcastRoom(room);
@@ -275,7 +276,8 @@ function publicState(room, viewer, spectator = false) {
     code: room.code,
     room: {
       name: room.name,
-      visibility: room.visibility
+      visibility: room.visibility,
+      capacity: room.capacity
     },
     self: spectator
       ? { id: viewer.id, spectator: true }

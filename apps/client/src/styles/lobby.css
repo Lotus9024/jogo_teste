@@ -432,7 +432,8 @@
   text-align: center;
 }
 
-.nexus-visibility {
+.nexus-visibility,
+.nexus-player-count {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
@@ -441,12 +442,14 @@
   border: 0;
 }
 
-.nexus-visibility legend {
+.nexus-visibility legend,
+.nexus-player-count legend {
   grid-column: 1 / -1;
   margin-bottom: 7px;
 }
 
-.nexus-visibility label {
+.nexus-visibility label,
+.nexus-player-count label {
   display: flex;
   align-items: center;
   gap: 9px;
@@ -458,26 +461,77 @@
   cursor: pointer;
 }
 
-.nexus-visibility input {
+.nexus-visibility input,
+.nexus-player-count input {
   width: 16px;
   height: 16px;
   accent-color: #bd914c;
 }
 
-.nexus-visibility span {
+.nexus-visibility span,
+.nexus-player-count span {
   display: grid;
   gap: 4px;
 }
 
-.nexus-visibility b {
+.nexus-visibility b,
+.nexus-player-count b {
   color: #c8bda7;
   font-size: 12px;
 }
 
-.nexus-visibility small {
+.nexus-visibility small,
+.nexus-player-count small {
   color: #7f8079;
   font-size: 11px;
   line-height: 1.3;
+}
+
+.nexus-player-count {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.nexus-confirm-modal {
+  position: fixed;
+  z-index: 80;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(1, 3, 2, .76);
+  backdrop-filter: blur(7px);
+}
+
+.nexus-confirm-modal[hidden] {
+  display: none;
+}
+
+.nexus-confirm-card {
+  width: min(420px, 100%);
+  padding: 28px;
+  color: #a7a49a;
+  border: 1px solid rgba(189, 145, 76, .48);
+  border-radius: 12px;
+  background: linear-gradient(180deg, #111612, #070a08);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .72);
+  text-align: center;
+}
+
+.nexus-confirm-card h2 {
+  margin: 0 0 12px;
+  color: #d2c5aa;
+  font: 600 22px Cinzel, serif;
+}
+
+.nexus-confirm-card p {
+  margin: 0 0 24px;
+  line-height: 1.6;
+}
+
+.nexus-confirm-card > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
 .nexus-waiting {
@@ -615,6 +669,10 @@
 
   .nexus-visibility {
     grid-template-columns: 1fr;
+  }
+
+  .nexus-player-count {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .match-state {

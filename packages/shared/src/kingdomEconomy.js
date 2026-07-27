@@ -9,10 +9,10 @@ export function isRoadCard(cardId) {
   return CARD_BY_ID[cardId]?.road === true;
 }
 
-export function connectedRoadKeys(seat, roads, boardSize = 15, baseLevel = 1) {
+export function connectedRoadKeys(seat, roads, boardSize = 15, baseLevel = 1, playerCount = 2) {
   const completedRoads = roads.filter(road => road.ownerSeat === seat && !road.underConstruction);
   const owned = new Set(completedRoads.map(road => cellKey(road.x, road.z)));
-  const bases = new Set(baseCellsForSeat(seat, boardSize, baseLevel).map(cell => cellKey(cell.x, cell.z)));
+  const bases = new Set(baseCellsForSeat(seat, boardSize, baseLevel, playerCount).map(cell => cellKey(cell.x, cell.z)));
   const connected = new Set();
   const queue = completedRoads.filter(road => ORTHOGONAL_DIRECTIONS.some(direction => bases.has(cellKey(road.x + direction.x, road.z + direction.z))));
   queue.forEach(road => connected.add(cellKey(road.x, road.z)));
@@ -29,19 +29,19 @@ export function connectedRoadKeys(seat, roads, boardSize = 15, baseLevel = 1) {
   return connected;
 }
 
-export function isRoadPlacementCell(seat, x, z, roads, boardSize = 15, baseLevel = 1) {
+export function isRoadPlacementCell(seat, x, z, roads, boardSize = 15, baseLevel = 1, playerCount = 2) {
   if (x < 0 || x >= boardSize || z < 0 || z >= boardSize || roads.some(road => road.x === x && road.z === z)) return false;
-  if (!isDeploymentCell(seat, x, z, boardSize, baseLevel)) return false;
-  const bases = new Set(baseCellsForSeat(seat, boardSize, baseLevel).map(cell => cellKey(cell.x, cell.z)));
-  const connected = connectedRoadKeys(seat, roads, boardSize, baseLevel);
+  if (!isDeploymentCell(seat, x, z, boardSize, baseLevel, playerCount)) return false;
+  const bases = new Set(baseCellsForSeat(seat, boardSize, baseLevel, playerCount).map(cell => cellKey(cell.x, cell.z)));
+  const connected = connectedRoadKeys(seat, roads, boardSize, baseLevel, playerCount);
   return ORTHOGONAL_DIRECTIONS.some(direction => {
     const key = cellKey(x + direction.x, z + direction.z);
     return bases.has(key) || connected.has(key);
   });
 }
 
-export function citizensForSeat(seat, units, roads, boardSize = 15, baseLevel = 1) {
-  const connected = connectedRoadKeys(seat, roads, boardSize, baseLevel);
+export function citizensForSeat(seat, units, roads, boardSize = 15, baseLevel = 1, playerCount = 2) {
+  const connected = connectedRoadKeys(seat, roads, boardSize, baseLevel, playerCount);
   const completedRoads = new Map(roads
     .filter(road => road.ownerSeat === seat && !road.underConstruction)
     .map(road => [cellKey(road.x, road.z), road]));

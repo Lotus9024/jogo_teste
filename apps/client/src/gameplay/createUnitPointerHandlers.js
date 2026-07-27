@@ -141,8 +141,7 @@ export function createUnitPointerHandlers({
     }
     const clickedBaseSeat = state.selected && actions.canCommandUnit(state.selected)
       ? interaction.baseSeatAtPointer(event) : null;
-    const enemySeat = state.selected?.userData.ownerSeat === 1 ? 2 : 1;
-    if (clickedBaseSeat === enemySeat) {
+    if (clickedBaseSeat && clickedBaseSeat !== state.selected?.userData.ownerSeat) {
       const cell = boardCoordinates.baseCellsForSeat(clickedBaseSeat)
         .find(item => movementOverlay.isInteractiveCell(item.x, item.z));
       if (cell) {

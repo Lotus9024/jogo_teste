@@ -98,8 +98,8 @@ export class GameSocketClient extends EventTarget {
     this.#send(CLIENT_EVENTS.ROOM_LIST);
   }
 
-  createRoom({ name, visibility }) {
-    this.#send(CLIENT_EVENTS.ROOM_CREATE, { name, visibility });
+  createRoom({ name, visibility, playerCount = 2 }) {
+    this.#send(CLIENT_EVENTS.ROOM_CREATE, { name, visibility, playerCount });
   }
 
   joinRoom(roomCode) {

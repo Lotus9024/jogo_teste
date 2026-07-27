@@ -8,7 +8,9 @@ export function createAbilityController(options) {
   const currentRound = () => state.onlineState?.state.round ?? state.round;
   const currentTurnIndex = () => {
     const seat = state.onlineState?.state.activeSeat ?? state.activePlayer;
-    return (currentRound() - 1) * 2 + (seat === 2 ? 1 : 0);
+    const players = state.onlineState?.state.players ?? [{ seat: 1 }, { seat: 2 }];
+    const playerIndex = Math.max(0, players.findIndex(player => player.seat === seat));
+    return (currentRound() - 1) * players.length + playerIndex;
   };
 
   function syncInstantCommand() {

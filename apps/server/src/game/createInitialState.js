@@ -82,8 +82,8 @@ export function grantRandomCard(player, predicate, random = randomInt) {
   return true;
 }
 
-export function createInitialState(players) {
-  const ready = players.length === GAME_CONFIG.maxPlayers;
+export function createInitialState(players, playerCount = GAME_CONFIG.maxPlayers) {
+  const ready = players.length === playerCount;
   const statePlayers = players.map(player => ({
     id: player.id, name: player.name, seat: player.seat, connected: true,
     baseHp: GAME_CONFIG.startingBaseHp, energy: GAME_CONFIG.startingEnergy, maxEnergy: GAME_CONFIG.maxEnergy,
@@ -100,6 +100,6 @@ export function createInitialState(players) {
     turnEndsAt: ready ? Date.now() + GAME_CONFIG.turnDurationSeconds * 1000 : null,
     winnerSeat: null, endReason: null, forfeitSeat: null,
     players: statePlayers, units: [], roads: [], fires: [], snowstorms: [], effects: [],
-    board: { size: GAME_CONFIG.boardSize }
+    board: { size: GAME_CONFIG.boardSize, playerCount }
   };
 }

@@ -21,6 +21,21 @@ export function createNexusLobbyController({
   let socketReady = false;
   let busy = false;
   let pendingRoomCancelled = false;
+  let pendingExperimentalRoom = null;
+
+  function createRoom(options) {
+    pendingRoomCancelled = false;
+    showScreen('waiting');
+    document.querySelector('#waiting-code').textContent = '------';
+    document.querySelector('#waiting-status').textContent = `Criando sala para ${options.playerCount} jogadores...`;
+    onlineSession.createRoom(options);
+  }
+
+  function closeExperimentalModal() {
+    const modal = document.querySelector('#experimental-mode-modal');
+    modal.hidden = true;
+    pendingExperimentalRoom = null;
+  }
 
   function showScreen(name) {
     lobby.querySelectorAll('[data-lobby-screen]').forEach(screen => {
@@ -231,11 +246,29 @@ export function createNexusLobbyController({
         ? 'private'
         : 'public';
       const name = formValue(event.currentTarget, '#room-display-name');
-      pendingRoomCancelled = false;
-      showScreen('waiting');
-      document.querySelector('#waiting-code').textContent = '------';
-      document.querySelector('#waiting-status').textContent = 'Criando a sala...';
-      onlineSession.createRoom({ name, visibility });
+      const playerCount = Number(new FormData(event.currentTarget).get('room-player-count') ?? 2);
+      const options = { name, visibility, playerCount };
+      if (playerCount > 2) {
+        pendingExperimentalRoom = options;
+        document.querySelector('#experimental-mode-modal').hidden = false;
+        document.querySelector('#confirm-experimental-mode')?.focus();
+        return;
+      }
+      createRoom(options);
+    });
+    document.querySelector('#cancel-experimental-mode')?.addEventListener('click', closeExperimentalModal);
+    document.querySelector('#confirm-experimental-mode')?.addEventListener('click', () => {
+      const options = pendingExperimentalRoom;
+      closeExperimentalModal();
+      if (options) createRoom(options);
+    });
+    document.querySelector('#experimental-mode-modal')?.addEventListener('click', event => {
+      if (event.target === event.currentTarget) closeExperimentalModal();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && !document.querySelector('#experimental-mode-modal')?.hidden) {
+        closeExperimentalModal();
+      }
     });
   }
 
@@ -262,7 +295,10 @@ export function createNexusLobbyController({
       }
       showScreen('waiting');
       document.querySelector('#waiting-code').textContent = event.detail.code ?? '------';
-      document.querySelector('#waiting-status').textContent = 'Aguardando o rei rival...';
+      const capacity = Number(event.detail.capacity ?? 2);
+      document.querySelector('#waiting-status').textContent = capacity > 2
+        ? `Aguardando jogadores · ${event.detail.playerCount ?? 1}/${capacity}`
+        : 'Aguardando o rei rival...';
     });
     onlineSession.addEventListener('match-started', () => {
       lobby.classList.add('closed');

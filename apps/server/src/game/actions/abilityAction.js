@@ -30,7 +30,7 @@ export function useAbilityAction(state, player, _opponent, action) {
     });
   }
   if (card.id === 'goblin_house') {
-    const forward = forwardDeltaForSeat(player.seat);
+    const forward = forwardDeltaForSeat(player.seat, state.board?.playerCount ?? 2);
     const spawn = { x: unit.x + forward.x, z: unit.z + forward.z };
     if (!validCell(spawn.x, spawn.z) || inBase(spawn.x, spawn.z, state) || unitAt(state, spawn.x, spawn.z)) fail('A Casa Goblin precisa de espaço livre à frente.');
     const hp = goblinSpawnHp(player.seat, spawn.x, spawn.z, state.units, 'goblin');
@@ -45,7 +45,7 @@ export function useAbilityAction(state, player, _opponent, action) {
     damageAlliedConstructionsBesideEnteringGoblin(state, spawnedGoblin);
   }
   if (card.id === 'goblin_bomber') {
-    const forward = forwardDeltaForSeat(player.seat);
+    const forward = forwardDeltaForSeat(player.seat, state.board?.playerCount ?? 2);
     const destination = {
       x: unit.x + forward.x * ability.chargeDistance,
       z: unit.z + forward.z * ability.chargeDistance,
@@ -121,7 +121,9 @@ export function summonGoblinAction(state, player, opponent, action) {
   const card = CARD_BY_ID[tower.cardId];
   if (card.id !== 'goblin_tower' || tower.underConstruction || tower.actionUsed) fail('Habilidade indisponível.');
   const x = integer(action.x), z = integer(action.z);
-  if (!validCell(x, z) || inBase(x, z, state) || deploymentCell(opponent.seat, x, z, state) || unitAt(state, x, z)) {
+  const inEnemyKingdom = state.players.some(candidate =>
+    candidate.seat !== player.seat && deploymentCell(candidate.seat, x, z, state));
+  if (!validCell(x, z) || inBase(x, z, state) || inEnemyKingdom || unitAt(state, x, z)) {
     fail('Escolha uma casa livre fora da área da base inimiga.');
   }
   const goblinIndex = player.hand.findIndex(instance => instance.cardId === 'goblin');

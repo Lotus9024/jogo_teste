@@ -17,6 +17,7 @@ export function createCardSummoningController({
   const deploymentSeat = () => state.onlineState ? state.selfSeat : state.activePlayer;
   const deploymentLevel = () => state.onlineState?.state.players
     ?.find(player => player.seat === deploymentSeat())?.baseLevel ?? 1;
+  const playerCount = () => state.onlineState?.state.board?.playerCount ?? 2;
 
   function cardTileAtPointer(event, cardIndex) {
     const cell = interaction.boardCellAtPointer(event);
@@ -33,8 +34,16 @@ export function createCardSummoningController({
       ? !boardCoordinates.baseSeatAtCell(cell.x, cell.z)
       : roadCard
       ? !boardCoordinates.baseSeatAtCell(cell.x, cell.z) && !roadBlocker
-        && isRoadPlacementCell(deploymentSeat(), cell.x, cell.z, roads, GAME_CONFIG.boardSize, deploymentLevel())
-      : isDeploymentCell(deploymentSeat(), cell.x, cell.z, GAME_CONFIG.boardSize, deploymentLevel())
+        && isRoadPlacementCell(
+          deploymentSeat(),
+          cell.x,
+          cell.z,
+          roads,
+          GAME_CONFIG.boardSize,
+          deploymentLevel(),
+          playerCount(),
+        )
+      : isDeploymentCell(deploymentSeat(), cell.x, cell.z, GAME_CONFIG.boardSize, deploymentLevel(), playerCount())
         && (!occupants.length || mountable)
         && !(roadOccupied && ['construction', 'machine'].includes(card.type));
     return { ...cell, valid, mountableTower: tower ?? null };
@@ -98,7 +107,7 @@ export function createCardSummoningController({
     unit.position.set(x, 0.06, z);
     unit.userData.ownerSeat = state.activePlayer;
     unit.userData.devLevel = level;
-    setUnitOwnerFacing(unit, card.id, state.activePlayer);
+    setUnitOwnerFacing(unit, card.id, state.activePlayer, playerCount());
     setUnitTeamColor(unit, state.activePlayer === 1 ? 0x168cff : 0xff352f);
     units.push(unit);
     hoverables.push(unit);
@@ -199,7 +208,14 @@ export function createCardSummoningController({
     }));
     const citizens = state.onlineState
       ? state.onlineState.state.players.find(player => player.seat === state.selfSeat)?.citizens ?? 0
-      : citizensForSeat(state.activePlayer, localUnits, roads, GAME_CONFIG.boardSize, deploymentLevel());
+      : citizensForSeat(
+        state.activePlayer,
+        localUnits,
+        roads,
+        GAME_CONFIG.boardSize,
+        deploymentLevel(),
+        playerCount(),
+      );
     const requirementError = royalRequirementError(card.id, deploymentSeat(), localUnits, citizens);
     if (requirementError) {
       callbacks.showGameError?.(requirementError);

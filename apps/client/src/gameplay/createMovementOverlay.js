@@ -64,6 +64,7 @@ export function createMovementOverlay({
   function show(unit) {
     clear();
     const { onlineState, selfSeat, devMode } = getMatchContext();
+    const playerCount = onlineState?.state.board?.playerCount ?? 2;
     const onlineAllowed = onlineState
       && !onlineState.self?.spectator
       && unit.userData.ownerSeat === selfSeat
@@ -92,7 +93,7 @@ export function createMovementOverlay({
         + roadAttackBonus(originX, originZ, getRoads(), unit.userData.cardId),
     };
     if (unit.userData.cardId === 'cannon') {
-      const forward = forwardDeltaForSeat(unit.userData.ownerSeat);
+      const forward = forwardDeltaForSeat(unit.userData.ownerSeat, playerCount);
       const operator = unitAtCell(originX - forward.x, originZ - forward.z, unit);
       const x = originX + forward.x, z = originZ + forward.z;
       if (operator?.userData.cardId === 'operator'
@@ -118,12 +119,12 @@ export function createMovementOverlay({
     const attackTargets = !attackAvailable || unit.userData.underConstruction || unit.userData.damage <= 0 || unit.userData.cardId === 'mage' ? [] : units.filter(target => {
       const targetCell = { x: Math.round((target.position.x + half) / tile), z: Math.round((target.position.z + half) / tile) };
       const distance = Math.abs(targetCell.x - originX) + Math.abs(targetCell.z - originZ);
-      const cannonCanTarget = unit.userData.cardId === 'cannon' && isCannonTargetValid({ x: originX, z: originZ, ownerSeat: unit.userData.ownerSeat }, targetCell);
+      const cannonCanTarget = unit.userData.cardId === 'cannon' && isCannonTargetValid({ x: originX, z: originZ, ownerSeat: unit.userData.ownerSeat }, targetCell, playerCount);
       return target !== unit && (cannonCanTarget || target.userData.ownerSeat !== unit.userData.ownerSeat) && (cannonCanTarget || isAttackTargetValid(attackStats, { x: originX, z: originZ }, targetCell)) && !attackLineBlocked(unit, { x: originX, z: originZ }, targetCell);
     });
     const cannonAttackCells = [];
     if (unit.userData.cardId === 'cannon' && !unit.userData.underConstruction && unit.userData.damage > 0) {
-      const forward = forwardDeltaForSeat(unit.userData.ownerSeat);
+      const forward = forwardDeltaForSeat(unit.userData.ownerSeat, playerCount);
       for (let step = unit.userData.minAttackRange; step <= unit.userData.attackRange; step += 1) {
         const cell = { x: originX + forward.x * step, z: originZ + forward.z * step };
         if (cell.x < 0 || cell.x >= 15 || cell.z < 0 || cell.z >= 15 || attackLineBlocked(unit, { x: originX, z: originZ }, cell)) continue;
@@ -138,10 +139,13 @@ export function createMovementOverlay({
 
     const canAttackOpponentBase = attackAvailable && (devMode
       || (onlineState && unit.userData.ownerSeat === selfSeat));
-    const opponentBaseSeat = unit.userData.ownerSeat === 1 ? 2 : 1;
-    const opponentBaseCells = canAttackOpponentBase ? baseCellsForSeat(opponentBaseSeat) : [];
+    const opponentBaseCells = canAttackOpponentBase
+      ? Array.from({ length: playerCount }, (_, index) => index + 1)
+        .filter(seat => seat !== unit.userData.ownerSeat)
+        .flatMap(seat => baseCellsForSeat(seat))
+      : [];
     const reachableBaseCells = opponentBaseCells.filter(cell => (unit.userData.cardId === 'cannon'
-      ? isCannonTargetValid({ x: originX, z: originZ, ownerSeat: unit.userData.ownerSeat }, cell)
+      ? isCannonTargetValid({ x: originX, z: originZ, ownerSeat: unit.userData.ownerSeat }, cell, playerCount)
       : isAttackTargetValid(attackStats, { x: originX, z: originZ }, cell))
       && !attackLineBlocked(unit, { x: originX, z: originZ }, cell));
     const baseInRange = reachableBaseCells.length > 0;

@@ -5,14 +5,19 @@ import { M, add } from '../core/scenePrimitives.js';
 const SEAT_THEMES = Object.freeze({
   1: { name: 'Baralho da Fortaleza do Corvo', accent: 0x8062cf, edge: 0xb69262 },
   2: { name: 'Baralho da Cidadela Rubra', accent: 0xb34f8d, edge: 0xa9716d },
+  3: { name: 'Baralho do Reino do Bosque', accent: 0x42b977, edge: 0x7daa82 },
+  4: { name: 'Baralho do Reino do Sol', accent: 0xd29a3d, edge: 0xb99057 },
 });
 
 function deckPosition(half, seat) {
   // Each ruler faces the center. Seat 1 faces -Z, so its left is -X;
   // seat 2 faces +Z, so its left is +X.
-  return seat === 1
-    ? [-half - 2.18, -0.34, half - 1.15]
-    : [half + 2.18, -0.34, -half + 1.15];
+  return {
+    1: [-half - 2.18, -0.34, half - 1.15],
+    2: [half + 2.18, -0.34, -half + 1.15],
+    3: [half + 2.18, -0.34, half - 1.15],
+    4: [-half - 2.18, -0.34, -half + 1.15],
+  }[seat];
 }
 
 export function createPhysicalDeck(scene, half, seat = 1) {
@@ -20,7 +25,7 @@ export function createPhysicalDeck(scene, half, seat = 1) {
   const deck3D = new THREE.Group();
   deck3D.name = theme.name;
   deck3D.position.set(...deckPosition(half, seat));
-  deck3D.rotation.y = seat === 1 ? -0.13 : Math.PI - 0.13;
+  deck3D.rotation.y = [1, 3].includes(seat) ? -0.13 : Math.PI - 0.13;
 
   const deckSideMaterial = new THREE.MeshStandardMaterial({ color: 0x6d6049, roughness: 0.82, metalness: 0.05 });
   const deckBackMaterial = new THREE.MeshStandardMaterial({
@@ -99,9 +104,13 @@ export function createPhysicalDeck(scene, half, seat = 1) {
 }
 
 export function createPhysicalDecks(scene, half) {
-  const decks = [createPhysicalDeck(scene, half, 1), createPhysicalDeck(scene, half, 2)];
+  const decks = [1, 2, 3, 4].map(seat => createPhysicalDeck(scene, half, seat));
+  decks.slice(2).forEach(deck => { deck.visible = false; });
   return {
     decks,
     bySeat: Object.fromEntries(decks.map(deck => [deck.userData.ownerSeat, deck])),
+    setPlayerCount(playerCount) {
+      decks.forEach((deck, index) => { deck.visible = index < playerCount; });
+    },
   };
 }

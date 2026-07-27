@@ -5,7 +5,10 @@ export const fail = message => { throw new Error(message); };
 
 export const distance = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.z - b.z);
 
-export const turnIndex = state => (state.round - 1) * 2 + (state.activeSeat === 2 ? 1 : 0);
+export const turnIndex = state => {
+  const seats = state.players.map(player => player.seat).sort((a, b) => a - b);
+  return (state.round - 1) * seats.length + Math.max(0, seats.indexOf(state.activeSeat));
+};
 
 export const integer = value => Number.isInteger(value) ? value : fail('Coordenada inválida.');
 
@@ -15,11 +18,12 @@ export function playerById(state, playerId) {
 
 export const baseCells = (seat, state = null) => {
   const level = state?.players?.find(player => player.seat === seat)?.baseLevel ?? 1;
-  return baseCellsForSeat(seat, GAME_CONFIG.boardSize, level);
+  return baseCellsForSeat(seat, GAME_CONFIG.boardSize, level, state?.board?.playerCount ?? 2);
 };
 
 export function inBase(x, z, state = null) {
-  return [1, 2].some(seat => baseCells(seat, state).some(cell => cell.x === x && cell.z === z));
+  const seats = state?.players?.map(player => player.seat) ?? [1, 2];
+  return seats.some(seat => baseCells(seat, state).some(cell => cell.x === x && cell.z === z));
 }
 
 export function validCell(x, z) {
@@ -28,7 +32,7 @@ export function validCell(x, z) {
 
 export function deploymentCell(seat, x, z, state = null) {
   const level = state?.players?.find(player => player.seat === seat)?.baseLevel ?? 1;
-  return isDeploymentCell(seat, x, z, GAME_CONFIG.boardSize, level);
+  return isDeploymentCell(seat, x, z, GAME_CONFIG.boardSize, level, state?.board?.playerCount ?? 2);
 }
 
 export const inBaseArea = (state, seat, x, z) => deploymentCell(seat, x, z, state);

@@ -10,11 +10,17 @@ test('cada jogador possui um baralho à esquerda do próprio lado', () => {
   const seatOne = physicalDecks.bySeat[1];
   const seatTwo = physicalDecks.bySeat[2];
 
-  assert.equal(physicalDecks.decks.length, 2);
+  assert.equal(physicalDecks.decks.length, 4);
+  assert.equal(physicalDecks.bySeat[3].visible, false);
+  assert.equal(physicalDecks.bySeat[4].visible, false);
   assert.ok(seatOne.position.x < -half && seatOne.position.z > 0);
   assert.ok(seatTwo.position.x > half && seatTwo.position.z < 0);
   assert.equal(seatOne.userData.ownerSeat, 1);
   assert.equal(seatTwo.userData.ownerSeat, 2);
+
+  physicalDecks.setPlayerCount(4);
+  assert.equal(physicalDecks.bySeat[3].visible, true);
+  assert.equal(physicalDecks.bySeat[4].visible, true);
 });
 
 test('a pilha física acompanha a quantidade de cartas restante', () => {

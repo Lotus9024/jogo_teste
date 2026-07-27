@@ -18,8 +18,11 @@ export function endTurn(state) {
   resolveEndingFires(state, state.activeSeat);
   finishSnowstormTurn(state, state.activeSeat);
   if (endingPlayer) endingPlayer.goblinSpankingTurn = null;
-  state.activeSeat = state.activeSeat === 1 ? 2 : 1;
-  if (state.activeSeat === 1) state.round += 1;
+  const seats = state.players.filter(player => player.baseHp > 0).map(player => player.seat).sort((a, b) => a - b);
+  const currentIndex = Math.max(0, seats.indexOf(state.activeSeat));
+  const nextIndex = (currentIndex + 1) % seats.length;
+  state.activeSeat = seats[nextIndex];
+  if (nextIndex === 0) state.round += 1;
   let completedMageAltars = 0;
   let completedGoblinAltars = 0;
   const completedRoyalTowers = [];
@@ -57,7 +60,7 @@ export function endTurn(state) {
     unit.shield = 0;
   });
   state.units.forEach(unit => {
-    if ((unit.attackPenaltyUntilTurn ?? 0) <= ((state.round - 1) * 2 + (state.activeSeat === 2 ? 1 : 0))) {
+    if ((unit.attackPenaltyUntilTurn ?? 0) <= ((state.round - 1) * seats.length + nextIndex)) {
       unit.attackPenalty = 0;
       unit.attackPenaltyUntilTurn = 0;
     }

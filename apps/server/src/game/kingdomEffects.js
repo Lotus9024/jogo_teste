@@ -1,6 +1,6 @@
 import { CARD_BY_ID, isGoblinCard, isGoblinTroop, isMageCard } from '@tronos/shared/cards';
 import { damageUnit } from './combat.js';
-import { inBaseArea } from './gameQueries.js';
+import { inBaseArea, turnIndex } from './gameQueries.js';
 
 export function goblinTroopsInBaseArea(state, seat) {
   return state.units.filter(unit => unit.ownerSeat === seat
@@ -46,7 +46,7 @@ export function damageAlliedConstructionsBesideEnteringGoblin(state, goblin) {
 export function damageAlliedConstructionsBesideGoblins(state, seat) {
   const disruptiveGoblins = state.units.filter(unit => unit.ownerSeat === seat
     && !unit.underConstruction
-    && (unit.disorderReadyTurn ?? 0) <= ((state.round - 1) * 2 + (state.activeSeat === 2 ? 1 : 0))
+    && (unit.disorderReadyTurn ?? 0) <= turnIndex(state)
     && (CARD_BY_ID[unit.cardId]?.adjacentConstructionDamage ?? 0) > 0);
 
   const targets = [...new Set(disruptiveGoblins.flatMap(goblin => alliedBasicConstructionsBesideGoblin(state, goblin)))];

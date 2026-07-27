@@ -226,6 +226,24 @@ test('nível dois mantém o castelo 3x3 e amplia apenas o lançamento nas latera
   assert.equal(isDeploymentCell(1, 3, 13, 15, 2), true);
 });
 
+test('modo de quatro jogadores posiciona os reinos nos quatro cantos', () => {
+  const centers = [1, 2, 3, 4].map(seat => {
+    const cells = baseCellsForSeat(seat, 15, 1, 4);
+    return {
+      x: Math.round(cells.reduce((sum, cell) => sum + cell.x, 0) / cells.length),
+      z: Math.round(cells.reduce((sum, cell) => sum + cell.z, 0) / cells.length),
+    };
+  });
+  assert.deepEqual(centers, [
+    { x: 1, z: 13 },
+    { x: 1, z: 1 },
+    { x: 13, z: 1 },
+    { x: 13, z: 13 },
+  ]);
+  assert.deepEqual(forwardDeltaForSeat(3, 4), { x: 0, z: 1 });
+  assert.equal(isDeploymentCell(4, 12, 11, 15, 1, 4), true);
+});
+
 test('Deck exige 7 comuns, 5 incomuns, 3 raras e bloqueia raridades futuras', () => {
   const validDeck = [
     'warrior', 'guard', 'wooden_barrier', 'operator', 'citizen', 'wooden_house', 'road',

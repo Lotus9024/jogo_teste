@@ -29,10 +29,16 @@ export function createDeckController({
     return { x: (deckPoint.x * 0.5 + 0.5) * innerWidth, y: (-deckPoint.y * 0.5 + 0.5) * innerHeight };
   }
 
-  function syncCounts(selfCount, enemyCount) {
+  function syncCounts(selfCount, enemyCount, countsBySeat = {}) {
     const seat = activeSeat() ?? 1;
+    const playerCount = state.onlineState?.state.board?.playerCount ?? 2;
+    physicalDecks.setPlayerCount?.(playerCount);
     physicalDecks.bySeat[seat].userData.setCount(selfCount);
-    physicalDecks.bySeat[seat === 1 ? 2 : 1].userData.setCount(enemyCount);
+    physicalDecks.decks
+      .filter(deck => deck.userData.ownerSeat !== seat && deck.userData.ownerSeat <= playerCount)
+      .forEach(deck => deck.userData.setCount(
+        countsBySeat[deck.userData.ownerSeat] ?? enemyCount,
+      ));
   }
 
   function drawCardPreview() {

@@ -2,7 +2,7 @@ import { CARD_BY_ID, forwardDeltaForSeat, gridCellsBetween, roadAttackBonus } fr
 import { unitAt, unitsAt } from './gameQueries.js';
 
 export function cannonOperator(state, cannon) {
-  const forward = forwardDeltaForSeat(cannon.ownerSeat);
+  const forward = forwardDeltaForSeat(cannon.ownerSeat, state.board?.playerCount ?? 2);
   return state.units.find(unit => unit.cardId === 'operator'
     && unit.ownerSeat === cannon.ownerSeat
     && unit.x === cannon.x - forward.x

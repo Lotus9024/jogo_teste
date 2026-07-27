@@ -4,7 +4,7 @@ import { createUnitPointerHandlers } from './createUnitPointerHandlers.js';
 
 export function createUnitInteractionController(options) {
   const {
-    state, app, scene, renderer, camera, cameraTransition, alliedKeep, enemyKeep,
+    state, app, scene, renderer, camera, cameraTransition, alliedKeep, enemyKeep, keeps = [alliedKeep, enemyKeep],
     tile, half, units, hoverables, boardCoordinates, movementOverlay, abilities,
   } = options;
   const ray = new THREE.Raycaster();
@@ -42,7 +42,7 @@ export function createUnitInteractionController(options) {
 
   function hoverableAtPointer(event) {
     updateRay(event);
-    const hit = ray.intersectObjects([alliedKeep, enemyKeep, ...hoverables], true)[0];
+    const hit = ray.intersectObjects([...keeps.filter(keep => keep.visible), ...hoverables], true)[0];
     if (!hit) return null;
     let object = hit.object;
     while (object.parent && !object.userData.hoverable) object = object.parent;
@@ -77,9 +77,7 @@ export function createUnitInteractionController(options) {
 
   function baseSeatAtPointer(event) {
     updateRay(event);
-    if (ray.intersectObject(alliedKeep, true).length) return 1;
-    if (ray.intersectObject(enemyKeep, true).length) return 2;
-    return null;
+    return keeps.find(keep => keep.visible && ray.intersectObject(keep, true).length)?.userData.ownerSeat ?? null;
   }
 
   const clearMovementGrid = () => movementOverlay.clear();

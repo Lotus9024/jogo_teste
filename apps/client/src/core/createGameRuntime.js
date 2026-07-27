@@ -61,6 +61,7 @@ export function createGameRuntime() {
     getBaseLevel: seat => state.devMode
       ? state.devBaseLevels[seat] ?? 1
       : state.onlineState?.state.players.find(player => player.seat === seat)?.baseLevel ?? 1,
+    getPlayerCount: () => state.onlineState?.state.board?.playerCount ?? 2,
     tile,
     half,
   });
@@ -89,6 +90,7 @@ export function createGameRuntime() {
     getBaseLevel: seat => state.devMode
       ? state.devBaseLevels[seat] ?? 1
       : state.onlineState?.state.players.find(player => player.seat === seat)?.baseLevel ?? 1,
+    getPlayerCount: () => state.onlineState?.state.board?.playerCount ?? 2,
   });
   let preferredGraphicsScheduled = false;
   function activatePreferredGraphics() {

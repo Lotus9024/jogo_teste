@@ -43,15 +43,17 @@ export class RoomManager {
     do code = roomCode(); while (this.rooms.has(code));
 
     const player = participant(playerIdentity, 1, socket);
+    const capacity = normalizePlayerCount(options.playerCount);
     const room = {
       id: randomUUID(),
       code,
       name: normalizeRoomName(options.name, player.name),
       visibility: normalizeVisibility(options.visibility),
       listed: options.listed !== false,
+      capacity,
       players: [player],
       spectators: [],
-      state: createInitialState([player]),
+      state: createInitialState([player], capacity),
       updatedAt: this.now(),
       botTurnReadyAt: null
     };
@@ -66,11 +68,11 @@ export class RoomManager {
 
     const room = this.rooms.get(normalizedCode);
     if (!room) throw new Error('Sala não encontrada.');
-    if (room.players.length >= GAME_CONFIG.maxPlayers) throw new Error('Sala cheia.');
+    if (room.players.length >= room.capacity) throw new Error('Sala cheia.');
 
-    const player = participant(playerIdentity, 2, socket);
+    const player = participant(playerIdentity, room.players.length + 1, socket);
     room.players.push(player);
-    room.state = createInitialState(room.players);
+    room.state = createInitialState(room.players, room.capacity);
     room.updatedAt = this.now();
     room.botTurnReadyAt = null;
     return { room, player };
@@ -83,7 +85,7 @@ export class RoomManager {
 
     const room = this.rooms.get(normalizedCode);
     if (!room) throw new Error('Sala não encontrada.');
-    if (room.players.length < GAME_CONFIG.maxPlayers || room.state.phase !== 'playing') {
+    if (room.players.length < room.capacity || room.state.phase !== 'playing') {
       throw new Error('A partida ainda não pode ser assistida.');
     }
 
@@ -110,7 +112,7 @@ export class RoomManager {
     }, 2, null, true);
 
     created.room.players.push(bot);
-    created.room.state = createInitialState(created.room.players);
+    created.room.state = createInitialState(created.room.players, created.room.capacity);
     created.room.updatedAt = this.now();
     created.room.botTurnReadyAt = null;
     return { room: created.room, player: created.player, bot };
@@ -145,7 +147,7 @@ export class RoomManager {
       .filter(room => room.listed && room.state.phase !== 'finished')
       .sort((left, right) => right.updatedAt - left.updatedAt)
       .map(room => {
-        const full = room.players.length >= GAME_CONFIG.maxPlayers;
+        const full = room.players.length >= room.capacity;
         const isPrivate = room.visibility === 'private';
         return {
           id: room.id,
@@ -154,9 +156,9 @@ export class RoomManager {
           locked: isPrivate,
           code: isPrivate ? null : room.code,
           playerCount: room.players.length,
-          capacity: GAME_CONFIG.maxPlayers,
+          capacity: room.capacity,
           players: room.players.length,
-          maxPlayers: GAME_CONFIG.maxPlayers,
+          maxPlayers: room.capacity,
           spectators: room.spectators.length,
           status: full ? 'playing' : 'waiting',
           canJoin: !isPrivate && !full,
@@ -205,7 +207,7 @@ export class RoomManager {
           this.rooms.delete(code);
           return null;
         }
-        room.state = createInitialState(room.players);
+        room.state = createInitialState(room.players, room.capacity);
       }
       room.updatedAt = this.now();
       return room;
@@ -353,6 +355,13 @@ function normalizeVisibility(value) {
   if (value === undefined) return 'private';
   if (value !== 'public' && value !== 'private') throw new Error('Privacidade de sala inválida.');
   return value;
+}
+
+function normalizePlayerCount(value) {
+  if (value === undefined) return GAME_CONFIG.maxPlayers;
+  const playerCount = Number(value);
+  if (![2, 3, 4].includes(playerCount)) throw new Error('Quantidade de jogadores inválida.');
+  return playerCount;
 }
 
 function normalizeCode(value) {

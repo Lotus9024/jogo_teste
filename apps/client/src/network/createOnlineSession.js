@@ -17,6 +17,8 @@ export function createOnlineSession({
   cameraTransition,
   alliedKeep,
   enemyKeep,
+  keeps = [alliedKeep, enemyKeep],
+  setPlayerCount = () => {},
   tile,
   half,
   units,
@@ -107,9 +109,10 @@ export function createOnlineSession({
     };
     ensureAbilityBadge(unit);
     updateHealthBadge(unit);
-    setUnitTeamColor(unit, data.ownerSeat === 1 ? 0x168cff : 0xff352f);
+    const teamColors = [0x168cff, 0xff352f, 0x36c76f, 0xe1a633];
+    setUnitTeamColor(unit, teamColors[data.ownerSeat - 1] ?? 0xffffff);
     handController.applyConstructionState(unit, Boolean(data.underConstruction));
-    setUnitOwnerFacing(unit, data.cardId, data.ownerSeat);
+    setUnitOwnerFacing(unit, data.cardId, data.ownerSeat, state.onlineState?.state.board?.playerCount ?? 2);
     return unit;
   }
 
@@ -180,7 +183,16 @@ export function createOnlineSession({
 
   function setPerspective() {
     cameraTransition.cancel();
-    camera.position.set(0, 16, state.selfSeat === 1 ? 5.2 : -5.2);
+    const playerCount = state.onlineState?.state.board?.playerCount ?? 2;
+    const cameraPositions = playerCount > 2
+      ? {
+          1: [-5.2, 16, 5.2],
+          2: [-5.2, 16, -5.2],
+          3: [5.2, 16, -5.2],
+          4: [5.2, 16, 5.2],
+        }
+      : { 1: [0, 16, 5.2], 2: [0, 16, -5.2] };
+    camera.position.set(...(cameraPositions[state.selfSeat] ?? cameraPositions[1]));
     camera.lookAt(0, 0, 0);
     controls.target.set(0, 0.2, 0);
     controls.update();
@@ -197,6 +209,16 @@ export function createOnlineSession({
       || previous.state.phase === 'waiting';
     state.onlineState = payload;
     state.selfSeat = selfSeat;
+    const playerCount = Number(payload.state.board?.playerCount ?? payload.room?.capacity ?? 2);
+    setPlayerCount(playerCount);
+    keeps.forEach(keep => {
+      const player = payload.state.players.find(item => item.seat === keep.userData.ownerSeat);
+      if (!player) return;
+      keep.userData.kingdomName = player.name;
+      keep.userData.baseHp = player.baseHp;
+      keep.userData.currentLevel = player.baseLevel ?? 1;
+      keep.getObjectByName('castleLevelTwoDetails').visible = (player.baseLevel ?? 1) >= 2;
+    });
     handController.showDeploymentArea(false);
     document.querySelector('#waiting-code').textContent = payload.code;
     document.querySelector('#match-state').hidden = false;
@@ -204,8 +226,11 @@ export function createOnlineSession({
     if (payload.state.phase === 'waiting') {
       callbacks.hideMatchResult?.();
       leaveMatchButton.hidden = true;
-      document.querySelector('#waiting-status').textContent = 'Aguardando o rei rival...';
-      emit('waiting', { code: payload.code });
+      const capacity = Number(payload.room?.capacity ?? payload.state.board?.playerCount ?? 2);
+      document.querySelector('#waiting-status').textContent = capacity > 2
+        ? `Aguardando jogadores · ${payload.state.players.length}/${capacity}`
+        : 'Aguardando o rei rival...';
+      emit('waiting', { code: payload.code, capacity, playerCount: payload.state.players.length });
       return;
     }
     callbacks.activatePreferredGraphics?.();
@@ -241,7 +266,11 @@ export function createOnlineSession({
     devController.setKingdomProgressHud(me.citizens ?? 0, me.baseLevel ?? 1, enemy.baseLevel ?? 1);
     state.deckRemaining = me.deckCount;
     document.querySelector('#deck-count').textContent = String(state.deckRemaining);
-    handController.syncPhysicalDecks(me.deckCount, enemy.deckCount);
+    handController.syncPhysicalDecks(
+      me.deckCount,
+      enemy.deckCount,
+      Object.fromEntries(payload.state.players.map(player => [player.seat, player.deckCount])),
+    );
     document.querySelector('.enemy-base-tag i').style.width = `${Math.max(0, enemy.baseHp / GAME_CONFIG.startingBaseHp * 100)}%`;
     document.querySelector('.enemy-base-tag').setAttribute(
       'aria-label',
@@ -254,7 +283,7 @@ export function createOnlineSession({
     leaveMatchButton.hidden = spectator || finished;
     if (leaveMatchButton.hidden) resetLeaveConfirmation();
     document.querySelector('#turn-label').textContent = spectator
-      ? (finished ? `VITÓRIA ${payload.state.winnerSeat === 1 ? 'AZUL' : 'VERMELHA'}${wonByForfeit ? ' · W.O.' : ''}` : 'ESPECTANDO')
+      ? (finished ? `VITÓRIA DO REINO ${payload.state.winnerSeat}${wonByForfeit ? ' · W.O.' : ''}` : 'ESPECTANDO')
       : finished
         ? `${payload.state.winnerSeat === state.selfSeat ? 'VITÓRIA' : 'DERROTA'}${wonByForfeit ? ' · W.O.' : ''}`
         : enemyDisconnected

@@ -16,7 +16,22 @@ const CHARACTER_CARDS = new Set([
   'goblin_clone',
 ]);
 
-export function setUnitOwnerFacing(unit, cardId, ownerSeat) {
+export function setUnitOwnerFacing(unit, cardId, ownerSeat, playerCount = 2) {
+  if (playerCount > 2) {
+    const directionBySeat = {
+      1: { x: 1, z: -1 },
+      2: { x: 1, z: 1 },
+      3: { x: -1, z: 1 },
+      4: { x: -1, z: -1 },
+    };
+    const direction = directionBySeat[ownerSeat] ?? directionBySeat[1];
+    const modelFrontZ = Math.sign(
+      unit.userData.modelFrontZ
+        ?? (['cannon', 'goblin_house'].includes(cardId) ? -1 : 1),
+    );
+    unit.rotation.y = Math.atan2(direction.x * modelFrontZ, direction.z * modelFrontZ);
+    return;
+  }
   if (CHARACTER_CARDS.has(cardId)) {
     const modelFrontZ = Math.sign(unit.userData.modelFrontZ ?? 1);
     const enemyDirectionZ = ownerSeat === 1 ? -1 : 1;

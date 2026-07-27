@@ -23,7 +23,15 @@ export function summonAction(state, player, _opponent, action) {
     if (!validCell(x, z) || inBase(x, z, state)) fail('Escolha uma casa da arena para lançar o feitiço.');
   } else if (roadCard) {
     if (!validCell(x, z) || !deploymentCell(player.seat, x, z, state) || inBase(x, z, state) || roadBlocker
-      || !isRoadPlacementCell(player.seat, x, z, state.roads, GAME_CONFIG.boardSize, player.baseLevel)) {
+      || !isRoadPlacementCell(
+        player.seat,
+        x,
+        z,
+        state.roads,
+        GAME_CONFIG.boardSize,
+        player.baseLevel,
+        state.board?.playerCount ?? 2,
+      )) {
       fail('A estrada precisa estar na área do reino e conectada ao castelo ou a outra Rua sua.');
     }
   } else if (!validCell(x, z) || !deploymentCell(player.seat, x, z, state) || inBase(x, z, state) || (unitAt(state, x, z) && !tower) || (roadOccupied && ['construction', 'machine'].includes(card.type))) fail('Escolha uma casa livre a até 2 casas do seu reino.');

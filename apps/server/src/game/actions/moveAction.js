@@ -41,7 +41,7 @@ export function moveAction(state, player, _opponent, action) {
 }
 
 function moveCannon(state, player, unit, x, z) {
-  const forward = forwardDeltaForSeat(player.seat);
+  const forward = forwardDeltaForSeat(player.seat, state.board?.playerCount ?? 2);
   const operator = cannonOperator(state, unit);
   const destination = { x: unit.x + forward.x, z: unit.z + forward.z };
   if (!operator || operator.actionUsed) fail('O Canhão precisa de um Operador disponível exatamente atrás.');
