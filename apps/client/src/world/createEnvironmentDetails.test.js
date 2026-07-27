@@ -2,6 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDistantIslands } from './createDistantIslands.js';
 import { createMagicDust } from './terrain/createArcaneDetails.js';
+import { SPACE_STAR_COUNTS } from '../core/createMagicSky.js';
+
+test('céu distribui milhares de estrelas em 360 graus', () => {
+  assert.deepEqual(SPACE_STAR_COUNTS, {
+    distant: 2800,
+    fine: 1300,
+    bright: 160,
+    band: 1700,
+    total: 5960,
+  });
+});
 
 test('ilha principal mantém uma órbita estelar densa e permanente', () => {
   const magicDust = createMagicDust();

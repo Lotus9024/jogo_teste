@@ -1,6 +1,13 @@
 import * as THREE from 'three';
 
 const SKY_ROTATION = -Math.PI * 0.38;
+export const SPACE_STAR_COUNTS = Object.freeze({
+  distant: 2800,
+  fine: 1300,
+  bright: 160,
+  band: 1700,
+  total: 5960,
+});
 
 function seededRandom(seed) {
   let state = seed >>> 0;
@@ -404,37 +411,37 @@ export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) 
   scene.add(sky);
   const starPoint = createStarPointTexture();
   const distantStars = createStarLayer({
-    count: 1550,
+    count: SPACE_STAR_COUNTS.distant,
     radius: 63,
     seed: 5021,
     size: 0.52,
-    opacity: 0.52,
+    opacity: 0.46,
     map: starPoint,
     colorA: 0x5a247f,
     colorB: 0xaf82d1,
   });
   const fineStars = createStarLayer({
-    count: 620,
+    count: SPACE_STAR_COUNTS.fine,
     radius: 61,
     seed: 7137,
     size: 0.78,
-    opacity: 0.7,
+    opacity: 0.66,
     map: starPoint,
     colorA: 0x7e3db8,
     colorB: 0xd7bced,
   });
   const brightStars = createStarLayer({
-    count: 96,
+    count: SPACE_STAR_COUNTS.bright,
     radius: 59,
     seed: 12821,
     size: 3.2,
-    opacity: 0.88,
+    opacity: 0.84,
     map: starPoint,
     colorA: 0xa156dc,
     colorB: 0xf0e6f8,
   });
   const stellarBand = createStellarBandLayer({
-    count: 940,
+    count: SPACE_STAR_COUNTS.band,
     radius: 60,
     seed: 77421,
     size: 0.56,
@@ -472,10 +479,10 @@ export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) 
     spaceLightFoci.children.forEach((focus, index) => {
       focus.visible = high || index % 3 === 0;
     });
-    distantStars.geometry.setDrawRange(0, high ? 1550 : 420);
-    fineStars.geometry.setDrawRange(0, high ? 620 : 210);
-    brightStars.geometry.setDrawRange(0, high ? 96 : 32);
-    stellarBand.geometry.setDrawRange(0, high ? 940 : 300);
+    distantStars.geometry.setDrawRange(0, high ? SPACE_STAR_COUNTS.distant : 720);
+    fineStars.geometry.setDrawRange(0, high ? SPACE_STAR_COUNTS.fine : 360);
+    brightStars.geometry.setDrawRange(0, high ? SPACE_STAR_COUNTS.bright : 48);
+    stellarBand.geometry.setDrawRange(0, high ? SPACE_STAR_COUNTS.band : 480);
     distantStars.material.size = high ? 0.52 : 0.42;
     fineStars.material.size = high ? 0.78 : 0.64;
     brightStars.material.size = high ? 3.2 : 2.35;
@@ -486,10 +493,10 @@ export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) 
   setQuality(quality);
 
   function update(elapsed = 0) {
-    distantStars.material.opacity = 0.54;
-    fineStars.material.opacity = 0.74;
-    brightStars.material.opacity = 0.89 + Math.sin(elapsed * 0.28 + 0.6) * 0.045;
-    stellarBand.material.opacity = 0.37;
+    distantStars.material.opacity = 0.48;
+    fineStars.material.opacity = 0.68;
+    brightStars.material.opacity = 0.85 + Math.sin(elapsed * 0.28 + 0.6) * 0.04;
+    stellarBand.material.opacity = 0.32;
     spaceLightFoci.children.forEach(focus => {
       focus.material.opacity = focus.userData.baseOpacity
         + (focus.userData.twinkle

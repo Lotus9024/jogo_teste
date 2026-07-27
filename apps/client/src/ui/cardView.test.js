@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { cardCostText, cardMarkup, cards } from './cardView.js';
-import { CARD_ICON_IDS, cardIconMarkup } from './cardIcon.js';
+import { CARD_ICON_IDS, cardIconMarkup, cardSymbolMarkup } from './cardIcon.js';
 import { canUsePhysicalDeck } from './createDeckController.js';
 import { createDevCardInstanceId } from './createDevCardGallery.js';
 import { deckBuilderTemplate } from './shell/deckBuilderTemplate.js';
@@ -20,6 +20,15 @@ test('todas as cartas exibem um símbolo junto à categoria', () => {
       /class="card-category-symbol"[^>]*>[^<]+<\/i>/,
       `${card.id} ficou sem símbolo`,
     );
+  }
+});
+
+test('todas as cartas possuem um selo de símbolo visível na arte', () => {
+  for (const card of cards) {
+    const symbol = cardSymbolMarkup(card);
+    assert.match(symbol, new RegExp(`data-card-symbol="${card.id}"`));
+    assert.doesNotMatch(symbol, />\\?</);
+    assert.match(cardMarkup(card, 0), new RegExp(`data-card-symbol="${card.id}"`));
   }
 });
 

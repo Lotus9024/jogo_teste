@@ -51,6 +51,47 @@
   vertical-align: -2px;
 }
 
+.card-art,
+.preview-art,
+.deck-slot,
+.deck-library-card {
+  position: relative;
+}
+
+.card-symbol-badge {
+  position: absolute;
+  z-index: 2;
+  right: 8px;
+  bottom: 7px;
+  display: grid;
+  width: 23px;
+  height: 23px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--rarity) 66%, rgba(244, 231, 255, .28));
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 28%, rgba(85, 48, 108, .96), rgba(8, 5, 13, .94) 72%);
+  color: color-mix(in srgb, var(--rarity) 72%, #f5eaff);
+  font: normal 12px/1 Cinzel, serif;
+  box-shadow:
+    0 0 10px color-mix(in srgb, var(--rarity) 35%, transparent),
+    inset 0 0 7px rgba(213, 154, 255, .15);
+  pointer-events: none;
+}
+
+.deck-slot .card-symbol-badge,
+.deck-library-card .card-symbol-badge {
+  right: 5px;
+  bottom: 5px;
+  width: 18px;
+  height: 18px;
+  font-size: 9px;
+}
+
+.preview-art .card-symbol-badge {
+  right: 10px;
+  bottom: 9px;
+}
+
 .deck-slot .card-illustration,
 .deck-library-card .card-illustration,
 #mage-altar-choice-cards .card-illustration {

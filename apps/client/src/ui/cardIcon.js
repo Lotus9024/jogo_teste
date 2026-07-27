@@ -125,4 +125,9 @@ export function cardIconMarkup(cardOrId, { className = 'card-illustration' } = {
   return `<span class="card-icon-fallback" aria-hidden="true">${glyph ?? '?'}</span>`;
 }
 
+export function cardSymbolMarkup(card, { className = 'card-symbol-badge' } = {}) {
+  const symbol = card?.glyph ?? (card?.type === 'spell' ? '✦' : card?.type === 'construction' ? '♜' : '♟');
+  return `<i class="${className}" data-card-symbol="${card?.id ?? 'unknown'}" aria-hidden="true">${symbol}</i>`;
+}
+
 preloadCardIcons();
