@@ -3,6 +3,17 @@ import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { setResource } from '../ui/resourceView.js';
 import { createDevToolsController } from './createDevToolsController.js';
 
+export function devBaseLevelForProgress({
+  currentLevel = 1,
+  citizens = 0,
+  completedRoads = 0,
+  manual = false,
+} = {}) {
+  if (manual) return currentLevel;
+  return citizens >= GAME_CONFIG.level2CitizenRequirement
+    && completedRoads >= GAME_CONFIG.level2RoadRequirement ? 2 : 1;
+}
+
 export function createDevModeController(options) {
   const {
     state, app, scene, tile, half, units, hoverables, roads, boardPresentation,
@@ -47,11 +58,50 @@ export function createDevModeController(options) {
   }
 
   function syncDevKingdomHud() {
-    const citizens = citizensForSeat(state.activePlayer, localUnitData(), roads, GAME_CONFIG.boardSize);
     const enemySeat = state.activePlayer === 1 ? 2 : 1;
-    setKingdomProgressHud(citizens, tools.kingdoms[state.activePlayer].baseLevel,
-      tools.kingdoms[enemySeat].baseLevel);
-    document.querySelector('#level-requirement').textContent = `Nível selecionado manualmente para o Reino ${state.activePlayer}.`;
+    const progress = {};
+    let baseLevelChanged = false;
+    for (const seat of [state.activePlayer, enemySeat]) {
+      const kingdom = tools.kingdoms[seat];
+      let citizens = citizensForSeat(
+        seat,
+        localUnitData(),
+        roads,
+        GAME_CONFIG.boardSize,
+        kingdom.baseLevel,
+      );
+      const nextLevel = devBaseLevelForProgress({
+        currentLevel: kingdom.baseLevel,
+        citizens,
+        completedRoads: completedRoadCount(seat, roads),
+        manual: kingdom.manualBaseLevel,
+      });
+      if (nextLevel !== kingdom.baseLevel) {
+        const upgraded = nextLevel > kingdom.baseLevel;
+        tools.setBaseLevel(seat, nextLevel, { notify: false });
+        baseLevelChanged = true;
+        if (upgraded) callbacks.showGameError?.(`Reino ${seat} evoluiu para o nível 2.`);
+        citizens = citizensForSeat(
+          seat,
+          localUnitData(),
+          roads,
+          GAME_CONFIG.boardSize,
+          nextLevel,
+        );
+      }
+      progress[seat] = { citizens, level: tools.kingdoms[seat].baseLevel };
+    }
+    if (baseLevelChanged) {
+      handController.showDeploymentArea(Boolean(handController.selectedCardElement()));
+    }
+    setKingdomProgressHud(
+      progress[state.activePlayer].citizens,
+      progress[state.activePlayer].level,
+      progress[enemySeat].level,
+    );
+    if (tools.kingdoms[state.activePlayer].manualBaseLevel) {
+      document.querySelector('#level-requirement').textContent = `Nível selecionado manualmente para o Reino ${state.activePlayer}.`;
+    }
     setResource('#self-health', tools.kingdoms[state.activePlayer].hp, GAME_CONFIG.startingBaseHp);
     document.querySelector('.enemy-base-tag i').style.width = `${tools.kingdoms[enemySeat].hp / GAME_CONFIG.startingBaseHp * 100}%`;
     document.querySelector('#turn-label').textContent = `REINO ${state.activePlayer} · TURNO ${state.round}`;

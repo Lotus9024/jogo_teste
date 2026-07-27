@@ -8,8 +8,18 @@ import { createDevCardInstanceId } from './createDevCardGallery.js';
 test('a carta exibe sua categoria logo abaixo do nome', () => {
   const markup = cardMarkup(cards.find(card => card.id === 'goblin_tower'), 0);
   assert.match(markup, /class="game-card[^"].*category-goblin/);
-  assert.match(markup, /class="card-category">GOBLIN<\/small>/);
+  assert.match(markup, /class="card-category"><i class="card-category-symbol"[^>]*>[^<]+<\/i>GOBLIN<\/small>/);
   assert.match(markup, /Goblins que nascem ao lado[^]*\nNecessita de 2 Goblins/);
+});
+
+test('todas as cartas exibem um símbolo junto à categoria', () => {
+  for (const [index, card] of cards.entries()) {
+    assert.match(
+      cardMarkup(card, index),
+      /class="card-category-symbol"[^>]*>[^<]+<\/i>/,
+      `${card.id} ficou sem símbolo`,
+    );
+  }
 });
 
 test('cada carta possui uma ilustração vetorial própria', () => {

@@ -133,6 +133,16 @@ function createKeep(tile, accent, enemy = false) {
   addGatehouse(keep, materials);
   addCentralKeep(keep, materials, enemy);
 
+  const levelDetails = new THREE.Group();
+  levelDetails.name = 'castleLevelTwoDetails';
+  levelDetails.visible = false;
+  for (const x of [-0.52, 0.52]) {
+    add(new THREE.CylinderGeometry(0.025, 0.025, 0.74, 7), materials.gate, levelDetails, [x, 1.45, 1.5]);
+    add(new THREE.OctahedronGeometry(0.11, 0), materials.glow, levelDetails, [x, 1.88, 1.5]);
+    add(new THREE.TorusGeometry(0.13, 0.018, 6, 16), materials.accent, levelDetails, [x, 1.88, 1.5], [Math.PI / 2, 0, 0]);
+  }
+  keep.add(levelDetails);
+
   const gateLight = new THREE.PointLight(enemy ? 0xb83f86 : 0x8d63e6, 5.2, 3.6, 2);
   gateLight.name = 'Luz violeta do portão';
   gateLight.position.set(0, 1.1, 1.72);

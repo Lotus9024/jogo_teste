@@ -23,17 +23,17 @@ test('Rua começa como pequenos galhos e conclui após uma rodada', () => {
   assert.equal(room.state.units.length, 0);
 });
 
-test('Rua não pode sair da área do reino e usa a expansão lateral do nível dois', () => {
+test('nível dois mantém a Rua conectada e expande o lançamento de tropas nas laterais', () => {
   const { rooms, room, first } = match();
   const player = room.state.players[0];
-  const [outside, expanded] = give(player, 'road', 'road');
+  const [outside, expanded] = give(player, 'road', 'guard');
   assert.throws(
     () => rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: outside.instanceId, x: 7, z: 9 }, room.state.version),
     /área do reino/i,
   );
   player.baseLevel = 2;
-  rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: expanded.instanceId, x: 5, z: 11 }, room.state.version);
-  assert.equal(room.state.roads.some(road => road.x === 5 && road.z === 11), true);
+  rooms.action(room.code, first.id, { type: 'summon', cardInstanceId: expanded.instanceId, x: 3, z: 13 }, room.state.version);
+  assert.equal(room.state.units.some(unit => unit.cardId === 'guard' && unit.x === 3 && unit.z === 13), true);
 });
 
 test('Rua aumenta o movimento somente depois de concluída', () => {

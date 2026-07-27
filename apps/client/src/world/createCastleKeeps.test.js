@@ -17,4 +17,5 @@ test('os dois portões dos castelos ficam virados para o centro do tabuleiro', (
   assert.ok(enemyEntrancePosition.z > enemyKeep.position.z, 'o portão inimigo aponta para o centro');
   assert.ok(alliedKeep.getObjectByName('Torre central sombria'));
   assert.ok(enemyKeep.getObjectByName('Grade do portão'));
+  assert.equal(alliedKeep.getObjectByName('castleLevelTwoDetails').visible, false);
 });

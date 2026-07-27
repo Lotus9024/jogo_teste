@@ -66,6 +66,11 @@ function cardCostMarkup(card) {
     : `<b>${effectiveCost}</b>`;
 }
 
+function cardCategoryMarkup(card, categoryLabel) {
+  const symbol = card.glyph ?? (card.type === 'spell' ? '✦' : card.type === 'construction' ? '♜' : '♟');
+  return `<small class="card-category"><i class="card-category-symbol" aria-hidden="true">${symbol}</i>${categoryLabel}</small>`;
+}
+
 export function cardMarkup(card, index, { level = null } = {}) {
   const levelAttribute = Number.isInteger(level) ? ` data-card-level="${level}"` : '';
   const copyClass = card.description.length > 180 || card.abilityText.length > 220 ? ' copy-very-long' : card.description.length > 115 || card.abilityText.length > 150 ? ' copy-long' : '';
@@ -75,7 +80,7 @@ export function cardMarkup(card, index, { level = null } = {}) {
   const abilitySize = Math.max(7.5, Math.min(8, 1050 / card.abilityText.length));
   const categoryLabel = card.categoryLabel ?? CARD_CATEGORY_LABELS[card.category];
   return `<button class="game-card rarity-${card.rarityClass} category-${card.category}${copyClass}${readableClass}" style="--desc-size:${descSize}px;--ability-size:${abilitySize}px" data-card="${index}"${levelAttribute} aria-label="Carta ${card.name}, categoria ${categoryLabel}, ${card.rarity}${level ? `, nível ${level}` : ''}">
-    <span class="card-top"><span class="card-heading"><strong class="card-name">${card.name}</strong><small class="card-category">${categoryLabel}</small></span><span class="card-top-cost">${cardCostMarkup(card)}</span></span>
+    <span class="card-top"><span class="card-heading"><strong class="card-name">${card.name}</strong>${cardCategoryMarkup(card, categoryLabel)}</span><span class="card-top-cost">${cardCostMarkup(card)}</span></span>
     <span class="card-art">${cardIconMarkup(card)}</span>
     <span class="card-description">${card.description}</span>
     <span class="card-main-row"><span class="card-combat-stats">${combatStats(card)}</span></span>
@@ -86,7 +91,7 @@ export function cardMarkup(card, index, { level = null } = {}) {
 export function showDeckPreview(element, card) {
   element.className = `deck-preview rarity-${card.rarityClass}`;
   element.innerHTML = `
-    <div class="preview-top"><b class="preview-cost">${card.dynamicCost ? '—' : card.cost}</b><span class="preview-heading"><strong>${card.name}</strong><small>${card.categoryLabel ?? CARD_CATEGORY_LABELS[card.category]}</small></span><i class="preview-gem"></i></div>
+    <div class="preview-top"><b class="preview-cost">${card.dynamicCost ? '—' : card.cost}</b><span class="preview-heading"><strong>${card.name}</strong>${cardCategoryMarkup(card, card.categoryLabel ?? CARD_CATEGORY_LABELS[card.category])}</span><i class="preview-gem"></i></div>
     <div class="preview-art">${cardIconMarkup(card)}</div><p class="preview-description">${card.description}</p>
     <div class="preview-stats">${combatStats(card)}</div>
     ${abilityMarkup(card, true)}`;

@@ -10,7 +10,7 @@ test('castelo nível um informa requisitos e vantagens reais do nível dois', ()
     [1, 1, true],
   ]);
   assert.match(progress.advantages.join(' '), /Energia máxima aumenta para 12/);
-  assert.match(progress.advantages.join(' '), /15 casas/);
+  assert.match(progress.advantages.join(' '), /lançamento expande 1 casa para cada lateral/);
 });
 
 test('castelo evoluído não inventa uma progressão ainda não implementada', () => {

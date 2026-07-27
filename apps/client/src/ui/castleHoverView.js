@@ -41,7 +41,7 @@ export function castleProgressView({ level = 1, citizens = 0, completedRoads = 0
     advantages: [
       `Energia máxima aumenta para ${GAME_CONFIG.level2MaxEnergy}`,
       `Receba ${GAME_CONFIG.level2EnergyBonus} de energia imediatamente`,
-      'Área da base aumenta de 9 para 15 casas',
+      'Área de lançamento expande 1 casa para cada lateral',
       'Construções recuperam 1 de vida a cada 2 rodadas',
     ],
     message: '',
