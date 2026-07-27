@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CARD_BY_ID, CARD_CATEGORY_LABELS, CARD_DEFINITIONS, baseCellsForSeat, citizensForSeat, completedRoadCount, connectedRoadKeys, deploymentDistance, effectiveCardCost, forwardDeltaForSeat, goblinSpawnHp, goblinTowerRequirementError, gridCellsBetween, isBasicCard, isCannonTargetValid, isDeploymentCell, isGoblinCard, isMageCard, isRoadCard, isRoadPlacementCell, roadAttackBonus, roadMovementBonus, royalRequirementError, validateDeckCardIds } from '../src/cards.js';
+import { CARD_BY_ID, CARD_CATEGORY_LABELS, CARD_DEFINITIONS, DECK_FUTURE_LIMITS, DECK_LIMITS, baseCellsForSeat, citizensForSeat, completedRoadCount, connectedRoadKeys, deckCounts, deploymentDistance, effectiveCardCost, forwardDeltaForSeat, goblinSpawnHp, goblinTowerRequirementError, gridCellsBetween, isBasicCard, isCannonTargetValid, isDeploymentCell, isGoblinCard, isMageCard, isRoadCard, isRoadPlacementCell, roadAttackBonus, roadMovementBonus, royalRequirementError, validateDeckCardIds } from '../src/cards.js';
 
 test('calcula as casas intermediarias de uma linha no tabuleiro', () => {
   assert.deepEqual(gridCellsBetween({ x: 2, z: 2 }, { x: 5, z: 2 }), [{ x: 3, z: 2 }, { x: 4, z: 2 }]);
@@ -222,15 +222,18 @@ test('castelo nível dois acrescenta três quadrados em cada lateral', () => {
   assert.equal(baseCellsForSeat(1, 15, 2).some(cell => cell.x === 5 && cell.z === 13), true);
 });
 
-test('Deck exige exatamente sete comuns, cinco incomuns e três raras', () => {
+test('Deck exige 7 comuns, 5 incomuns, 3 raras e bloqueia raridades futuras', () => {
   const validDeck = [
     'warrior', 'guard', 'wooden_barrier', 'operator', 'citizen', 'wooden_house', 'road',
     'henry', 'archer', 'tower', 'cannon', 'goblin_house',
     'goblin_tower', 'mage', 'goblin_altar',
   ];
+  assert.deepEqual(DECK_LIMITS, { common: 7, uncommon: 5, rare: 3, legendary: 0, mystic: 0 });
+  assert.deepEqual(DECK_FUTURE_LIMITS, { legendary: 2, mystic: 1 });
+  assert.deepEqual(deckCounts(validDeck), { common: 7, uncommon: 5, rare: 3, legendary: 0, mystic: 0 });
   assert.deepEqual(validateDeckCardIds(validDeck), validDeck);
-  assert.throws(() => validateDeckCardIds(validDeck.slice(0, -1)), /exatamente 7 cartas comuns, 5 incomuns e 3 raras/);
-  assert.throws(() => validateDeckCardIds([...validDeck, 'goblin']), /exatamente 7 cartas comuns, 5 incomuns e 3 raras/);
+  assert.throws(() => validateDeckCardIds(validDeck.slice(0, -1)), /0 lendárias e 0 místicas/);
+  assert.throws(() => validateDeckCardIds([...validDeck, 'goblin']), /0 lendárias e 0 místicas/);
 });
 
 test('cartas reais e Nevasca expõem os atributos e regras definidos', () => {

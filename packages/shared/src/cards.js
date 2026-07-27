@@ -24,4 +24,13 @@ export {
   roadAttackBonus,
   roadMovementBonus
 } from './kingdomEconomy.js';
-export { DEFAULT_DECK_CARD_IDS, DECK_LIMITS, DECK_RARITIES, deckCounts, normalizeDeckCardIds, validateDeckCardIds } from './deckRules.js';
+export {
+  DEFAULT_DECK_CARD_IDS,
+  DECK_FUTURE_LIMITS,
+  DECK_LIMITS,
+  DECK_RARITIES,
+  DECK_REQUIREMENT_MESSAGE,
+  deckCounts,
+  normalizeDeckCardIds,
+  validateDeckCardIds
+} from './deckRules.js';

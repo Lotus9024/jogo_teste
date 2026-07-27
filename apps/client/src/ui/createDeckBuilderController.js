@@ -4,7 +4,7 @@ import { cardIconMarkup } from './cardIcon.js';
 
 const STORAGE_KEY = 'nexus.deck.v1';
 const LEGACY_STORAGE_KEY = 'tronos.deck.v1';
-const RARITY_ORDER = { common: 0, uncommon: 1, rare: 2 };
+const RARITY_ORDER = { common: 0, uncommon: 1, rare: 2, legendary: 3, mystic: 4 };
 const orderedCards = [...availableCards].sort((left, right) =>
   RARITY_ORDER[left.rarityClass] - RARITY_ORDER[right.rarityClass]
   || left.name.localeCompare(right.name, 'pt-BR')

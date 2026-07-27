@@ -4,6 +4,7 @@ import { cardCostText, cardMarkup, cards } from './cardView.js';
 import { CARD_ICON_IDS, cardIconMarkup } from './cardIcon.js';
 import { canUsePhysicalDeck } from './createDeckController.js';
 import { createDevCardInstanceId } from './createDevCardGallery.js';
+import { deckBuilderTemplate } from './shell/deckBuilderTemplate.js';
 
 test('a carta exibe sua categoria logo abaixo do nome', () => {
   const markup = cardMarkup(cards.find(card => card.id === 'goblin_tower'), 0);
@@ -111,4 +112,13 @@ test('DEV MODE pode abrir a galeria por qualquer baralho físico', () => {
 test('DEV MODE cria uma instância de carta mesmo sem randomUUID na rede local', () => {
   const instanceId = createDevCardInstanceId({});
   assert.match(instanceId, /^dev-[a-z0-9]+-[a-z0-9]+$/);
+});
+
+test('seletor de Deck mostra raridades atuais e reservas futuras', () => {
+  const markup = deckBuilderTemplate();
+  assert.match(markup, /data-deck-rarity="common"[^]*data-deck-count="common">0\/7/);
+  assert.match(markup, /data-deck-rarity="uncommon"[^]*data-deck-count="uncommon">0\/5/);
+  assert.match(markup, /data-deck-rarity="rare"[^]*data-deck-count="rare">0\/3/);
+  assert.match(markup, /data-deck-rarity="legendary"[^]*data-deck-count="legendary">0\/0[^]*Futuro: 2 cartas/);
+  assert.match(markup, /data-deck-rarity="mystic"[^]*data-deck-count="mystic">0\/0[^]*Futuro: 1 carta/);
 });

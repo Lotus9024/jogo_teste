@@ -22,6 +22,25 @@
   opacity:.38;
   filter:grayscale(1);
 }
+.deck-rarity-locked{
+  padding:9px 12px;
+  border:1px solid rgba(124,99,150,.25);
+  background:linear-gradient(90deg,rgba(36,22,48,.36),rgba(10,8,14,.2));
+}
+.deck-rarity-locked[data-deck-rarity="legendary"]{border-color:rgba(198,138,52,.28)}
+.deck-rarity-locked header h3{margin:0;color:#8e8497}
+.deck-rarity-locked header span{color:#bcaec8;font:600 12px Cinzel}
+.deck-rarity-future{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  margin:6px 0 0;
+  color:#756d7d;
+  font:600 9px Cinzel;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.deck-rarity-future span{color:#9d8cab}
 @media(max-width:760px){
   .deck-builder-card-preview,.deck-builder-card-preview .game-card{width:196px;height:372px}
 }

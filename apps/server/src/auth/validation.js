@@ -1,4 +1,4 @@
-import { validateDeckCardIds as validateSharedDeck } from '@tronos/shared/cards';
+import { DECK_REQUIREMENT_MESSAGE, validateDeckCardIds as validateSharedDeck } from '@tronos/shared/cards';
 
 const CONTROL_CHARACTER = /[\u0000-\u001f\u007f]/u;
 const WHITESPACE_RUN = /\s+/gu;
@@ -35,6 +35,6 @@ export function validateDeckCardIds(value) {
   try {
     return validateSharedDeck(value);
   } catch {
-    throw new ValidationError('O Deck precisa ter exatamente 7 cartas comuns, 5 incomuns e 3 raras.', 'INVALID_DECK');
+    throw new ValidationError(DECK_REQUIREMENT_MESSAGE, 'INVALID_DECK');
   }
 }
