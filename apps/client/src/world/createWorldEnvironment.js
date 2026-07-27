@@ -243,25 +243,42 @@ function addWatchFires(scene, environment, fireLights, flameOuter, flameCore) {
 
 function addMist(environment) {
   const wisps = [];
-  for (let index = 0; index < 6; index += 1) {
+  const placements = [
+    [-20.8, -1.1, -12.5, 3.8, 1.8], [21.2, -1.3, -10.2, 4.1, 2],
+    [-22.4, -2.2, 1.5, 4.5, 2.2], [22.8, -2.4, 3.8, 4.2, 2.1],
+    [-20.2, -1.8, 15.2, 3.7, 1.8], [19.6, -2.1, 17.1, 4.1, 2],
+    [-10.5, -3.2, -20.8, 4.8, 2.3], [11.8, -3.5, -22.5, 5.2, 2.4],
+    [-8.6, -3.8, 23.2, 4.6, 2.1], [9.8, -4.1, 24.5, 5, 2.3],
+    [-28.5, -5.2, -28.2, 6.2, 2.8], [28.8, -5.6, -31.5, 6.6, 3],
+    [-18.2, -6.4, -42, 7.1, 3.2], [19.5, -6.8, -45.5, 7.5, 3.4]
+  ];
+  placements.forEach(([x, y, z, radius, depthScale], index) => {
+    const baseOpacity = 0.024 + (index % 4) * 0.004;
     const material = new THREE.MeshBasicMaterial({
-      color: 0x705484,
+      color: index % 3 === 0 ? 0x21132e : 0x180e22,
       transparent: true,
-      opacity: 0.018 + index * 0.003,
+      opacity: baseOpacity,
       depthWrite: false,
       side: THREE.DoubleSide
     });
     const mist = add(
-      new THREE.CircleGeometry(1.6 + index * 0.18, 32),
+      new THREE.CircleGeometry(radius, 40),
       material,
       environment,
-      [(index % 2 ? 1 : -1) * (8.7 + (index % 3)), -0.43, -7.2 + index * 2.8],
+      [x, y, z],
       [-Math.PI / 2, 0, 0],
-      [1.8, 0.7, 1]
+      [1.8, depthScale, 1]
     );
-    mist.userData = { mist: true, index, baseX: mist.position.x };
+    mist.name = 'Névoa periférica dark fantasy';
+    mist.userData = {
+      mist: true,
+      index,
+      baseX: mist.position.x,
+      baseOpacity,
+      drift: 0.22 + (index % 3) * 0.08
+    };
     wisps.push(mist);
-  }
+  });
   return wisps;
 }
 

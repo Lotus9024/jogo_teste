@@ -9,6 +9,7 @@ export function gameHudTemplate() {
       <section id="deck-preview" class="deck-preview" aria-live="polite" aria-hidden="true"></section>
       <aside id="hover-card" class="hover-card unit-card-preview" aria-hidden="true"></aside>
       <aside id="castle-hover" class="castle-hover" role="tooltip" aria-hidden="true"></aside>
+      <i id="game-cursor" class="game-cursor" aria-hidden="true"><span></span></i>
       <div id="match-state" class="match-state" hidden><span id="turn-label">SEU TURNO</span><time id="turn-clock">02:00</time></div>
       <button id="settings-toggle" class="settings-toggle" aria-haspopup="dialog" aria-controls="settings-modal" aria-label="Abrir configurações">⚙</button>
       <button id="leave-match" class="leave-match" type="button" hidden>SAIR <span>W.O.</span></button>

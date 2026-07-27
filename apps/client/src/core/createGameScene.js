@@ -6,7 +6,12 @@ import { pixelRatioForQuality } from './gameSettings.js';
 export function createGameScene(app, { quality = 'high' } = {}) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color(0x08060f);
-  scene.fog = new THREE.FogExp2(0x181023, 0.0135);
+  scene.fog = new THREE.FogExp2(0x100a19, 0.016);
+  scene.userData.environmentFog = {
+    theme: 'dark-fantasy-violet',
+    boardVisibility: 'preserved',
+    lightPoints: 'unchanged'
+  };
 
   const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(pixelRatioForQuality(quality));
