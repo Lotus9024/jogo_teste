@@ -23,6 +23,21 @@ test('Guerreiro ataca apenas em linhas retas', () => {
     type: 'attack', unitId: 'warrior', targetUnitId: 'straight-target',
   }, straight.room.state.version);
   assert.equal(straight.room.state.units.find(unit => unit.id === 'straight-target').hp, 1);
+  assert.deepEqual({
+    type: straight.room.state.effects[0].type,
+    unitId: straight.room.state.effects[0].unitId,
+    cardId: straight.room.state.effects[0].cardId,
+    targetKind: straight.room.state.effects[0].targetKind,
+    from: [straight.room.state.effects[0].fromX, straight.room.state.effects[0].fromZ],
+    to: [straight.room.state.effects[0].toX, straight.room.state.effects[0].toZ],
+  }, {
+    type: 'unit_attack',
+    unitId: 'warrior',
+    cardId: 'warrior',
+    targetKind: 'unit',
+    from: [5, 8],
+    to: [5, 10],
+  });
 });
 
 test('perder cidadãos reduz o castelo ao nível um', () => {

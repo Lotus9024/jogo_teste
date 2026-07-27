@@ -53,6 +53,52 @@ function createArrow() {
   return arrow;
 }
 
+function createArcaneProjectile() {
+  const projectile = new THREE.Group();
+  const core = new THREE.Mesh(
+    new THREE.IcosahedronGeometry(0.095, 1),
+    new THREE.MeshStandardMaterial({
+      color: 0xf2ccff,
+      emissive: 0x7a22c8,
+      emissiveIntensity: 2.4,
+      roughness: 0.2,
+      transparent: true,
+      opacity: 0.95,
+    }),
+  );
+  projectile.add(core);
+  const halo = new THREE.Mesh(
+    new THREE.TorusGeometry(0.14, 0.018, 6, 18),
+    new THREE.MeshBasicMaterial({
+      color: 0xc16cff,
+      transparent: true,
+      opacity: 0.78,
+      depthWrite: false,
+    }),
+  );
+  halo.rotation.x = Math.PI / 2;
+  projectile.add(halo);
+  return projectile;
+}
+
+function createSlashEffect() {
+  const group = new THREE.Group();
+  for (let index = 0; index < 2; index += 1) {
+    const slash = new THREE.Mesh(
+      new THREE.TorusGeometry(0.34 + index * 0.09, 0.025, 5, 20, Math.PI * 1.18),
+      new THREE.MeshBasicMaterial({
+        color: index === 0 ? 0xf7eaff : 0xa747e8,
+        transparent: true,
+        opacity: 0.9 - index * 0.2,
+        depthWrite: false,
+      }),
+    );
+    slash.rotation.set(Math.PI / 2, index ? -0.28 : 0.2, -0.6 + index * 0.28);
+    group.add(slash);
+  }
+  return group;
+}
+
 function createSnowstormGroup(tile, radius) {
   const group = new THREE.Group();
   group.name = 'snowstormEffect';
@@ -110,6 +156,8 @@ export function createBattleAnimationController({
   const arrows = [];
   const bursts = [];
   const cloneEffects = [];
+  const attackPoses = [];
+  const slashEffects = [];
   const stormGroups = new Map();
   const seenEffects = new Set();
   const protectedUnitIds = new Set();
@@ -209,6 +257,50 @@ export function createBattleAnimationController({
       scene.add(arrow);
       arrows.push({ arrow, start: start.clone(), end, age: 0, duration: 0.44 });
     }
+  }
+
+  function playAttack(unit, targetPosition, cardId = unit?.userData.cardId) {
+    if (!unit || !targetPosition) return false;
+    for (let index = attackPoses.length - 1; index >= 0; index -= 1) {
+      const existing = attackPoses[index];
+      if (existing.unit !== unit) continue;
+      existing.unit.scale.copy(existing.startScale);
+      existing.unit.rotation.z = existing.startTilt;
+      attackPoses.splice(index, 1);
+    }
+    attackPoses.push({
+      unit,
+      startScale: unit.scale.clone(),
+      startTilt: unit.rotation.z,
+      age: 0,
+      duration: 0.34,
+    });
+
+    if (['archer', 'cannon'].includes(cardId)) {
+      const start = unit.position.clone();
+      start.y += cardId === 'cannon' ? 0.68 : 0.92;
+      const end = targetPosition.clone();
+      end.y = Math.max(0.32, end.y + 0.3);
+      const projectile = cardId === 'archer' ? createArrow() : createArcaneProjectile();
+      projectile.position.copy(start);
+      projectile.quaternion.setFromUnitVectors(UP, end.clone().sub(start).normalize());
+      scene.add(projectile);
+      arrows.push({
+        arrow: projectile,
+        start,
+        end,
+        age: 0,
+        duration: cardId === 'cannon' ? 0.38 : 0.3,
+      });
+      return true;
+    }
+
+    const slash = createSlashEffect();
+    slash.position.copy(targetPosition);
+    slash.position.y = Math.max(0.32, slash.position.y + 0.34);
+    scene.add(slash);
+    slashEffects.push({ group: slash, age: 0, duration: 0.32 });
+    return true;
   }
 
   function spawnClone(unit) {
@@ -340,6 +432,10 @@ export function createBattleAnimationController({
       if (effect.type === 'blizzard_cast') {
         burstBlizzard(effect.x, effect.z, effect.radius ?? 1);
       }
+      if (effect.type === 'unit_attack') {
+        const unit = units.find(candidate => candidate.userData.serverUnitId === effect.unitId);
+        playAttack(unit, worldPoint(effect.toX, effect.toZ), effect.cardId);
+      }
       if (effect.type === 'goblin_clone_spawn') {
         spawnClone(units.find(unit => unit.userData.serverUnitId === effect.unitId));
       }
@@ -361,6 +457,19 @@ export function createBattleAnimationController({
   }
 
   function update(delta, time) {
+    for (let index = attackPoses.length - 1; index >= 0; index -= 1) {
+      const pose = attackPoses[index];
+      pose.age += delta;
+      const progress = Math.min(1, pose.age / pose.duration);
+      const emphasis = Math.sin(progress * Math.PI);
+      pose.unit.scale.copy(pose.startScale).multiplyScalar(1 + emphasis * 0.09);
+      pose.unit.rotation.z = pose.startTilt - emphasis * 0.12;
+      if (progress < 1) continue;
+      pose.unit.scale.copy(pose.startScale);
+      pose.unit.rotation.z = pose.startTilt;
+      attackPoses.splice(index, 1);
+    }
+
     for (let index = motions.length - 1; index >= 0; index -= 1) {
       const motion = motions[index];
       motion.elapsed += delta;
@@ -386,6 +495,21 @@ export function createBattleAnimationController({
       scene.remove(projectile.arrow);
       disposeGroup(projectile.arrow);
       arrows.splice(index, 1);
+    }
+
+    for (let index = slashEffects.length - 1; index >= 0; index -= 1) {
+      const slash = slashEffects[index];
+      slash.age += delta;
+      const progress = Math.min(1, slash.age / slash.duration);
+      slash.group.scale.setScalar(0.65 + progress * 0.85);
+      slash.group.rotation.y += delta * 5.2;
+      slash.group.children.forEach(part => {
+        part.material.opacity = Math.max(0, 0.9 * (1 - progress));
+      });
+      if (progress < 1) continue;
+      scene.remove(slash.group);
+      disposeGroup(slash.group);
+      slashEffects.splice(index, 1);
     }
 
     for (let index = bursts.length - 1; index >= 0; index -= 1) {
@@ -447,6 +571,7 @@ export function createBattleAnimationController({
   return {
     update,
     slideUnit,
+    playAttack,
     chargeGoblin,
     launchTowerVolley,
     spawnClone,

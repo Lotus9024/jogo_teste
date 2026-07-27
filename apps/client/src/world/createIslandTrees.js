@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { createBarkMaps, createGrainMaps, texturedStandardMaterial } from '../core/darkFantasySurfaces.js';
 
 const BOARD_SCENERY_CLEARANCE = 12;
-const TREE_COUNT = 8;
+const TREE_COUNT = 12;
 const TRUNK_SEGMENTS = 3;
 const BRANCHES_PER_TREE = 5;
 const BRANCH_SEGMENTS = 2;
