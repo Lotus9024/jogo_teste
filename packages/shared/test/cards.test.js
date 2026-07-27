@@ -197,7 +197,7 @@ test('categorias abrangem tropas e construções de cada família', () => {
   assert.equal(isGoblinCard('warrior'), false);
 });
 
-test('Espanquem é um feitiço Goblin incomum de custo cinco', () => {
+test('Espanquem é um feitiço Goblin incomum de custo seis', () => {
   assert.deepEqual(
     {
       type: CARD_BY_ID.goblin_spanking.type,
@@ -205,8 +205,15 @@ test('Espanquem é um feitiço Goblin incomum de custo cinco', () => {
       rarity: CARD_BY_ID.goblin_spanking.rarityClass,
       cost: CARD_BY_ID.goblin_spanking.cost,
     },
-    { type: 'spell', category: 'goblin', rarity: 'uncommon', cost: 5 },
+    { type: 'spell', category: 'goblin', rarity: 'uncommon', cost: 6 },
   );
+});
+
+test('cartas com Desordem usam as descrições resumidas', () => {
+  assert.match(CARD_BY_ID.goblin_swarm.description, /Contém Desordem daqui 2 turnos seus\./);
+  for (const cardId of ['henry', 'goblin', 'goblin_bomber']) {
+    assert.match(CARD_BY_ID[cardId].description, /Contém Desordem ao entrar\./);
+  }
 });
 
 test('castelo nível dois acrescenta três quadrados em cada lateral', () => {

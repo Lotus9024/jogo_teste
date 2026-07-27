@@ -69,7 +69,7 @@ test('Espanquem libera os Goblins existentes e os novos durante o turno', () => 
     { bonusMoves: existing.bonusMoves, bonusAttacks: existing.bonusAttacks },
     { bonusMoves: 1, bonusAttacks: 1 },
   );
-  assert.equal(player.energy, 5);
+  assert.equal(player.energy, 4);
 
   rooms.action(room.code, first.id, {
     type: 'summon', cardInstanceId: 'goblin-card', x: 6, z: 10,

@@ -18,7 +18,7 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'henry', name: 'Henry', description: 'Entra podendo agir e pode se movimentar e atacar, ou vice-versa, no mesmo turno.\nEle entra com Desordem: ao entrar e no início dos seus próximos turnos, retira 1 de resistência de cada construção Básica sua diretamente ao lado.',
+    id: 'henry', name: 'Henry', description: 'Entra podendo agir e pode se movimentar e atacar, ou vice-versa, no mesmo turno.\nContém Desordem ao entrar.',
     hp: 1, damage: 1, move: 1, movementType: 'any', attackType: 'any', minAttackRange: 1, attackRange: 1, cost: 4, adjacentConstructionDamage: 1, category: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', family: 'goblin', info: 'GOBLIN · ÁGIL', glyph: '⚡',
     ability: Object.freeze({ name: 'Agilidade', cost: '—', description: 'Pode realizar um movimento e um ataque no mesmo turno, em qualquer ordem. Entra em campo pronto para agir.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
@@ -80,19 +80,19 @@ export const CARD_DEFINITIONS = Object.freeze([
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'goblin', name: 'Goblin', description: 'Um Goblin frágil, mas que tem coragem de roubar ouro.\nEle entra com Desordem: ao entrar e no início dos seus próximos turnos, retira 1 de resistência de cada construção Básica sua diretamente ao lado.',
+    id: 'goblin', name: 'Goblin', description: 'Um Goblin frágil, mas que tem coragem de roubar ouro.\nContém Desordem ao entrar.',
     hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 2, adjacentConstructionDamage: 1, category: 'goblin', rarity: 'COMUM', rarityClass: 'common', family: 'goblin', info: 'GOBLIN · SAQUEADOR', glyph: '♟',
     ability: Object.freeze({ name: 'Desordem', cost: '—', description: 'Ao entrar e no início de cada turno seu, causa 1 de dano a cada construção Básica sua diretamente ao lado.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'goblin_swarm', name: 'Enxame Goblin', description: 'Três Goblins surgem em posições aleatórias da sua área de lançamento.\nEles entram com Desordem, mas só retiram resistência de construções no seu próximo turno após o surgimento.',
+    id: 'goblin_swarm', name: 'Enxame Goblin', description: 'Três Goblins surgem em posições aleatórias da sua área de lançamento.\nContém Desordem daqui 2 turnos seus.',
     hp: 1, damage: 1, move: 1, movementType: 'any', minAttackRange: 1, attackRange: 1, cost: 6, summonCount: 3, summonsCardId: 'goblin', type: 'summon', category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'GOBLIN · ENXAME', glyph: '♟',
     ability: Object.freeze({ name: 'Enxame', cost: '—', description: 'Ao ser lançada, esta carta se transforma em três Goblins. Cada um aplica Desordem separadamente.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
   }),
   Object.freeze({
-    id: 'goblin_bomber', name: 'Goblin Bombardeiro', description: 'Ele entra com Desordem: ao entrar e no início de cada turno seu, retira 1 de resistência de cada construção Básica sua diretamente ao lado.',
+    id: 'goblin_bomber', name: 'Goblin Bombardeiro', description: 'Contém Desordem ao entrar.',
     hp: 1, damage: 1, move: 1, movementType: 'straight', minAttackRange: 1, attackRange: 1, cost: 4, adjacentConstructionDamage: 1, category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'GOBLIN · BOMBARDEIRO', glyph: '✹',
     ability: Object.freeze({ name: 'Carga explosiva', cost: 2, chargeDistance: 4, troopDamage: 3, constructionDamage: 4, radius: 1, description: 'Corre 4 blocos para a frente e explode. Causa 3 de dano em tropas e 4 em construções no centro e ao redor, destruindo também as ruas atingidas. O Goblin morre. Enquanto aguarda, também aplica Desordem às construções aliadas diretamente ao lado.', enabled: true }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'Esta carta não possui habilidade instantânea.', enabled: false })
@@ -105,7 +105,7 @@ export const CARD_DEFINITIONS = Object.freeze([
   }),
   Object.freeze({
     id: 'goblin_spanking', name: 'Espanquem', description: 'Todos os seus Goblins podem agir e atacar novamente neste turno.\nGoblins lançados depois deste feitiço entram prontos para agir e atacar.',
-    hp: null, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 5, type: 'spell', category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'FEITIÇO · GOBLIN', glyph: '✺',
+    hp: null, damage: 0, move: 0, movementType: 'none', minAttackRange: 0, attackRange: 0, cost: 6, type: 'spell', category: 'goblin', family: 'goblin', rarity: 'INCOMUM', rarityClass: 'uncommon', info: 'FEITIÇO · GOBLIN', glyph: '✺',
     ability: Object.freeze({ name: 'Espanquem', cost: '—', description: 'Ao ser lançado, concede uma ação e um ataque adicionais aos seus Goblins até o fim do turno.', enabled: false }),
     instant: Object.freeze({ name: 'Nenhuma', cost: '—', description: 'O efeito acontece ao lançar a carta.', enabled: false })
   }),
