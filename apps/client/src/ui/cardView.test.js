@@ -68,8 +68,16 @@ test('construções omitem atributos zerados e cartas passivas omitem habilidade
   assert.doesNotMatch(houseMarkup, /aria-label="Dano"/);
   assert.doesNotMatch(houseMarkup, /aria-label="Movimento"/);
   assert.doesNotMatch(houseMarkup, /class="card-ability"/);
+  assert.match(houseMarkup, /class="game-card[^"]* no-ability/);
   const towerMarkup = cardMarkup(cards.find(card => card.id === 'tower'), 0);
-  assert.doesNotMatch(towerMarkup, /Aperte F/);
+  assert.doesNotMatch(towerMarkup, /(?:Aperte|Pressione)\s+F/i);
+});
+
+test('descrições de habilidades não repetem instruções de teclado', () => {
+  for (const card of cards) {
+    assert.doesNotMatch(card.abilityText, /(?:Aperte|Pressione)\s+F/i);
+    assert.doesNotMatch(cardMarkup(card, 0), /(?:Aperte|Pressione)\s+F/i);
+  }
 });
 
 test('carta com buff exibe o custo efetivo e o desconto aplicado', () => {

@@ -33,6 +33,20 @@
 .card-top-cost{display:flex;align-items:center;justify-content:center;gap:3px}
 .card-top-cost .card-cost-discount{font:700 7px/1 Cinzel;letter-spacing:0;color:#82b26f}
 
+/* Cartas sem habilidade preservam a mesma hierarquia superior e deixam o espaço livre abaixo. */
+.game-card.no-ability{
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  justify-content:flex-start;
+}
+.game-card.no-ability .card-top,
+.game-card.no-ability .card-art,
+.game-card.no-ability .card-description,
+.game-card.no-ability .card-main-row{
+  flex:0 0 auto;
+}
+
 /* Cartas de regras densas preservam uma leitura confortável sem aumentar o HUD. */
 .game-card.copy-readable .card-art{height:86px}
 .game-card.copy-readable .card-description{height:82px}

@@ -13,9 +13,7 @@ export const cards = CARD_DEFINITIONS.map(card => {
     ability: featuredAbility.name,
     abilityCost: featuredAbility.cost,
     hasAbility: featuredAbility.enabled,
-    abilityText: featuredAbility.enabled
-      ? `${featuredAbility.description}${card.id === 'tower' ? '' : ' Aperte F selecionando a carta para utilizar.'}`
-      : featuredAbility.description,
+    abilityText: featuredAbility.description,
     abilityKind: card.instant.enabled ? 'instant' : 'normal'
   };
 });
@@ -74,7 +72,8 @@ export function cardMarkup(card, index, { level = null } = {}) {
   const descSize = Math.max(7.5, Math.min(9, 1100 / card.description.length));
   const abilitySize = Math.max(7.5, Math.min(8, 1050 / card.abilityText.length));
   const categoryLabel = card.categoryLabel ?? CARD_CATEGORY_LABELS[card.category];
-  return `<button class="game-card rarity-${card.rarityClass} category-${card.category}${copyClass}${readableClass}" style="--desc-size:${descSize}px;--ability-size:${abilitySize}px" data-card="${index}"${levelAttribute} aria-label="Carta ${card.name}, categoria ${categoryLabel}, ${card.rarity}${level ? `, nível ${level}` : ''}">
+  const abilityClass = card.hasAbility ? ' has-ability' : ' no-ability';
+  return `<button class="game-card rarity-${card.rarityClass} category-${card.category}${abilityClass}${copyClass}${readableClass}" style="--desc-size:${descSize}px;--ability-size:${abilitySize}px" data-card="${index}"${levelAttribute} aria-label="Carta ${card.name}, categoria ${categoryLabel}, ${card.rarity}${level ? `, nível ${level}` : ''}">
     <span class="card-top"><span class="card-heading"><strong class="card-name">${card.name}</strong><small class="card-category">${categoryLabel}</small></span><span class="card-top-cost">${cardCostMarkup(card)}</span></span>
     <span class="card-art">${cardIconMarkup(card)}</span>
     <span class="card-description">${card.description}</span>

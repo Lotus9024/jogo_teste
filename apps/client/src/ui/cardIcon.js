@@ -46,9 +46,11 @@ const CUSTOM_ICON_PATHS = Object.freeze({
     <path class="card-icon-accent" d="M32 5 44 21 32 37 20 21 32 5Z"/>
     <path d="M32 5 44 21 32 37 20 21 32 5Zm0 0v32M20 21h24"/>`,
   royal_warrior: `
-    <path class="card-icon-fill" d="M13 49h38l4 8H9l4-8Z"/>
-    <path d="M13 49h38l4 8H9l4-8ZM32 8v40M19 21h26M24 8h16l-3 8H27l-3-8Z"/>
-    <path d="m18 43 28-28m-4-5 6 6-7 3-2-2 3-7Z"/>`,
+    <path class="card-icon-fill" d="M8 57c1-11 8-17 18-19V25h18v13c8 2 13 8 14 19H8Z"/>
+    <path d="M8 57c1-11 8-17 18-19V25h18v13c8 2 13 8 14 19H8Zm18-32h18v8c0 6-4 11-9 11s-9-5-9-11v-8Z"/>
+    <path class="card-icon-accent" d="m23 23-3-12 9 5 6-10 6 10 9-5-3 12H23Z"/>
+    <path d="m23 23-3-12 9 5 6-10 6 10 9-5-3 12H23Zm5 7h14M35 30v7"/>
+    <path d="M49 54V22m-5 6h10M49 9l5 9H44l5-9Zm-3 45h6"/>`,
   royal_tower: `
     <path class="card-icon-fill" d="M12 21h40v36H12V21Z"/>
     <path d="M12 21h40v36H12V21ZM8 8h12v13H8V8Zm18 0h12v13H26V8Zm18 0h12v13H44V8ZM24 57V43h16v14"/>

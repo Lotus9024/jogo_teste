@@ -124,12 +124,12 @@ test('Mago possui cajado, orbe de fogo e identidade arcana', () => {
   assert.ok(mage.getObjectByName('mageFireOrb'));
 });
 
-test('Mago possui círculo ácido no chão e instrução de atalho na carta', () => {
+test('Mago possui círculo ácido no chão sem instrução de atalho na carta', () => {
   const acid = makeAcidCircle(TILE_SIZE);
   assert.ok(acid.getObjectByName('acidPuddle'));
   assert.ok(acid.getObjectByName('acidRing'));
   assert.ok(acid.children.some(part => part.userData.acidDrop));
-  assert.match(cards.find(card => card.id === 'mage').abilityText, /Aperte F selecionando a carta/);
+  assert.doesNotMatch(cards.find(card => card.id === 'mage').abilityText, /(?:Aperte|Pressione)\s+F/i);
 });
 
 test('guarda possui identidade própria e não usa elementos de mago', () => {
