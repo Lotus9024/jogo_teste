@@ -11,7 +11,23 @@ export function createUnitPointerHandlers({
 }) {
   const hoverCard = document.querySelector('#hover-card');
   const castleHover = document.querySelector('#castle-hover');
+  const gameCursor = document.querySelector('#game-cursor');
   let rangePreviewUnit = null;
+
+  function moveGameCursor(event) {
+    gameCursor.style.setProperty('--cursor-x', `${event.clientX}px`);
+    gameCursor.style.setProperty('--cursor-y', `${event.clientY}px`);
+    gameCursor.classList.add('visible');
+    gameCursor.classList.toggle('pressed', Boolean(event.buttons & 1));
+  }
+
+  function releaseGameCursor() {
+    gameCursor.classList.remove('pressed');
+  }
+
+  function hideGameCursor() {
+    gameCursor.classList.remove('visible', 'pressed');
+  }
 
   function hideCastleHover() {
     castleHover.classList.remove('visible');
@@ -278,14 +294,18 @@ export function createUnitPointerHandlers({
 
   function mount() {
     renderer.domElement.addEventListener('click', pick);
+    renderer.domElement.addEventListener('pointermove', moveGameCursor);
     renderer.domElement.addEventListener('pointerdown', startDrag, true);
     renderer.domElement.addEventListener('pointermove', moveDrag, true);
     renderer.domElement.addEventListener('pointermove', showHover);
     renderer.domElement.addEventListener('pointerup', finishDrag, true);
+    renderer.domElement.addEventListener('pointerup', releaseGameCursor);
     renderer.domElement.addEventListener('pointercancel', finishDrag, true);
+    renderer.domElement.addEventListener('pointercancel', hideGameCursor);
     renderer.domElement.addEventListener('pointerleave', () => {
       hoverCard.classList.remove('visible');
       hideCastleHover();
+      hideGameCursor();
       rangePreviewUnit = null;
       if (state.selected) movementOverlay.show(state.selected);
       else movementOverlay.clear();

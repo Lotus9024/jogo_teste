@@ -128,6 +128,74 @@ export function createGrainMaps({
   };
 }
 
+export function createBarkMaps({
+  size = 128,
+  seed = 167,
+  bark = [48, 29, 27],
+  highlight = [77, 49, 42],
+  repeat = [3.5, 2.2],
+} = {}) {
+  const colorData = new Uint8Array(size * size * 4);
+  const bumpData = new Uint8Array(size * size * 4);
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const index = (y * size + x) * 4;
+      const warpedX = x + Math.sin(y * 0.08 + seed) * 4.2 + Math.sin(y * 0.027) * 7.5;
+      const ridge = (Math.sin(warpedX * 0.34) + Math.sin(warpedX * 0.73) * 0.42) * 0.5 + 0.5;
+      const pores = (hash(x, y, seed) - 0.5) * 18;
+      const split = Math.abs(Math.sin(warpedX * 0.115 + Math.sin(y * 0.045) * 1.8)) > 0.965;
+      const verticalBreak = hash(Math.floor(x / 5), Math.floor(y / 13), seed + 37) > 0.91
+        && y % 17 < 2;
+      const mix = THREE.MathUtils.clamp(ridge * 0.72 + 0.12, 0, 1);
+      const tone = bark.map((channel, channelIndex) => (
+        THREE.MathUtils.lerp(channel, highlight[channelIndex], mix) + pores
+      ));
+      if (split || verticalBreak) tone.forEach((_, channelIndex) => { tone[channelIndex] *= 0.4; });
+      writePixel(colorData, index, tone);
+      const height = split || verticalBreak ? 34 : 88 + ridge * 128 + pores;
+      writePixel(bumpData, index, [height, height, height]);
+    }
+  }
+  return {
+    map: textureFrom(colorData, size, { color: true, repeat }),
+    bumpMap: textureFrom(bumpData, size, { repeat }),
+  };
+}
+
+export function createRockMaps({
+  size = 128,
+  seed = 193,
+  rock = [69, 61, 78],
+  mineral = [101, 84, 116],
+  repeat = [3.2, 3.2],
+  strata = 0.7,
+} = {}) {
+  const colorData = new Uint8Array(size * size * 4);
+  const bumpData = new Uint8Array(size * size * 4);
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const index = (y * size + x) * 4;
+      const broad = Math.sin(x * 0.075 + Math.sin(y * 0.031) * 2.1) * 12;
+      const layers = Math.sin(y * 0.29 + Math.sin(x * 0.046) * 3.4) * 15 * strata;
+      const grain = (hash(x, y, seed) - 0.5) * 24;
+      const cell = (hash(Math.floor(x / 9), Math.floor(y / 9), seed + 53) - 0.5) * 18;
+      const vein = Math.abs(Math.sin(x * 0.12 + y * 0.19 + Math.sin(y * 0.035) * 2.6)) > 0.985;
+      const mix = THREE.MathUtils.clamp(0.18 + (broad + layers + cell) / 90, 0.03, 0.68);
+      const tone = rock.map((channel, channelIndex) => (
+        THREE.MathUtils.lerp(channel, mineral[channelIndex], mix) + grain
+      ));
+      if (vein) tone.forEach((_, channelIndex) => { tone[channelIndex] *= 0.52; });
+      writePixel(colorData, index, tone);
+      const height = vein ? 48 : 126 + broad * 2 + layers * 1.5 + cell + grain;
+      writePixel(bumpData, index, [height, height, height]);
+    }
+  }
+  return {
+    map: textureFrom(colorData, size, { color: true, repeat }),
+    bumpMap: textureFrom(bumpData, size, { repeat }),
+  };
+}
+
 export function texturedStandardMaterial(maps, options = {}) {
   return new THREE.MeshStandardMaterial({
     ...options,
