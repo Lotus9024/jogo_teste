@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { createDistantIslands } from './createDistantIslands.js';
 import { createMagicDust } from './terrain/createArcaneDetails.js';
 import { createSphericalStarPositions, SPACE_STAR_COUNTS } from '../core/createMagicSky.js';
+import { createAnimatedGrass, createSurfaceRelief } from './terrain/terrainUnderside.js';
 
 test('céu distribui milhares de estrelas em 360 graus', () => {
   assert.deepEqual(SPACE_STAR_COUNTS, {
@@ -49,4 +50,16 @@ test('ilhas distantes possuem textura, relevo, silhuetas e órbitas próprias', 
     assert.ok(island.getObjectByName('Fragmentos minerais nas bordas'));
     assert.ok(island.getObjectByName('Formações rochosas inferiores'));
   }
+});
+
+test('ilha principal possui relevo superficial e gramíneas animadas fora do tabuleiro', () => {
+  const grass = createAnimatedGrass({ count: 120 });
+  const relief = createSurfaceRelief({ count: 40 });
+
+  assert.equal(grass.name, 'Gramíneas escuras animadas');
+  assert.equal(grass.userData.animated, true);
+  assert.equal(grass.userData.count, 120);
+  assert.equal(grass.material.type, 'MeshLambertMaterial');
+  assert.equal(relief.name, 'Pedras e placas do relevo superficial');
+  assert.equal(relief.userData.count, 40);
 });

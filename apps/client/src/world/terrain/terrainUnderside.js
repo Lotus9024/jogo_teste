@@ -1,6 +1,131 @@
 import * as THREE from 'three';
 import { boundaryPoint, cliffProfileScale, cliffProfileY, edgeVariation, ISLAND_RADIUS_X, ISLAND_RADIUS_Z, seededRandom, SURFACE_Y, terrainHeight } from './terrainGeometry.js';
 
+function outsideBoardPosition(random, minimumRadius = 0.57, maximumRadius = 0.9) {
+  for (let attempt = 0; attempt < 80; attempt += 1) {
+    const angle = random() * Math.PI * 2;
+    const radial = minimumRadius + random() * (maximumRadius - minimumRadius);
+    const x = Math.cos(angle) * ISLAND_RADIUS_X * radial * edgeVariation(angle);
+    const z = Math.sin(angle) * ISLAND_RADIUS_Z * radial * edgeVariation(angle);
+    if (Math.abs(x) > 8.75 || Math.abs(z) > 8.75) return { x, z };
+  }
+  return { x: ISLAND_RADIUS_X * 0.78, z: 0 };
+}
+
+export function createAnimatedGrass({ count = 480 } = {}) {
+  const bladeGeometry = new THREE.ConeGeometry(0.047, 0.28, 3, 1, true);
+  bladeGeometry.translate(0, 0.14, 0);
+  bladeGeometry.setAttribute(
+    'instancePhase',
+    new THREE.InstancedBufferAttribute(new Float32Array(count), 1)
+  );
+  const material = new THREE.MeshLambertMaterial({
+    color: 0x4d5b45,
+    emissive: 0x0b100c,
+    emissiveIntensity: 0.12,
+    side: THREE.DoubleSide,
+    vertexColors: true,
+  });
+  material.onBeforeCompile = shader => {
+    shader.uniforms.grassTime = { value: 0 };
+    shader.vertexShader = shader.vertexShader
+      .replace(
+        '#include <common>',
+        '#include <common>\nuniform float grassTime;\nattribute float instancePhase;'
+      )
+      .replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+        float bladeTip = smoothstep(0.02, 0.28, position.y);
+        float wind = sin(grassTime * 0.78 + instancePhase) * 0.023
+          + sin(grassTime * 0.34 + instancePhase * 1.73) * 0.009;
+        transformed.x += wind * bladeTip;
+        transformed.z += wind * 0.36 * bladeTip;`
+      );
+    material.userData.shader = shader;
+  };
+  material.customProgramCacheKey = () => 'animated-dark-grass-v2';
+
+  const grass = new THREE.InstancedMesh(bladeGeometry, material, count);
+  grass.name = 'Gramíneas escuras animadas';
+  grass.castShadow = false;
+  grass.receiveShadow = true;
+  grass.userData = {
+    count,
+    animated: true,
+    update(elapsed) {
+      const shader = material.userData.shader;
+      if (shader) shader.uniforms.grassTime.value = elapsed;
+    },
+  };
+  const random = seededRandom(5317);
+  const dummy = new THREE.Object3D();
+  const color = new THREE.Color();
+  const phases = bladeGeometry.getAttribute('instancePhase');
+  for (let index = 0; index < count; index += 1) {
+    const { x, z } = outsideBoardPosition(random);
+    dummy.position.set(x, terrainHeight(x, z) + 0.005, z);
+    dummy.rotation.set((random() - 0.5) * 0.08, random() * Math.PI * 2, (random() - 0.5) * 0.08);
+    const height = 0.52 + random() * 0.75;
+    const width = 0.65 + random() * 0.6;
+    dummy.scale.set(width, height, width);
+    dummy.updateMatrix();
+    grass.setMatrixAt(index, dummy.matrix);
+    color.setHSL(
+      0.25 + (random() - 0.5) * 0.055,
+      0.18 + random() * 0.18,
+      0.27 + random() * 0.12
+    );
+    grass.setColorAt(index, color);
+    phases.setX(index, random() * Math.PI * 2);
+  }
+  grass.instanceMatrix.needsUpdate = true;
+  grass.instanceColor.needsUpdate = true;
+  phases.needsUpdate = true;
+  grass.computeBoundingSphere();
+  return grass;
+}
+
+export function createSurfaceRelief({ count = 190 } = {}) {
+  const material = new THREE.MeshLambertMaterial({
+    color: 0x5e5865,
+    emissive: 0x100b16,
+    emissiveIntensity: 0.1,
+    vertexColors: true,
+  });
+  const relief = new THREE.InstancedMesh(
+    new THREE.DodecahedronGeometry(0.24, 0),
+    material,
+    count
+  );
+  relief.name = 'Pedras e placas do relevo superficial';
+  relief.castShadow = true;
+  relief.receiveShadow = true;
+  relief.userData.count = count;
+  const random = seededRandom(6721);
+  const dummy = new THREE.Object3D();
+  const color = new THREE.Color();
+  for (let index = 0; index < count; index += 1) {
+    const { x, z } = outsideBoardPosition(random, 0.6, 0.94);
+    dummy.position.set(x, terrainHeight(x, z) + 0.018, z);
+    dummy.rotation.set(random() * Math.PI, random() * Math.PI, random() * Math.PI);
+    const size = 0.18 + random() * 0.52;
+    dummy.scale.set(
+      size * (0.75 + random() * 0.7),
+      size * (0.08 + random() * 0.14),
+      size * (0.7 + random() * 0.75)
+    );
+    dummy.updateMatrix();
+    relief.setMatrixAt(index, dummy.matrix);
+    color.setHSL(0.67 + (random() - 0.5) * 0.05, 0.07, 0.3 + random() * 0.12);
+    relief.setColorAt(index, color);
+  }
+  relief.instanceMatrix.needsUpdate = true;
+  relief.instanceColor.needsUpdate = true;
+  relief.computeBoundingSphere();
+  return relief;
+}
+
 export function createUndersideRocks() {
   const count = 180;
   const geometry = new THREE.DodecahedronGeometry(0.62, 0);

@@ -21,12 +21,13 @@ export function createGroundTexture(renderer, size = 1024) {
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
       const index = (y * size + x) * 4;
-      const large = Math.sin(x * 0.025) * 5 + Math.cos(y * 0.021) * 4;
-      const mottled = Math.sin((x + y) * 0.071) * 3 + Math.cos((x - y) * 0.054) * 3;
-      const grain = (random() - 0.5) * 12;
+      const large = Math.sin(x * 0.025) * 7 + Math.cos(y * 0.021) * 6;
+      const mottled = Math.sin((x + y) * 0.071) * 4.5 + Math.cos((x - y) * 0.054) * 4;
+      const mineral = Math.sin(x * 0.19 + Math.sin(y * 0.043) * 3.4) * 2.8;
+      const grain = (random() - 0.5) * 18;
       image.data[index] = 51 + large + mottled + grain;
-      image.data[index + 1] = 45 + large * 0.82 + mottled + grain;
-      image.data[index + 2] = 59 + large * 1.05 + grain * 0.5;
+      image.data[index + 1] = 45 + large * 0.82 + mottled + mineral + grain;
+      image.data[index + 2] = 59 + large * 1.05 + mineral * 0.7 + grain * 0.5;
       image.data[index + 3] = 255;
     }
   }
@@ -42,6 +43,23 @@ export function createGroundTexture(renderer, size = 1024) {
     context.ellipse(x, y, radius, radius * (0.35 + random() * 0.55), random() * Math.PI, 0, Math.PI * 2);
     context.fill();
   }
+  context.globalAlpha = 0.2;
+  for (let index = 0; index < 210; index += 1) {
+    const x = random() * size;
+    const y = random() * size;
+    const length = 5 + random() * 34;
+    context.strokeStyle = random() > 0.55 ? '#17121d' : '#74657b';
+    context.lineWidth = 0.5 + random() * 1.4;
+    context.beginPath();
+    context.moveTo(x, y);
+    context.quadraticCurveTo(
+      x + length * 0.42,
+      y + (random() - 0.5) * 9,
+      x + length,
+      y + (random() - 0.5) * 13
+    );
+    context.stroke();
+  }
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -55,11 +73,16 @@ export function loadIslandGroundTexture(renderer, material) {
   new THREE.TextureLoader().load(ISLAND_GROUND_TEXTURE, texture => {
     texture.colorSpace = THREE.SRGBColorSpace;
     texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(3.5, 3);
+    texture.repeat.set(4.8, 4.1);
     texture.anisotropy = Math.min(8, renderer.capabilities.getMaxAnisotropy());
+    const reliefTexture = texture.clone();
+    reliefTexture.colorSpace = THREE.NoColorSpace;
+    reliefTexture.needsUpdate = true;
     material.map = texture;
-    material.bumpMap = texture;
-    material.bumpScale = 0.075;
+    material.bumpMap = reliefTexture;
+    material.roughnessMap = null;
+    material.roughness = 1;
+    material.bumpScale = 0.09;
     material.needsUpdate = true;
   });
 }

@@ -30,9 +30,14 @@ export function edgeVariation(angle) {
 
 export function terrainHeight(x, z) {
   const distance = Math.hypot(x / ISLAND_RADIUS_X, z / ISLAND_RADIUS_Z);
-  const broad = Math.sin(x * 0.31) * 0.048 + Math.cos(z * 0.27) * 0.04;
-  const detail = Math.sin((x + z) * 0.83) * 0.016 + Math.cos((x - z) * 1.17) * 0.01;
-  return SURFACE_Y + (broad + detail) * (1 - THREE.MathUtils.smoothstep(distance, 0.12, 1));
+  const broad = Math.sin(x * 0.31) * 0.082 + Math.cos(z * 0.27) * 0.068;
+  const crossed = Math.sin((x + z) * 0.83) * 0.027 + Math.cos((x - z) * 1.17) * 0.021;
+  const weathering = Math.sin(x * 1.91 + Math.cos(z * 0.44) * 2.2) * 0.012;
+  const outerRelief = THREE.MathUtils.smoothstep(distance, 0.44, 0.9)
+    * Math.sin(distance * 28 + Math.atan2(z, x) * 5) * 0.036;
+  return SURFACE_Y
+    + (broad + crossed + weathering) * (1 - THREE.MathUtils.smoothstep(distance, 0.18, 1))
+    + outerRelief;
 }
 
 export function boundaryPoint(angle, scale = 1) {

@@ -15,9 +15,11 @@ import {
   loadIslandRockTexture
 } from './terrain/terrainTextures.js';
 import {
+  createAnimatedGrass,
   createMossPatches,
   createRoots,
   createStrataVeins,
+  createSurfaceRelief,
   createUndersideRocks
 } from './terrain/terrainUnderside.js';
 
@@ -28,10 +30,10 @@ function createTerrainMaterials(renderer, quality) {
     color: 0x8e8695,
     map: texture,
     bumpMap: texture,
-    bumpScale: 0.035,
+    bumpScale: 0.058,
     emissive: 0x100a16,
     emissiveIntensity: 0.16,
-    roughness: 0.96,
+    roughness: 1,
     metalness: 0
   });
   const cliffMaterial = new THREE.MeshStandardMaterial({
@@ -96,9 +98,20 @@ export function createMagicTerrain(renderer, { quality = 'high' } = {}) {
   const roots = createRoots();
   const strataVeins = createStrataVeins();
   const topDetails = createMossPatches();
+  const surfaceRelief = createSurfaceRelief();
+  const animatedGrass = createAnimatedGrass();
   const hanging = createHangingLanterns();
   const crystals = createCrystals();
-  terrain.add(undersideRocks, roots, strataVeins, topDetails, hanging.group, crystals.group);
+  terrain.add(
+    undersideRocks,
+    roots,
+    strataVeins,
+    topDetails,
+    surfaceRelief,
+    animatedGrass,
+    hanging.group,
+    crystals.group
+  );
 
   const magicalLift = new THREE.PointLight(0x7569c7, 7.4, 19, 2);
   magicalLift.name = 'Luz de sustentação arcana';
@@ -109,6 +122,7 @@ export function createMagicTerrain(renderer, { quality = 'high' } = {}) {
   let currentQuality = quality;
   function update(elapsed) {
     if (currentQuality === 'low') return;
+    animatedGrass.userData.update(elapsed);
     magicDust.position.y = Math.sin(elapsed * 0.2) * 0.07;
     magicDust.userData.field.rotation.y = elapsed * 0.008;
     magicDust.userData.field.material.opacity = 0.35;
@@ -141,7 +155,7 @@ export function createMagicTerrain(renderer, { quality = 'high' } = {}) {
   function setQuality(nextQuality) {
     currentQuality = nextQuality;
     const high = nextQuality === 'high';
-    [undersideRocks, roots, strataVeins, topDetails, hanging.group, crystals.group, magicDust]
+    [undersideRocks, roots, strataVeins, topDetails, surfaceRelief, animatedGrass, hanging.group, crystals.group, magicDust]
       .forEach(detail => { detail.visible = high; });
     magicalLift.visible = high;
     islandBody.castShadow = high;
