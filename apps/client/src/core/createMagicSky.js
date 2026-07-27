@@ -2,11 +2,11 @@ import * as THREE from 'three';
 
 const SKY_ROTATION = -Math.PI * 0.38;
 export const SPACE_STAR_COUNTS = Object.freeze({
-  distant: 2800,
-  fine: 1300,
-  bright: 160,
-  band: 1700,
-  total: 5960,
+  distant: 4200,
+  fine: 2300,
+  bright: 240,
+  band: 2700,
+  total: 9440,
 });
 
 function seededRandom(seed) {
@@ -237,26 +237,46 @@ function createSpaceLightFoci(scene) {
   return group;
 }
 
-function createStarLayer({ count, radius, seed, size, opacity, map, colorA = 0x7c35bd, colorB = 0xdcc8f4 }) {
+export function createSphericalStarPositions({ count, radius, seed, depth = 3 }) {
   const random = seededRandom(seed);
-  const positions = [];
+  const positions = new Float32Array(count * 3);
+  for (let index = 0; index < count; index += 1) {
+    const longitude = random() * Math.PI * 2;
+    const vertical = random() * 2 - 1;
+    const horizontal = Math.sqrt(1 - vertical * vertical);
+    const distance = radius - random() * depth;
+    positions[index * 3] = Math.cos(longitude) * horizontal * distance;
+    positions[index * 3 + 1] = vertical * distance;
+    positions[index * 3 + 2] = Math.sin(longitude) * horizontal * distance;
+  }
+  return positions;
+}
+
+function createStarLayer({
+  count,
+  radius,
+  seed,
+  depth,
+  size,
+  opacity,
+  map,
+  colorA = 0x7c35bd,
+  colorB = 0xdcc8f4
+}) {
+  const colorRandom = seededRandom(seed + 1907);
+  const positions = createSphericalStarPositions({ count, radius, seed, depth });
   const colors = [];
   const violet = new THREE.Color(colorA);
   const pale = new THREE.Color(colorB);
   const color = new THREE.Color();
 
   for (let index = 0; index < count; index += 1) {
-    const longitude = random() * Math.PI * 2;
-    const vertical = random() * 2 - 1;
-    const horizontal = Math.sqrt(1 - vertical * vertical);
-    const distance = radius - random() * 3;
-    positions.push(
-      Math.cos(longitude) * horizontal * distance,
-      vertical * distance,
-      Math.sin(longitude) * horizontal * distance
+    color.lerpColors(violet, pale, colorRandom() * 0.72);
+    color.offsetHSL(
+      (colorRandom() - 0.5) * 0.025,
+      0,
+      (colorRandom() - 0.5) * 0.12
     );
-    color.lerpColors(violet, pale, random() * 0.72);
-    color.offsetHSL((random() - 0.5) * 0.025, 0, (random() - 0.5) * 0.12);
     colors.push(color.r, color.g, color.b);
   }
 
@@ -280,6 +300,12 @@ function createStarLayer({ count, radius, seed, size, opacity, map, colorA = 0x7
   stars.frustumCulled = false;
   stars.renderOrder = -999;
   stars.rotation.y = SKY_ROTATION;
+  stars.userData = {
+    count,
+    seed,
+    distribution: 'spherical-random-360',
+    radialDepth: depth,
+  };
   return stars;
 }
 
@@ -414,8 +440,9 @@ export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) 
     count: SPACE_STAR_COUNTS.distant,
     radius: 63,
     seed: 5021,
+    depth: 12,
     size: 0.52,
-    opacity: 0.46,
+    opacity: 0.44,
     map: starPoint,
     colorA: 0x5a247f,
     colorB: 0xaf82d1,
@@ -424,8 +451,9 @@ export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) 
     count: SPACE_STAR_COUNTS.fine,
     radius: 61,
     seed: 7137,
+    depth: 9,
     size: 0.78,
-    opacity: 0.66,
+    opacity: 0.62,
     map: starPoint,
     colorA: 0x7e3db8,
     colorB: 0xd7bced,
@@ -434,8 +462,9 @@ export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) 
     count: SPACE_STAR_COUNTS.bright,
     radius: 59,
     seed: 12821,
+    depth: 8,
     size: 3.2,
-    opacity: 0.84,
+    opacity: 0.82,
     map: starPoint,
     colorA: 0xa156dc,
     colorB: 0xf0e6f8,
@@ -479,10 +508,10 @@ export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) 
     spaceLightFoci.children.forEach((focus, index) => {
       focus.visible = high || index % 3 === 0;
     });
-    distantStars.geometry.setDrawRange(0, high ? SPACE_STAR_COUNTS.distant : 720);
-    fineStars.geometry.setDrawRange(0, high ? SPACE_STAR_COUNTS.fine : 360);
-    brightStars.geometry.setDrawRange(0, high ? SPACE_STAR_COUNTS.bright : 48);
-    stellarBand.geometry.setDrawRange(0, high ? SPACE_STAR_COUNTS.band : 480);
+    distantStars.geometry.setDrawRange(0, high ? SPACE_STAR_COUNTS.distant : 1050);
+    fineStars.geometry.setDrawRange(0, high ? SPACE_STAR_COUNTS.fine : 520);
+    brightStars.geometry.setDrawRange(0, high ? SPACE_STAR_COUNTS.bright : 64);
+    stellarBand.geometry.setDrawRange(0, high ? SPACE_STAR_COUNTS.band : 650);
     distantStars.material.size = high ? 0.52 : 0.42;
     fineStars.material.size = high ? 0.78 : 0.64;
     brightStars.material.size = high ? 3.2 : 2.35;
@@ -493,10 +522,10 @@ export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) 
   setQuality(quality);
 
   function update(elapsed = 0) {
-    distantStars.material.opacity = 0.48;
-    fineStars.material.opacity = 0.68;
-    brightStars.material.opacity = 0.85 + Math.sin(elapsed * 0.28 + 0.6) * 0.04;
-    stellarBand.material.opacity = 0.32;
+    distantStars.material.opacity = 0.46;
+    fineStars.material.opacity = 0.64;
+    brightStars.material.opacity = 0.83 + Math.sin(elapsed * 0.28 + 0.6) * 0.035;
+    stellarBand.material.opacity = 0.29;
     spaceLightFoci.children.forEach(focus => {
       focus.material.opacity = focus.userData.baseOpacity
         + (focus.userData.twinkle
