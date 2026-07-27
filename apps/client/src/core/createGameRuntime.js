@@ -29,6 +29,7 @@ export function createGameRuntime() {
     onlineState: null,
     selfSeat: null,
     devMode: false,
+    devBaseLevels: { 1: 1, 2: 1 },
     activePlayer: 1,
     localGoblinSpankingSeat: null,
     round: 1,
@@ -57,7 +58,9 @@ export function createGameRuntime() {
   });
   const boardCoordinates = createBoardCoordinates({
     getUnits: () => units,
-    getBaseLevel: seat => state.onlineState?.state.players.find(player => player.seat === seat)?.baseLevel ?? 1,
+    getBaseLevel: seat => state.devMode
+      ? state.devBaseLevels[seat] ?? 1
+      : state.onlineState?.state.players.find(player => player.seat === seat)?.baseLevel ?? 1,
     tile,
     half,
   });
@@ -79,7 +82,14 @@ export function createGameRuntime() {
       onlineState: state.onlineState, selfSeat: state.selfSeat, devMode: state.devMode,
     }),
   });
-  const deploymentOverlay = createDeploymentOverlay({ scene, tile, half });
+  const deploymentOverlay = createDeploymentOverlay({
+    scene,
+    tile,
+    half,
+    getBaseLevel: seat => state.devMode
+      ? state.devBaseLevels[seat] ?? 1
+      : state.onlineState?.state.players.find(player => player.seat === seat)?.baseLevel ?? 1,
+  });
   let preferredGraphicsScheduled = false;
   function activatePreferredGraphics() {
     if (preferredGraphicsScheduled || state.graphicsQuality !== GRAPHICS_QUALITY.HIGH) return;

@@ -36,6 +36,21 @@
   filter: drop-shadow(0 5px 8px #000);
 }
 
+.card-category-symbol {
+  display: inline-grid;
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--rarity) 58%, transparent);
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--rarity) 14%, rgba(8, 6, 13, .84));
+  color: color-mix(in srgb, var(--rarity) 78%, #f1e8d7);
+  font: normal 9px/1 Cinzel, serif;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--rarity) 20%, transparent);
+  vertical-align: -2px;
+}
+
 .deck-slot .card-illustration,
 .deck-library-card .card-illustration,
 #mage-altar-choice-cards .card-illustration {

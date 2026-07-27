@@ -47,25 +47,33 @@ export function isAttackTargetValid(card, from, to) {
   return isAttackDistanceValid(card, distance);
 }
 
-export function baseCellsForSeat(seat, boardSize = 15, baseLevel = 1) {
+export function baseCellsForSeat(seat, boardSize = 15) {
   const centerX = Math.floor(boardSize / 2);
   const centerZ = seat === 1 ? boardSize - 2 : 1;
   const cells = [];
-  const lateralRadius = baseLevel >= 2 ? 2 : 1;
-  for (let x = centerX - lateralRadius; x <= centerX + lateralRadius; x += 1) {
+  for (let x = centerX - 1; x <= centerX + 1; x += 1) {
     for (let z = centerZ - 1; z <= centerZ + 1; z += 1) cells.push({ x, z });
   }
   return cells;
 }
 
 export function deploymentDistance(seat, cell, boardSize = 15, baseLevel = 1) {
-  return Math.min(...baseCellsForSeat(seat, boardSize, baseLevel).map(base => Math.abs(base.x - cell.x) + Math.abs(base.z - cell.z)));
+  const baseCells = baseCellsForSeat(seat, boardSize);
+  const origins = baseLevel >= 2
+    ? baseCells.flatMap(base => [
+      base,
+      { x: base.x - 1, z: base.z },
+      { x: base.x + 1, z: base.z },
+    ])
+    : baseCells;
+  return Math.min(...origins.map(base => Math.abs(base.x - cell.x) + Math.abs(base.z - cell.z)));
 }
 
 export function isDeploymentCell(seat, x, z, boardSize = 15, baseLevel = 1) {
   if (![1, 2].includes(seat) || x < 0 || x >= boardSize || z < 0 || z >= boardSize) return false;
+  if (baseCellsForSeat(seat, boardSize).some(base => base.x === x && base.z === z)) return false;
   const value = deploymentDistance(seat, { x, z }, boardSize, baseLevel);
-  return value >= 1 && value <= 2;
+  return value <= 2;
 }
 
 export const ORTHOGONAL_DIRECTIONS = Object.freeze([

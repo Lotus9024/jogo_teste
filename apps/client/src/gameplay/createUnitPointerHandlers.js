@@ -13,6 +13,7 @@ export function createUnitPointerHandlers({
   const castleHover = document.querySelector('#castle-hover');
   const gameCursor = document.querySelector('#game-cursor');
   let rangePreviewUnit = null;
+  let pinnedCastle = null;
 
   function moveGameCursor(event) {
     gameCursor.style.setProperty('--cursor-x', `${event.clientX}px`);
@@ -29,7 +30,8 @@ export function createUnitPointerHandlers({
     gameCursor.classList.remove('visible', 'pressed');
   }
 
-  function hideCastleHover() {
+  function hideCastleHover(force = false) {
+    if (pinnedCastle && !force) return;
     castleHover.classList.remove('visible');
     castleHover.setAttribute('aria-hidden', 'true');
   }
@@ -79,6 +81,21 @@ export function createUnitPointerHandlers({
     if (state.justDragged) {
       state.justDragged = false;
       return;
+    }
+    const castle = interaction.hoverableAtPointer(event);
+    if (castle?.userData.isCastle) {
+      if (pinnedCastle === castle) {
+        pinnedCastle = null;
+        hideCastleHover(true);
+      } else {
+        pinnedCastle = castle;
+        showCastleHover(castle, event);
+      }
+      return;
+    }
+    if (pinnedCastle) {
+      pinnedCastle = null;
+      hideCastleHover(true);
     }
     const spectator = Boolean(state.onlineState?.self?.spectator);
     const abilityHit = interaction.abilityTriggerAtPointer(event);

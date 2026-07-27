@@ -73,7 +73,7 @@ test('ruas formam uma rede conectada ao castelo e não possuem vida própria', (
   assert.equal(isRoadPlacementCell(1, 9, 10, roads), false);
   assert.equal(isRoadPlacementCell(1, 8, 10, roads), true);
   assert.equal(isRoadPlacementCell(1, 5, 11, roads, 15, 1), false);
-  assert.equal(isRoadPlacementCell(1, 5, 11, roads, 15, 2), true);
+  assert.equal(isRoadPlacementCell(1, 5, 11, roads, 15, 2), false);
   assert.equal(isRoadPlacementCell(1, 2, 3, roads), false);
   assert.equal(roadMovementBonus(7, 10, roads), 1);
   assert.equal(roadMovementBonus(8, 11, roads), 0);
@@ -216,10 +216,14 @@ test('cartas com Desordem usam as descrições resumidas', () => {
   }
 });
 
-test('castelo nível dois acrescenta três quadrados em cada lateral', () => {
+test('nível dois mantém o castelo 3x3 e amplia apenas o lançamento nas laterais', () => {
   assert.equal(baseCellsForSeat(1, 15, 1).length, 9);
-  assert.equal(baseCellsForSeat(1, 15, 2).length, 15);
-  assert.equal(baseCellsForSeat(1, 15, 2).some(cell => cell.x === 5 && cell.z === 13), true);
+  assert.equal(baseCellsForSeat(1, 15, 2).length, 9);
+  assert.equal(baseCellsForSeat(1, 15, 2).some(cell => cell.x === 5 && cell.z === 13), false);
+  assert.equal(isDeploymentCell(1, 5, 13, 15, 1), true);
+  assert.equal(isDeploymentCell(1, 5, 13, 15, 2), true);
+  assert.equal(isDeploymentCell(1, 3, 13, 15, 1), false);
+  assert.equal(isDeploymentCell(1, 3, 13, 15, 2), true);
 });
 
 test('Deck exige 7 comuns, 5 incomuns, 3 raras e bloqueia raridades futuras', () => {

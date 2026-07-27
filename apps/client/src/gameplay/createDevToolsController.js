@@ -6,14 +6,35 @@ import { cards } from '../ui/cardView.js';
 import { updateHealthBadge } from '../ui/unitHealthBadge.js';
 
 export function createDevToolsController({
-  state, scene, alliedKeep, enemyKeep, units, hoverables, boardPresentation,
+  state = {}, scene, alliedKeep, enemyKeep, units = [], hoverables = [], boardPresentation,
   relations, interaction, handController, callbacks,
 }) {
+  state.devBaseLevels ??= { 1: 1, 2: 1 };
   const kingdoms = {
-    1: { baseLevel: 1, baseSize: 1, hp: GAME_CONFIG.startingBaseHp },
-    2: { baseLevel: 1, baseSize: 1, hp: GAME_CONFIG.startingBaseHp },
+    1: { baseLevel: state.devBaseLevels?.[1] ?? 1, baseSize: 1, hp: GAME_CONFIG.startingBaseHp, manualBaseLevel: false },
+    2: { baseLevel: state.devBaseLevels?.[2] ?? 1, baseSize: 1, hp: GAME_CONFIG.startingBaseHp, manualBaseLevel: false },
   };
   const keepForSeat = seat => seat === 1 ? alliedKeep : enemyKeep;
+
+  function setBaseLevel(seat, level, { manual = false, notify = true } = {}) {
+    const kingdom = kingdoms[seat];
+    if (!kingdom) return;
+    kingdom.baseLevel = THREE.MathUtils.clamp(Math.round(level), 1, 4);
+    if (manual) kingdom.manualBaseLevel = true;
+    state.devBaseLevels[seat] = kingdom.baseLevel;
+    const keep = keepForSeat(seat);
+    if (keep) {
+      keep.userData.currentLevel = kingdom.baseLevel;
+      keep.userData.role = `BASE 3×3 · NÍVEL ${kingdom.baseLevel}`;
+      const levelDetails = keep.getObjectByName('castleLevelTwoDetails');
+      if (levelDetails) levelDetails.visible = kingdom.baseLevel >= 2;
+      const gateLight = keep.getObjectByName('Luz violeta do portão');
+      if (gateLight) gateLight.intensity = kingdom.baseLevel >= 2 ? 7 : 5.2;
+    }
+    if (!notify) return;
+    callbacks.syncDevKingdomHud?.();
+    handController.showDeploymentArea(Boolean(handController.selectedCardElement()));
+  }
 
   function syncSettings() {
     if (!state.devMode) return;
@@ -71,14 +92,7 @@ export function createDevToolsController({
     });
     document.querySelectorAll('[data-base-level]').forEach(button => {
       button.addEventListener('click', () => {
-        const level = Number(button.dataset.baseLevel);
-        kingdoms[state.activePlayer].baseLevel = level;
-        const keep = keepForSeat(state.activePlayer);
-        if (keep) {
-          keep.userData.currentLevel = level;
-          keep.scale.set(1, 1, 1);
-        }
-        callbacks.syncDevKingdomHud?.();
+        setBaseLevel(state.activePlayer, Number(button.dataset.baseLevel), { manual: true });
       });
     });
     document.querySelectorAll('[data-dev-settings] [data-card-level]').forEach(button => {
@@ -131,5 +145,5 @@ export function createDevToolsController({
     });
   }
 
-  return { mount, syncSettings, kingdoms, keepForSeat, damageBase };
+  return { mount, syncSettings, kingdoms, keepForSeat, setBaseLevel, damageBase };
 }
