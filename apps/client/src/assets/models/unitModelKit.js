@@ -23,8 +23,11 @@ export function capsule(radius, length, material, parent, position, rotation = [
 }
 
 export function unitBase(parent, color = 0xb08a43) {
-  const pedestal = add(new THREE.CylinderGeometry(0.54, 0.59, 0.15, 32), M.base, parent, [0, 0.08, 0]);
+  const profile = [[0, 0], [0.55, 0], [0.59, 0.025], [0.59, 0.07], [0.56, 0.09], [0.54, 0.15], [0, 0.15]];
+  const pedestal = add(new THREE.LatheGeometry(profile.map(([radius, y]) => new THREE.Vector2(radius, y)), 24), M.base, parent, [0, 0.005, 0]);
   pedestal.name = 'unitPedestal';
+  const carvedRim = add(new THREE.TorusGeometry(0.566, 0.012, 4, 24), U.bronze, pedestal, [0, 0.091, 0], [-Math.PI / 2, 0, 0]);
+  carvedRim.name = 'pedestalBronzeInlay';
   const platformMaterial = new THREE.MeshStandardMaterial({ color, emissive: color, emissiveIntensity: 0.5, metalness: 0.32, roughness: 0.48 });
   const platform = add(new THREE.CylinderGeometry(0.49, 0.53, 0.04, 32), platformMaterial, parent, [0, 0.16, 0]);
   platform.name = 'teamPlatform';

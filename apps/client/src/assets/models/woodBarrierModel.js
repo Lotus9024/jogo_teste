@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { add } from '../../core/scenePrimitives.js';
+import { M, add } from '../../core/scenePrimitives.js';
 import { unitBase } from './unitModelKit.js';
 
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
@@ -75,6 +75,22 @@ function createBuiltParts() {
   beamBetween(parts, new THREE.Vector3(-0.78, 0.68, 0.09), new THREE.Vector3(0.78, 0.68, 0.09), 0.05, agedWoodLight, 'barrierUpperRail');
   beamBetween(parts, new THREE.Vector3(-0.69, 0.2, 0.145), new THREE.Vector3(0.69, 0.84, 0.145), 0.038, agedWood, 'barrierDiagonalBrace');
   addRearSupports(parts, agedWoodLight);
+  const bindings = new THREE.Group();
+  bindings.name = 'barrierIronBindings';
+  for (const x of [-0.608, 0, 0.608]) {
+    for (const y of [0.34, 0.68]) {
+      add(new THREE.BoxGeometry(0.11, 0.085, 0.025), M.iron, bindings, [x, y, 0.155]);
+      add(new THREE.SphereGeometry(0.022, 6, 4), M.steel, bindings, [x, y, 0.176]);
+    }
+    const shoe = add(new THREE.CylinderGeometry(0.087, 0.095, 0.13, 8), M.iron, bindings, [x, 0.1, 0]);
+    shoe.name = 'barrierStakeShoe';
+  }
+  parts.add(bindings);
+  // Uneven, raised splitting marks give the timber a carved miniature finish.
+  for (const x of [-0.76, -0.304, 0.304, 0.76]) {
+    const split = add(new THREE.BoxGeometry(0.018, 0.29, 0.016), agedWoodLight, parts, [x + 0.016, 0.81, 0.074], [0, 0, 0.045]);
+    split.name = 'barrierSplitGrain';
+  }
   return parts;
 }
 

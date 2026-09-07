@@ -12,6 +12,7 @@ Identidade visual: [DESIGN.md](DESIGN.md). Regras e custos: `packages/shared/src
 | Modal | ui/createModalFocus.js | UX-CONTRACT.md | Configurações, Deck e confirmação de sala experimental | Tab contido, fundo inert, Escape, retorno de foco |
 | Navigation | ui/createNexusLobbyController.js | packages/shared/src/protocol.js | Entrada, conta, hub, salas, espera | Voltar preserva fluxo e cancela espera existente |
 | Documentation | guide.html e src/guide.js | docs/GUIA-DO-JOGADOR.md | Jogador, catálogo, engenharia e revisão | Mesmos Markdown versionados, links e tabelas acessíveis |
+| Model preview | models.html e src/modelStudio.js | createCardUnit.js e assets/models | Miniaturas prontas e em construção | 21 peças, estado de obra, teclado, rotação e viewport estreito |
 
 Outros overlays legados mantêm seus controladores; a migração para o primitivo de foco deve ocorrer ao tocar cada fluxo, sem alegar cobertura integral de acessibilidade.
 

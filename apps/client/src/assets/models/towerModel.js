@@ -39,10 +39,65 @@ function addStoneBands(parent, bands) {
 }
 
 function addDoor(parent) {
-  const door = add(new THREE.BoxGeometry(0.34, 0.58, 0.08), agedWood, parent, [0, 0.39, 0.6]);
+  const outline = new THREE.Shape();
+  outline.moveTo(-0.17, 0);
+  outline.lineTo(0.17, 0);
+  outline.lineTo(0.17, 0.4);
+  outline.quadraticCurveTo(0.17, 0.59, 0, 0.59);
+  outline.quadraticCurveTo(-0.17, 0.59, -0.17, 0.4);
+  outline.closePath();
+  const door = add(new THREE.ExtrudeGeometry(outline, { depth: 0.065, bevelEnabled: false, curveSegments: 6 }), agedWood, parent, [0, 0.12, 0.595]);
   door.name = 'towerDoor';
-  [-0.1, 0, 0.1].forEach(x => add(new THREE.BoxGeometry(0.025, 0.52, 0.025), agedWoodLight, parent, [x, 0.39, 0.655]));
-  add(new THREE.BoxGeometry(0.3, 0.045, 0.03), iron, parent, [0, 0.43, 0.67]);
+  [-0.1, 0, 0.1].forEach(x => add(new THREE.BoxGeometry(0.015, 0.47, 0.017), agedWoodLight, parent, [x, 0.36, 0.666]));
+  for (const y of [0.28, 0.49]) add(new THREE.BoxGeometry(0.31, 0.04, 0.026), iron, parent, [0, y, 0.684]);
+  for (const side of [-1, 1]) {
+    for (let row = 0; row < 3; row += 1) add(new THREE.BoxGeometry(0.115, 0.145, 0.13), stoneLight, parent, [side * 0.238, 0.19 + row * 0.145, 0.638]);
+  }
+  const arch = new THREE.Group();
+  arch.name = 'towerDoorArch';
+  for (let index = 0; index < 7; index += 1) {
+    const angle = index / 6 * Math.PI;
+    const voussoir = add(new THREE.BoxGeometry(0.11, 0.135, 0.145), stoneLight, arch, [Math.cos(angle) * 0.24, 0.55 + Math.sin(angle) * 0.24, 0.65], [0, 0, angle - Math.PI / 2]);
+    voussoir.name = 'towerArchStone';
+  }
+  parent.add(arch);
+  add(new THREE.TorusGeometry(0.032, 0.009, 5, 10), iron, parent, [0.08, 0.37, 0.709]);
+}
+
+function addMasonryDetails(parent) {
+  const masonry = new THREE.InstancedMesh(new THREE.BoxGeometry(0.32, 0.16, 0.045), stoneDark, 32);
+  masonry.name = 'towerDressedStoneCourses';
+  masonry.castShadow = true;
+  masonry.receiveShadow = true;
+  const block = new THREE.Object3D();
+  for (let row = 0; row < 4; row += 1) {
+    const y = 0.39 + row * 0.25;
+    const radius = (0.6 - (y - 0.1) / 1.36 * 0.15) * Math.cos(Math.PI / 8) + 0.018;
+    for (let side = 0; side < 8; side += 1) {
+      const angle = side * Math.PI / 4 + Math.PI / 8;
+      block.position.set(Math.sin(angle) * radius, y, Math.cos(angle) * radius);
+      block.rotation.y = angle;
+      block.updateMatrix();
+      masonry.setMatrixAt(row * 8 + side, block.matrix);
+      masonry.setColorAt(row * 8 + side, new THREE.Color((row + side) % 3 ? 0xc5c0b4 : 0x8c908c));
+    }
+  }
+  parent.add(masonry);
+  for (let index = 0; index < 4; index += 1) {
+    const angle = Math.PI / 4 + index * Math.PI / 2;
+    const buttress = new THREE.Group();
+    buttress.name = 'towerButtress';
+    buttress.rotation.y = angle;
+    add(new THREE.BoxGeometry(0.17, 0.8, 0.19), stoneDark, buttress, [0, 0.56, 0.56]);
+    add(new THREE.BoxGeometry(0.21, 0.14, 0.28), stoneLight, buttress, [0, 0.18, 0.58]);
+    add(new THREE.BoxGeometry(0.2, 0.075, 0.23), stoneLight, buttress, [0, 0.97, 0.55], [-0.28, 0, 0]);
+    parent.add(buttress);
+  }
+  for (const side of [-1, 1]) {
+    const slit = add(new THREE.BoxGeometry(0.045, 0.23, 0.04), iron, parent, [side * 0.493, 1.065, 0], [0, Math.PI / 2, 0]);
+    slit.name = 'towerArrowSlit';
+    add(new THREE.BoxGeometry(0.11, 0.04, 0.095), stoneLight, parent, [side * 0.49, 0.94, 0]);
+  }
 }
 
 function addBattlements(parent) {
@@ -67,11 +122,17 @@ function createBuiltParts() {
   const body = add(new THREE.CylinderGeometry(0.45, 0.6, 1.36, 8), stone, parts, [0, 0.78, 0]);
   body.name = 'towerOctagonalBody';
   addStoneBands(parts, [[0.31, 0.58], [0.76, 0.53], [1.2, 0.48]]);
+  addMasonryDetails(parts);
 
   const gallery = add(new THREE.CylinderGeometry(0.66, 0.47, 0.17, 8), stoneDark, parts, [0, 1.5, 0]);
   gallery.name = 'towerUpperGallery';
   const topFloor = add(new THREE.CylinderGeometry(0.56, 0.56, 0.06, 8), agedWood, parts, [0, 1.62, 0]);
   topFloor.name = 'towerTopFloor';
+  for (let index = 0; index < 8; index += 1) {
+    const angle = index * Math.PI / 4;
+    const corbel = add(new THREE.BoxGeometry(0.11, 0.24, 0.16), stoneLight, parts, [Math.sin(angle) * 0.5, 1.38, Math.cos(angle) * 0.5], [0, angle, 0]);
+    corbel.name = 'towerGalleryCorbel';
+  }
 
   addBattlements(parts);
   addDoor(parts);

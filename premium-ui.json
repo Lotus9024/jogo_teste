@@ -1,6 +1,6 @@
 {
   "profile": "product-admin",
-  "sourceRoots": ["apps/client/src", "apps/client/index.html", "apps/client/guide.html"],
+  "sourceRoots": ["apps/client/src", "apps/client/index.html", "apps/client/guide.html", "apps/client/models.html"],
   "locale": "pt-BR",
   "canonicalMap": "UX-CONTRACT.md",
   "requiredCapabilities": ["Form", "Scrollbar", "Toast"],

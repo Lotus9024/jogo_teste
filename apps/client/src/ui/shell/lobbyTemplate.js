@@ -174,6 +174,7 @@ export function lobbyTemplate() {
 
         <footer class="nexus-lobby-footer">
           <a class="nexus-guide-link" href="./guide.html" target="_blank" rel="noopener">Como jogar <span aria-hidden="true">↗</span><span class="sr-only"> (abre em outra aba)</span></a>
+          <a class="nexus-guide-link" href="./models.html" target="_blank" rel="noopener">Explorar miniaturas <span aria-hidden="true">↗</span><span class="sr-only"> (abre em outra aba)</span></a>
           <output id="lobby-error" class="lobby-error" aria-live="polite"></output>
         </footer>
       </div>

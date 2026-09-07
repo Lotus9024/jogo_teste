@@ -1,8 +1,6 @@
 import * as THREE from 'three';
 import { M, add } from '../../core/scenePrimitives.js';
-import { U, capsule, humanoidBase } from './unitModelKit.js';
-
-const Y_AXIS = new THREE.Vector3(0, 1, 0);
+import { U, human, mesh, oval, tailoredTorso, profile, arm, legs, face, belt, foldedCape } from './humanMiniatureKit.js';
 
 function createBowGeometry() {
   const curve = new THREE.CatmullRomCurve3([
@@ -11,50 +9,25 @@ function createBowGeometry() {
     new THREE.Vector3(0.31, 0.2, 0), new THREE.Vector3(0.27, 0.5, 0),
     new THREE.Vector3(0.1, 0.72, 0)
   ]);
-  return new THREE.TubeGeometry(curve, 36, 0.027, 8, false);
+  return new THREE.TubeGeometry(curve, 24, 0.032, 6, false);
 }
 
 function addBowString(parent) {
   const geometry = new THREE.BufferGeometry().setFromPoints([
-    new THREE.Vector3(0.1, -0.72, 0),
-    new THREE.Vector3(0, 0, -0.28),
-    new THREE.Vector3(0.1, 0.72, 0)
+    new THREE.Vector3(0.1, -0.72, 0), new THREE.Vector3(0, 0, -0.28), new THREE.Vector3(0.1, 0.72, 0)
   ]);
   const string = new THREE.Line(geometry, new THREE.LineBasicMaterial({ color: 0xd8d0b8 }));
   string.name = 'archerBowString';
   parent.add(string);
 }
 
-function addLimbBetween(parent, start, end, radius, material, name) {
-  const direction = end.clone().sub(start);
-  const mesh = new THREE.Mesh(
-    new THREE.CapsuleGeometry(radius, Math.max(0.04, direction.length() - radius * 2), 8, 12),
-    material
-  );
-  mesh.name = name;
-  mesh.position.copy(start).add(end).multiplyScalar(0.5);
-  mesh.quaternion.setFromUnitVectors(Y_AXIS, direction.normalize());
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  parent.add(mesh);
-  return mesh;
-}
-
-function addHand(parent, position, name) {
-  const hand = add(new THREE.DodecahedronGeometry(0.105, 0), M.skin, parent, position.toArray(), [0, 0, 0], [0.82, 1, 0.74]);
-  hand.name = name;
-  return hand;
-}
-
 function createNockedArrow(parent) {
   const arrow = new THREE.Group();
   arrow.name = 'archerArrow';
-  const shaft = add(new THREE.CylinderGeometry(0.012, 0.012, 1.22, 6), M.wood, arrow, [0, 0, 0.34], [Math.PI / 2, 0, 0]);
-  shaft.name = 'archerArrowShaft';
-  add(new THREE.ConeGeometry(0.045, 0.14, 6), U.plate, arrow, [0, 0, 1], [Math.PI / 2, 0, 0]);
+  mesh(arrow, 'archerArrowShaft', new THREE.CylinderGeometry(0.012, 0.012, 1.08, 6), M.wood, [0, 0, 0.28], [Math.PI / 2, 0, 0]);
+  add(new THREE.ConeGeometry(0.045, 0.14, 6), U.plate, arrow, [0, 0, 0.88], [Math.PI / 2, 0, 0]);
   add(new THREE.PlaneGeometry(0.13, 0.08), U.feather, arrow, [0, 0, -0.24], [Math.PI / 2, 0, 0]);
   parent.add(arrow);
-  return arrow;
 }
 
 function createQuiver(rig) {
@@ -62,10 +35,11 @@ function createQuiver(rig) {
   quiver.name = 'archerQuiver';
   quiver.position.set(-0.3, 1.3, -0.28);
   quiver.rotation.set(-0.18, 0, -0.25);
-  add(new THREE.CylinderGeometry(0.13, 0.17, 0.82, 10), M.leather, quiver);
+  add(new THREE.CylinderGeometry(0.13, 0.17, 0.82, 8), M.leather, quiver);
+  mesh(quiver, 'archerQuiverRim', new THREE.TorusGeometry(0.135, 0.025, 5, 10), U.bronze, [0, 0.38, 0], [Math.PI / 2, 0, 0]);
   for (let index = 0; index < 4; index += 1) {
     const x = -0.08 + index * 0.052;
-    add(new THREE.CylinderGeometry(0.011, 0.011, 0.66, 6), M.wood, quiver, [x, 0.57, 0]);
+    add(new THREE.CylinderGeometry(0.011, 0.011, 0.66, 5), M.wood, quiver, [x, 0.57, 0]);
     add(new THREE.PlaneGeometry(0.09, 0.14), U.feather, quiver, [x, 0.88, 0], [0, index * 0.35, 0]);
   }
   rig.add(quiver);
@@ -80,46 +54,44 @@ export function setArcherMountedState(root, mounted) {
 }
 
 export function makeArcher() {
-  const { root, rig } = humanoidBase('Arqueiro', 'ARQUEIRO', 0x66866b, { hp: 2, damage: 2, move: 2 });
-  [-1, 1].forEach(side => {
-    capsule(0.105, 0.5, M.darkLeather, rig, [side * 0.16, 0.49, 0], [0, 0, side * 0.06]);
-    add(new THREE.BoxGeometry(0.23, 0.14, 0.38), M.darkLeather, rig, [side * 0.16, 0.27, 0.12]);
-  });
-  add(new THREE.CylinderGeometry(0.38, 0.29, 0.7, 9), U.greenCloth, rig, [0, 0.94, 0]);
-  capsule(0.24, 0.52, U.tanCloth, rig, [0, 1.38, 0]);
-  add(new THREE.BoxGeometry(0.38, 0.62, 0.055), M.leather, rig, [0, 1.37, 0.26], [0, 0, -0.04]);
-  add(new THREE.TorusGeometry(0.27, 0.04, 8, 24), M.leather, rig, [0, 1.1, 0], [Math.PI / 2, 0, 0]);
-  add(new THREE.SphereGeometry(0.25, 14, 9), M.skin, rig, [0, 1.99, 0.04]);
-  add(new THREE.SphereGeometry(0.31, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.65), U.greenCloth, rig, [0, 2.08, -0.02]);
-  add(new THREE.ConeGeometry(0.25, 0.64, 10), U.greenCloth, rig, [0, 2.25, -0.15], [-0.45, 0, 0]);
-  add(new THREE.BoxGeometry(0.34, 0.07, 0.13), M.leather, rig, [0, 1.65, -0.18]);
+  const { root, rig } = human('Arqueiro', 'ARQUEIRO', 0x66866b, { hp: 2, damage: 2, move: 2 });
+  legs(rig, 'archer', { material: U.greenCloth, stance: 0.19 });
+  tailoredTorso(rig, 'archerHuntingCoat', U.greenCloth, { y: 1.15, height: 0.82, width: 0.88, depth: 0.91 });
+  foldedCape(rig, 'archerRangerCloak', U.greenCloth, { top: 1.62, bottom: 0.63, width: 0.47, back: -0.23 });
+  profile(rig, 'archerLeatherJerkin', [[-0.22, 0.25], [0.22, 0.25], [0.25, -0.22], [-0.25, -0.22]],
+    0.035, M.leather, [0, 1.30, 0.18]);
+  for (const side of [-1, 1]) {
+    profile(rig, 'archerCoatTail', [[-0.12, 0.16], [0.12, 0.16], [0.15, -0.23], [0, -0.30], [-0.13, -0.23]],
+      0.025, U.greenCloth, [side * 0.14, 0.80, 0.20], [0.07, 0, side * 0.1], 0.005);
+  }
+  belt(rig, 'archer', 1.01, 0.28);
+  face(rig, 'archer', 1.90);
+  mesh(rig, 'archerHoodCrown', new THREE.SphereGeometry(0.27, 12, 7, 0, Math.PI * 2, 0, Math.PI * 0.56), U.greenCloth,
+    [0, 2.025, -0.035], [0.11, 0, 0], [1, 1.08, 1.06]);
+  for (const side of [-1, 1]) {
+    profile(rig, 'archerHoodDrape', [[-0.055, 0.18], [0.075, 0.14], [0.11, -0.20], [-0.10, -0.24]],
+      0.045, U.greenCloth, [side * 0.20, 1.92, 0.09], [0.08, side * -0.50, side * -0.11]);
+  }
+  mesh(rig, 'archerHoodCowl', new THREE.TorusGeometry(0.225, 0.064, 6, 12), U.greenCloth, [0, 1.68, 0], [Math.PI / 2, 0, 0], [1.20, 1, 1]);
+  profile(rig, 'archerCloakClasp', [[0, 0.075], [0.05, 0], [0, -0.075], [-0.05, 0]], 0.025, U.bronze, [-0.10, 1.64, 0.255]);
 
   const bow = new THREE.Group();
   bow.name = 'archerBow';
-  bow.position.set(0.6, 1.52, 0.3);
-  add(createBowGeometry(), M.wood, bow);
+  bow.position.set(0.24, 1.50, 0.31);
+  const limb = add(createBowGeometry(), M.wood, bow);
+  limb.name = 'archerRecurveBow';
   addBowString(bow);
   createNockedArrow(bow);
+  mesh(bow, 'archerBowGrip', new THREE.CylinderGeometry(0.045, 0.045, 0.20, 8), M.leather, [0.14, 0, 0]);
+  for (const side of [-1, 1]) oval(bow, 'archerBowHornTip', [0.11, side * 0.66, 0], [0.036, 0.075, 0.034], U.bronze);
   rig.add(bow);
-
-  const bowShoulder = new THREE.Vector3(0.29, 1.64, 0.02);
-  const bowElbow = new THREE.Vector3(0.48, 1.58, 0.16);
-  const bowHandPosition = new THREE.Vector3(0.74, 1.52, 0.3);
-  const drawShoulder = new THREE.Vector3(-0.29, 1.64, 0.01);
-  const drawElbow = new THREE.Vector3(0.02, 1.69, -0.04);
-  const drawHandPosition = new THREE.Vector3(0.6, 1.52, 0.02);
-  add(new THREE.DodecahedronGeometry(0.17, 0), U.greenCloth, rig, bowShoulder.toArray(), [0, 0, 0], [1, 0.82, 0.9]);
-  add(new THREE.DodecahedronGeometry(0.17, 0), U.greenCloth, rig, drawShoulder.toArray(), [0, 0, 0], [1, 0.82, 0.9]);
-  addLimbBetween(rig, bowShoulder, bowElbow, 0.085, M.leather, 'archerBowUpperArm');
-  addLimbBetween(rig, bowElbow, bowHandPosition, 0.078, M.skin, 'archerBowForearm');
-  addLimbBetween(rig, drawShoulder, drawElbow, 0.085, M.leather, 'archerDrawUpperArm');
-  addLimbBetween(rig, drawElbow, drawHandPosition, 0.078, M.skin, 'archerDrawForearm');
-  addHand(rig, bowHandPosition, 'archerBowHand');
-  addHand(rig, drawHandPosition, 'archerDrawHand');
-  add(new THREE.BoxGeometry(0.16, 0.22, 0.16), M.leather, rig, [0.5, 1.55, 0.17]);
-
+  const bowHand = arm(rig, 'archerBow', [0.28, 1.55, 0], [0.39, 1.48, 0.11], [0.38, 1.50, 0.31], U.greenCloth, M.leather);
+  bowHand.name = 'archerBowHand';
+  const drawHand = arm(rig, 'archerDraw', [-0.28, 1.55, 0], [-0.32, 1.45, -0.15], [0.24, 1.50, 0.03], U.greenCloth, M.leather);
+  drawHand.name = 'archerDrawHand';
+  profile(rig, 'archerBracer', [[-0.07, -0.13], [0.07, -0.13], [0.09, 0.11], [-0.09, 0.11]],
+    0.025, U.plateDark, [0.39, 1.50, 0.19], [Math.PI / 2, 0, 0]);
   createQuiver(rig);
-  root.rotation.y = 0.2;
   setArcherMountedState(root, false);
   return root;
 }

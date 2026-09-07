@@ -8,6 +8,7 @@ export default defineConfig({
       input: {
         game: fileURLToPath(new URL('./index.html', import.meta.url)),
         guide: fileURLToPath(new URL('./guide.html', import.meta.url)),
+        models: fileURLToPath(new URL('./models.html', import.meta.url)),
       },
       output: {
         manualChunks(id) {

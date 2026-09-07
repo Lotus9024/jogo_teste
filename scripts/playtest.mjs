@@ -137,6 +137,39 @@ try {
   await guide.screenshot({ path: resolve(output, 'guia-mobile.png') });
   passed('Biblioteca: todos os documentos, âncoras e viewport de 390px');
 
+  const studio = await first.context().newPage();
+  studio.on('pageerror', error => pageErrors.push(error.message));
+  await studio.goto(`${baseURL}/models.html`);
+  await studio.locator('#model-viewport canvas').waitFor();
+  const modelIds = await studio.locator('#model-list [data-model-id]').evaluateAll(buttons => buttons.map(button => button.dataset.modelId));
+  assert.equal(modelIds.length, 21, 'Todas as miniaturas físicas devem estar disponíveis.');
+  let constructionStates = 0;
+  for (const id of modelIds) {
+    await studio.locator(`[data-model-id="${id}"]`).click();
+    assert.equal(await studio.locator('#model-viewport').getAttribute('data-current-model'), id);
+    if (await studio.locator('#model-build').isVisible()) {
+      await studio.locator('#model-build').click();
+      assert.equal(await studio.locator('#model-build').getAttribute('aria-pressed'), 'true');
+      await studio.locator('#model-build').click();
+      constructionStates += 1;
+    }
+  }
+  assert.ok(constructionStates >= 8);
+  await studio.locator('[data-model-id="mage"]').click();
+  await studio.locator('#model-rotate').click();
+  assert.equal(await studio.locator('#model-rotate').getAttribute('aria-pressed'), 'true');
+  await studio.locator('#model-rotate').click();
+  await studio.locator('#model-viewport').focus();
+  await studio.keyboard.press('ArrowRight');
+  await studio.locator('#model-reset').click();
+  await studio.screenshot({ path: resolve(output, 'miniaturas-desktop.png') });
+  await studio.setViewportSize({ width: 390, height: 844 });
+  await studio.emulateMedia({ reducedMotion: 'reduce' });
+  assert.equal(await studio.locator('#model-rotate').isDisabled(), true);
+  assert.equal(await studio.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+  await studio.screenshot({ path: resolve(output, 'miniaturas-mobile.png') });
+  passed('Galeria: 21 miniaturas, obras, rotação, teclado e movimento reduzido');
+
   const failureContext = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
   contexts.push(failureContext);
   const failure = await failureContext.newPage();

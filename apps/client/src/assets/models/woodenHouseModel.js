@@ -95,17 +95,50 @@ function createRoofSide(parent, side) {
   roof.rotation.z = side < 0 ? angle : -angle;
   add(new THREE.BoxGeometry(slope, 0.075, CABIN.roofDepth), roofWood, roof);
 
-  for (let band = 0; band < 4; band += 1) {
-    const width = slope / 4 + 0.015;
-    const x = -slope / 2 + width / 2 + band * (slope / 4);
-    add(
-      new THREE.BoxGeometry(width, 0.028, CABIN.roofDepth + 0.025),
-      band % 2 ? roofWoodAlt : roofWood,
-      roof,
-      [x, 0.052 + (band % 2) * 0.008, 0]
-    );
+  const shingles = new THREE.InstancedMesh(new THREE.BoxGeometry(slope / 4 + 0.025, 0.045, 0.26), roofWoodAlt, 24);
+  shingles.name = 'houseRoofShingles';
+  shingles.castShadow = true;
+  shingles.receiveShadow = true;
+  const tile = new THREE.Object3D();
+  for (let row = 0; row < 4; row += 1) {
+    for (let column = 0; column < 6; column += 1) {
+      tile.position.set(-slope / 2 + slope / 8 + row * slope / 4, 0.065 + (row % 2) * 0.008, -0.65 + column * 0.25 + (row % 2) * 0.055);
+      tile.rotation.z = side * 0.035;
+      tile.updateMatrix();
+      const index = row * 6 + column;
+      shingles.setMatrixAt(index, tile.matrix);
+      shingles.setColorAt(index, new THREE.Color(index % 3 ? 0xb0a093 : 0x84746c));
+    }
   }
+  roof.add(shingles);
+  for (const z of [-0.78, 0.78]) add(new THREE.BoxGeometry(slope + 0.055, 0.095, 0.06), darkWood, roof, [0, 0, z]);
   parent.add(roof);
+}
+
+function addCabinFittings(parent) {
+  for (const x of [-0.68, 0.68]) {
+    const post = add(new THREE.BoxGeometry(0.095, 0.96, 0.13), darkWood, parent, [x, 0.68, -0.63]);
+    post.name = 'houseCornerTimber';
+    for (const y of [0.38, 0.97]) add(new THREE.BoxGeometry(0.12, 0.08, 0.018), M.iron, parent, [x, y, -0.705]);
+  }
+  for (const x of [0, 0.48]) add(new THREE.BoxGeometry(0.065, 0.8, 0.1), freshWood, parent, [x, 0.62, -0.69]);
+  add(new THREE.BoxGeometry(0.58, 0.08, 0.12), darkWood, parent, [0.24, 1.03, -0.69]);
+  add(new THREE.BoxGeometry(0.52, 0.065, 0.2), chimneyStone, parent, [0.24, 0.2, -0.75]);
+  for (const y of [0.42, 0.83]) {
+    add(new THREE.BoxGeometry(0.36, 0.043, 0.025), M.iron, parent, [0.24, y, -0.735]);
+    for (const x of [0.085, 0.385]) add(new THREE.SphereGeometry(0.018, 6, 4), M.steel, parent, [x, y, -0.753]);
+  }
+  const handle = add(new THREE.TorusGeometry(0.038, 0.009, 5, 10), M.iron, parent, [0.36, 0.59, -0.746]);
+  handle.name = 'houseDoorRing';
+  for (const x of [-0.615, -0.225]) {
+    add(new THREE.BoxGeometry(0.07, 0.4, 0.06), freshWood, parent, [x, 0.78, -0.72]);
+  }
+  for (const y of [0.57, 0.99]) add(new THREE.BoxGeometry(0.46, 0.065, 0.1), darkWood, parent, [-0.42, y, -0.72]);
+  // An open, capped flue reads as a chimney from the player's elevated view.
+  const flue = add(new THREE.BoxGeometry(0.16, 0.025, 0.16), M.void, parent, [0.48, 1.694, 0.22]);
+  flue.name = 'houseChimneyOpening';
+  for (const x of [0.365, 0.595]) add(new THREE.BoxGeometry(0.07, 0.075, 0.3), chimneyStone, parent, [x, 1.71, 0.22]);
+  for (const z of [0.105, 0.335]) add(new THREE.BoxGeometry(0.16, 0.075, 0.07), chimneyStone, parent, [0.48, 1.71, z]);
 }
 
 function createBuiltCabin(parent) {
@@ -138,6 +171,7 @@ function createBuiltCabin(parent) {
       [0, stone % 2 ? 0.08 : -0.05, 0]
     );
   }
+  addCabinFittings(parent);
 }
 
 function createConstructionRoof(parent) {

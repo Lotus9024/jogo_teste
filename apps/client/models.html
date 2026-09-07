@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#101511" />
+    <title>Miniaturas · Tronos em Ruínas</title>
+  </head>
+  <body class="model-studio">
+    <header class="studio-header"><a href="./">← Voltar ao jogo</a><span>TRONOS EM RUÍNAS <i aria-hidden="true">✦</i> MINIATURAS</span><a href="./guide.html">Como jogar ↗</a></header>
+    <main class="studio-layout">
+      <section class="studio-stage" aria-labelledby="model-title">
+        <div class="studio-heading"><small id="model-category"></small><h1 id="model-title"></h1><p id="model-summary"></p></div>
+        <div id="model-viewport" role="group" tabindex="0" aria-label="Miniatura 3D: arraste para girar e use a roda do mouse para aproximar"></div>
+        <div class="studio-tools" aria-label="Controles da miniatura">
+          <button id="model-reset" type="button">Restaurar vista</button>
+          <button id="model-rotate" type="button" aria-pressed="false">Girar automaticamente</button>
+          <button id="model-build" type="button" aria-pressed="false" hidden>Ver em construção</button>
+        </div>
+        <p class="studio-hint">Arraste para girar · Roda do mouse para aproximar · Setas para girar pelo teclado</p>
+        <output id="model-error" role="status"></output>
+      </section>
+      <aside class="studio-library"><header><small>O EXÉRCITO DO REINO</small><h2>Escolha uma miniatura</h2><p>Os mesmos modelos que aparecem na partida.</p></header><div id="model-list" role="group" aria-label="Miniaturas disponíveis"></div></aside>
+    </main>
+    <script type="module" src="/src/modelStudio.js"></script>
+  </body>
+</html>

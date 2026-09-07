@@ -83,3 +83,11 @@ Scrollbars globais vêm de tokens.css, com cores de repouso/hover/arraste, padr�
 | Base bronze era sobrescrita por tokens violeta em um tema global | Bronze volta à hierarquia de texto/ações do lobby; violeta permanece nos detalhes arcanos | tokens.css e interface-polish.css |
 | Pequenos textos de configuração tinham 8px | Explicações passam a 12px | interface-polish.css |
 | Galeria tinha scrollbar própria e não havia baseline única | Novos contêineres herdam baseline global, galeria conserva variante de cor | tokens.css |
+
+### Miniaturas e galeria 3D
+
+As 21 miniaturas físicas usam silhuetas próprias: armaduras segmentadas para humanos, sucata e assimetria para Goblins, pregas e capuz para o Mago, coroas vazadas e mantos para peças reais. Casas e torres mostram a estrutura que sustenta telhas e plataformas; canhão tem boca aberta e rodas raiadas. A fidelidade vem da forma, não de aumentar brilho ou tamanho da unidade.
+
+Roupas opacas com pregas, aço gasto, madeira e bronze seguem materiais em `unitModelKit.js`/`scenePrimitives.js`. Geometrias de perfil e tecido compartilhadas ficam em `miniatureGeometry.js`; anatomia humana e criaturas têm kits próprios. Preserve escala 0,55, seleção por equipe e orientação ao rival. Capas devem ficar atrás da frente declarada em `modelFrontZ`. Detalhes de construção pertencem ao grupo de estado que os controla. Veja [Miniaturas 3D](docs/MODELOS-3D.md).
+
+`models.html` é uma superfície de consulta: iluminação neutra quente com contraluz violeta discreta e chão escuro, sem aplicar o ambiente completo da partida. Reutiliza os modelos reais, com biblioteca lateral rolável, seleção por botões, órbita por arraste/setas e estado de obra. No celular, a lista fica abaixo do visor. Rotação automática começa desligada e é desativada por reduced-motion. Erros de WebGL aparecem no próprio visor.
