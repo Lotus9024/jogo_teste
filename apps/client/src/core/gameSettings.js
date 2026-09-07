@@ -5,7 +5,8 @@ export function bootGraphicsQuality() {
 }
 
 export function pixelRatioForQuality(quality, pixelRatio = globalThis.devicePixelRatio ?? 1) {
-  return Math.min(Number(pixelRatio) || 1, quality === GRAPHICS_QUALITY.LOW ? 0.85 : 1.3);
+  const ratio = Number(pixelRatio);
+  return Math.min(Number.isFinite(ratio) && ratio > 0 ? ratio : 1, quality === GRAPHICS_QUALITY.LOW ? 0.85 : 1.3);
 }
 
 export function recommendedGraphicsQuality(device = {}) {
@@ -18,9 +19,17 @@ export function recommendedGraphicsQuality(device = {}) {
     : GRAPHICS_QUALITY.HIGH;
 }
 
-export function loadGameSettings(storage = globalThis.localStorage, device = globalThis.navigator ?? {}) {
+function resolveStorage(storage) {
+  // Some embedded/private browsing contexts throw when reading localStorage itself.
+  try { return storage === undefined ? globalThis.localStorage : storage; } catch { return null; }
+}
+
+export function loadGameSettings(storage, device = globalThis.navigator ?? {}) {
   let saved = {};
-  try { saved = JSON.parse(storage?.getItem('tronos-game-settings') ?? '{}'); } catch {}
+  try {
+    const parsed = JSON.parse(resolveStorage(storage)?.getItem('tronos-game-settings') ?? '{}');
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) saved = parsed;
+  } catch {}
   const recommended = recommendedGraphicsQuality({
     deviceMemory: device.deviceMemory,
     hardwareConcurrency: device.hardwareConcurrency,
@@ -33,6 +42,6 @@ export function loadGameSettings(storage = globalThis.localStorage, device = glo
   };
 }
 
-export function saveGameSettings(settings, storage = globalThis.localStorage) {
-  try { storage?.setItem('tronos-game-settings', JSON.stringify(settings)); } catch {}
+export function saveGameSettings(settings, storage) {
+  try { resolveStorage(storage)?.setItem('tronos-game-settings', JSON.stringify(settings)); } catch {}
 }

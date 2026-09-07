@@ -1,0 +1,72 @@
+/* Presentation only: the board, targeting and turn rules are unchanged. */
+.online-lobby { background: linear-gradient(90deg, rgba(4, 6, 7, .94), rgba(7, 6, 12, .68) 62%, rgba(5, 6, 7, .76)); backdrop-filter: blur(3px); }
+.nexus-lobby { width: min(480px, 100%); padding: 38px 40px 24px; border: 1px solid var(--line); border-radius: 3px; background: radial-gradient(ellipse at 0 0, rgba(97, 75, 44, .16), transparent 60%), linear-gradient(150deg, #141514, #0a0a0e 75%); }
+.nexus-lobby::before { border-color: var(--line); border-radius: 0; opacity: .6; }
+.nexus-brand { gap: 18px; margin-bottom: 30px; }
+.nexus-brand > span { width: 52px; height: 64px; border-radius: 0; border-color: var(--gold); color: var(--gold-hi); background: rgba(169, 130, 69, .05); font-size: 30px; clip-path: polygon(50% 0, 100% 15%, 90% 80%, 50% 100%, 10% 80%, 0 15%); }
+.nexus-brand-caption { color: var(--muted); font-size: 9px; letter-spacing: .18em; }
+.nexus-brand h1 { margin-top: 10px; color: var(--bone); font: 500 36px/1.05 var(--font-display); letter-spacing: .035em; }
+.nexus-intro { margin: 0 0 30px; color: var(--bone); font: 20px/1.55 var(--font-display); }
+.nexus-intro em { font-style: normal; color: var(--gold-hi); }
+[data-lobby-screen="entry"] .nexus-screen-header { display: none; }
+.nexus-entry-note { margin: 22px 0 4px; max-width: 290px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.nexus-actions button { min-height: 48px; border-radius: var(--control-radius); font-size: 12px; letter-spacing: .025em; }
+.nexus-actions .nexus-primary { display: flex; align-items: center; justify-content: space-between; text-align: left; padding-inline: 20px; }
+.nexus-lobby .nexus-primary { border-color: var(--gold) !important; background: linear-gradient(150deg, #725532, #3c2d20) !important; color: #fff0cf !important; box-shadow: inset 0 1px rgba(255, 225, 170, .12), 0 5px 18px rgba(0, 0, 0, .3); }
+.nexus-lobby .nexus-primary:hover:not(:disabled) { filter: brightness(1.18); }
+.nexus-lobby .nexus-primary:disabled { opacity: .5; }
+.nexus-lobby .nexus-quiet { border-color: var(--line) !important; color: var(--muted) !important; background: transparent !important; box-shadow: none; }
+.nexus-lobby .nexus-screen-header h2 { font-size: 22px; color: var(--bone); }
+.nexus-lobby .nexus-form label, .nexus-lobby legend { font-size: 11px; color: var(--muted); }
+.nexus-lobby .nexus-form input:not([type="radio"]) { min-height: 44px; border-radius: var(--control-radius); }
+.nexus-lobby-footer { display: flex; flex-direction: column; gap: 12px; margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--line); }
+.nexus-guide-link { align-self: flex-start; color: var(--gold-hi); font-size: 12px; text-decoration: none; padding: 8px 0; }
+.nexus-guide-link:hover { color: var(--focus); text-decoration: underline; text-underline-offset: 4px; }
+.lobby-error { min-height: 18px; color: #efb2a4; font-size: 12px; line-height: 1.5; }
+.nexus-lobby [aria-invalid="true"] { border-color: #efb2a4 !important; }
+.nexus-lobby[aria-busy="true"] { cursor: progress; }
+.game-guide-toggle { position: fixed; z-index: 8; top: 20px; right: 76px; display: grid; place-items: center; width: 42px; height: 42px; border: 1px solid var(--line); border-radius: var(--control-radius); color: var(--gold-hi); background: var(--panel); font: 600 19px var(--font-display); text-decoration: none; }
+.game-guide-toggle:hover { border-color: var(--gold-hi); color: var(--focus); }
+.turn-round-card { padding: 10px 14px; width: 154px; background: var(--panel); border-color: var(--line); border-radius: var(--control-radius); }
+.turn-round-card > div { font: 11px/1.4 var(--font-body); gap: 4px; }
+.turn-round-card span b { font: 600 17px var(--font-data); color: var(--gold-hi); }
+.match-state { border-color: var(--line); background: var(--panel); }
+.match-state time { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.bottom-command { border-color: var(--line); background: var(--panel); }
+.command-resource small { font-size: 9px; color: var(--muted); letter-spacing: .08em; }
+.command-resource b { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.command-resource em { font-size: 10px; color: var(--muted); }
+.settings-panel { max-height: calc(100dvh - 32px); overflow-y: auto; scrollbar-gutter: stable; }
+.settings-group p { font-size: 12px; line-height: 1.6; color: var(--muted); }
+.settings-panel header small, .settings-group small { font-size: 9px; }
+.settings-options button { font-size: 10px; min-height: 42px; }
+.settings-panel header button { min-width: 40px; min-height: 40px; }
+@media (min-width: 1100px) {
+  .online-lobby { justify-items: start; padding-left: clamp(48px, 10vw, 170px); }
+}
+@media (max-width: 620px) {
+  .online-lobby { padding: 16px; }
+  .nexus-lobby { padding: 25px 24px 16px; max-height: calc(100dvh - 32px); }
+  .nexus-brand { margin-bottom: 22px; }
+  .nexus-brand h1 { font-size: 30px; }
+  .nexus-intro { font-size: 17px; margin-bottom: 22px; }
+  .game-guide-toggle { top: 10px; right: 54px; width: 36px; height: 36px; }
+  .turn-round-card { top: 10px; left: 10px; width: 116px; padding: 7px 10px; }
+  .command-resource small { font-size: 8px; }
+  .match-state { top: 10px; left: 10px; right: auto; width: calc(100vw - 112px); min-width: 0; min-height: 36px; padding: 6px 12px; gap: 8px; transform: none; clip-path: none; border-radius: var(--control-radius); }
+  .match-state time { font-size: 14px; }
+  .turn-round-card { top: 56px; width: 182px; padding: 6px 10px; }
+  .turn-round-card > div { flex-direction: row; gap: 15px; }
+  .turn-round-card span { gap: 8px; }
+  .turn-round-card span b { font-size: 13px; }
+  .bottom-command { left: 10px; right: 10px; width: calc(100vw - 20px); transform: none; grid-template-columns: 58px minmax(0, 1fr) 58px 64px; gap: 4px; padding: 5px; height: 52px; clip-path: none; border-radius: var(--control-radius); }
+  .bottom-command .command-resource.energy { display: flex; }
+  .bottom-command .command-resource.level { display: none; }
+  .bottom-command .command-resource { min-width: 0; margin: 0; padding: 2px; }
+  .bottom-command #end-turn { min-width: 0; width: 100%; height: 40px; margin: 0; padding: 4px; font-size: 9px; clip-path: none; }
+  .bottom-command .command-resource b { font-size: 13px; }
+  .bottom-command.hidden-by-card { transform: translateY(14px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}

@@ -1,129 +1,144 @@
 import * as THREE from 'three';
 import { animateAbilityBadges } from '../ui/unitHealthBadge.js';
 import { pixelRatioForQuality } from './gameSettings.js';
+import { createAmbientAnimation } from './createAmbientAnimation.js';
+import { createShadowInvalidation } from './createShadowInvalidation.js';
+import { fitGameViewport } from './fitGameViewport.js';
 
 export function createRenderLoop({
-  renderer,
-  scene,
-  camera,
-  controls,
-  cameraTransition,
-  damageEffects,
-  mageEffects,
-  battleAnimations,
-  units,
-  fireMeshes,
-  wisps,
-  fireLights,
-  physicalDecks,
-  alliedKeep,
-  enemyKeep,
-  updateDynamicLighting,
-  updateTerrain,
-  getSelfSeat,
-  getGraphicsQuality,
-  getDeckHoverSeat,
+  renderer, scene, camera, controls, cameraTransition, damageEffects, mageEffects,
+  battleAnimations, units, fireMeshes, wisps, fireLights, physicalDecks,
+  alliedKeep, enemyKeep, updateDynamicLighting, updateTerrain,
+  getSelfSeat, getGraphicsQuality, getDeckHoverSeat,
+  environment = globalThis,
 }) {
-  const clock = new THREE.Clock();
+  const { document } = environment;
   const enemyBaseTag = document.querySelector('.enemy-base-tag');
   const lobby = document.querySelector('#online-lobby');
+  const loading = document.querySelector('.loading');
   const baseTagPoint = new THREE.Vector3();
-  let lastStatusUpdate = 0;
-  let lastFrameAt = 0;
+  const ambient = createAmbientAnimation({ units, fireMeshes, wisps, fireLights, physicalDecks });
+  const shadows = createShadowInvalidation(renderer);
+  const reducedMotion = environment.matchMedia?.('(prefers-reduced-motion: reduce)');
+  let lastStatusUpdate = -Infinity;
+  let lastFrameAt = null;
+  let elapsed = 0;
+  let frameId = null;
+  let loadingTimer = null;
   let running = false;
+  let disposed = false;
+  let contextLost = false;
 
   function positionEnemyStatus() {
     const target = getSelfSeat() === 2 ? alliedKeep : enemyKeep;
+    if (!enemyBaseTag || !target) return;
     target.getWorldPosition(baseTagPoint);
     baseTagPoint.y += 4.9;
     baseTagPoint.project(camera);
-    enemyBaseTag.style.left = `${(baseTagPoint.x * 0.5 + 0.5) * innerWidth}px`;
-    enemyBaseTag.style.top = `${(-baseTagPoint.y * 0.5 + 0.5) * innerHeight}px`;
-    enemyBaseTag.style.visibility = baseTagPoint.z < 1 ? 'visible' : 'hidden';
+    enemyBaseTag.style.left = ((baseTagPoint.x * 0.5 + 0.5) * environment.innerWidth) + 'px';
+    enemyBaseTag.style.top = ((-baseTagPoint.y * 0.5 + 0.5) * environment.innerHeight) + 'px';
+    enemyBaseTag.style.visibility = baseTagPoint.z >= -1 && baseTagPoint.z < 1 ? 'visible' : 'hidden';
   }
 
-  function animate(frameAt = 0) {
-    if (!running) return;
-    requestAnimationFrame(animate);
-    const frameInterval = document.hidden ? 250 : (lobby?.classList.contains('closed') ? 0 : 1000 / 30);
-    if (frameAt - lastFrameAt < frameInterval) return;
-    lastFrameAt = frameAt;
-    const delta = clock.getDelta();
-    const time = clock.elapsedTime;
-    const quality = getGraphicsQuality();
-    const deckHoverSeat = getDeckHoverSeat();
+  function queueFrame() {
+    if (running && !document.hidden && !contextLost && frameId === null) {
+      frameId = environment.requestAnimationFrame(animate);
+    }
+  }
 
+  function cancelFrame() {
+    if (frameId !== null) environment.cancelAnimationFrame(frameId);
+    frameId = null;
+    lastFrameAt = null;
+  }
+
+  function animate(frameAt) {
+    frameId = null;
+    if (!running || document.hidden || contextLost) return;
+    queueFrame();
+    const interval = lobby?.classList.contains('closed') ? 0 : 1000 / 30;
+    if (lastFrameAt !== null && frameAt - lastFrameAt < interval) return;
+    // Clamp only presentation time. The server remains the source of game time.
+    const delta = lastFrameAt === null ? 0 : Math.min((frameAt - lastFrameAt) / 1000, 0.1);
+    lastFrameAt = frameAt;
+    elapsed += delta;
+    const quality = getGraphicsQuality();
     controls.update();
     cameraTransition.update();
     damageEffects.update(delta);
     mageEffects.update(delta);
-    battleAnimations?.update(delta, time);
-    animateAbilityBadges(units, time);
-    if (time - lastStatusUpdate > (quality === 'low' ? 0.1 : 0.033)) {
+    battleAnimations?.update(delta, elapsed);
+    animateAbilityBadges(units, reducedMotion?.matches ? 0 : elapsed);
+    if (elapsed - lastStatusUpdate > (quality === 'low' ? 0.1 : 0.033)) {
       positionEnemyStatus();
-      lastStatusUpdate = time;
+      lastStatusUpdate = elapsed;
     }
-
-    physicalDecks.decks.forEach(deck => {
-      const topCard = deck.userData.getTopCard();
-      if (!topCard) return;
-      const hovered = deck.userData.ownerSeat === deckHoverSeat;
-      topCard.position.y = THREE.MathUtils.lerp(topCard.position.y, topCard.userData.restY + (hovered ? 0.22 : 0), 0.14);
-      topCard.rotation.z = THREE.MathUtils.lerp(topCard.rotation.z, hovered ? -0.08 : 0, 0.12);
-    });
-
+    ambient.updateDecks(getDeckHoverSeat(), delta);
     if (quality === 'high') {
-      updateDynamicLighting(time);
-      updateTerrain(time);
-      units.forEach((unit, index) => {
-        const rig = unit.getObjectByName('rig');
-        rig.position.y = 0.18 + Math.sin(time * 1.35 + index * 1.7) * 0.012;
-        rig.rotation.z = Math.sin(time * 0.8 + index) * 0.006;
-        unit.traverse(object => {
-          if (object.userData.magic) object.rotation.y = time * 1.5;
-        });
-      });
-      fireMeshes.forEach(group => group.traverse(object => {
-        if (!object.userData.flame) return;
-        object.scale.y = 0.86 + Math.sin(time * 8 + object.userData.phase) * 0.16;
-        object.rotation.y = time * 1.7 + object.userData.phase;
-      }));
-      wisps.forEach((wisp, index) => {
-        wisp.position.x = wisp.userData.baseX
-          + Math.sin(time * 0.1 + index) * (wisp.userData.drift ?? 0.3);
-        wisp.material.opacity = (wisp.userData.baseOpacity ?? 0.025)
-          + Math.sin(time * 0.28 + index) * 0.0035;
-      });
-      fireLights.forEach((light, index) => {
-        const pulse = 0.91
-          + Math.sin(time * 7.4 + light.userData.phase) * 0.065
-          + Math.sin(time * 13.1 + index) * 0.025;
-        light.intensity = light.userData.baseIntensity * pulse;
-      });
+      const ambientTime = reducedMotion?.matches ? 0 : elapsed;
+      updateDynamicLighting(ambientTime);
+      updateTerrain(ambientTime);
+      ambient.update(ambientTime);
+      shadows.update([...units, alliedKeep, enemyKeep], elapsed);
     }
     renderer.render(scene, camera);
   }
 
   function resize() {
-    const aspect = innerWidth / innerHeight;
-    const view = innerWidth < 700 ? 12.6 : 11.45;
-    camera.left = -view * aspect;
-    camera.right = view * aspect;
-    camera.top = view;
-    camera.bottom = -view;
-    camera.updateProjectionMatrix();
-    renderer.setSize(innerWidth, innerHeight);
-    renderer.setPixelRatio(pixelRatioForQuality(getGraphicsQuality()));
+    const width = Math.max(1, environment.innerWidth);
+    const height = Math.max(1, environment.innerHeight);
+    fitGameViewport(camera, width, height);
+    renderer.setPixelRatio(pixelRatioForQuality(getGraphicsQuality(), environment.devicePixelRatio));
+    renderer.setSize(width, height);
+    lastStatusUpdate = -Infinity;
+  }
+
+  function visibilityChanged() {
+    cancelFrame();
+    queueFrame();
+  }
+
+  function onContextLost(event) {
+    event.preventDefault();
+    contextLost = true;
+    cancelFrame();
+    renderer.domElement.dataset.renderStatus = 'recovering';
+  }
+
+  function onContextRestored() {
+    contextLost = false;
+    renderer.shadowMap.needsUpdate = true;
+    renderer.domElement.dataset.renderStatus = 'ready';
+    resize();
+    queueFrame();
   }
 
   function start() {
-    if (running) return;
+    if (running || disposed) return;
     running = true;
-    addEventListener('resize', resize);
+    environment.addEventListener('resize', resize);
+    document.addEventListener('visibilitychange', visibilityChanged);
+    renderer.domElement.addEventListener('webglcontextlost', onContextLost);
+    renderer.domElement.addEventListener('webglcontextrestored', onContextRestored);
     resize();
-    animate();
-    setTimeout(() => document.querySelector('.loading').classList.add('done'), 500);
+    queueFrame();
+    loadingTimer = environment.setTimeout(() => loading?.classList.add('done'), 500);
   }
 
-  return { resize, start };
+  function stop() {
+    running = false;
+    cancelFrame();
+    environment.clearTimeout(loadingTimer);
+    environment.removeEventListener('resize', resize);
+    document.removeEventListener('visibilitychange', visibilityChanged);
+    renderer.domElement.removeEventListener('webglcontextlost', onContextLost);
+    renderer.domElement.removeEventListener('webglcontextrestored', onContextRestored);
+  }
+
+  function dispose() {
+    stop();
+    disposed = true;
+  }
+
+  return { resize, start, stop, dispose, get running() { return running; } };
 }

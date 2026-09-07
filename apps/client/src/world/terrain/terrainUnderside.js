@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { boundaryPoint, cliffProfileScale, cliffProfileY, edgeVariation, ISLAND_RADIUS_X, ISLAND_RADIUS_Z, seededRandom, SURFACE_Y, terrainHeight } from './terrainGeometry.js';
+import { createMossTexture } from './createMossTexture.js';
 
 function outsideBoardPosition(random, minimumRadius = 0.57, maximumRadius = 0.9) {
   for (let attempt = 0; attempt < 80; attempt += 1) {
@@ -228,13 +229,20 @@ export function createMossPatches() {
   const color = new THREE.Color();
   const count = 64;
   const material = new THREE.MeshStandardMaterial({
-    color: 0x657c59,
-    emissive: 0x1a281c,
-    emissiveIntensity: 0.4,
+    color: 0x83846c,
+    map: createMossTexture(),
+    alphaTest: 0.45,
+    side: THREE.DoubleSide,
+    emissive: 0x121b0d,
+    emissiveIntensity: 0.18,
     roughness: 1,
-    vertexColors: true
+    polygonOffset: true,
+    polygonOffsetFactor: -1,
+    polygonOffsetUnits: -1,
   });
-  const moss = new THREE.InstancedMesh(new THREE.IcosahedronGeometry(0.42, 1), material, count);
+  const geometry = new THREE.PlaneGeometry(0.84, 0.84);
+  geometry.rotateX(-Math.PI / 2);
+  const moss = new THREE.InstancedMesh(geometry, material, count);
   moss.name = 'Placas de musgo';
   moss.castShadow = false;
   moss.receiveShadow = true;
@@ -243,17 +251,18 @@ export function createMossPatches() {
     const radial = 0.73 + random() * 0.22;
     const x = Math.cos(angle) * ISLAND_RADIUS_X * radial * edgeVariation(angle);
     const z = Math.sin(angle) * ISLAND_RADIUS_Z * radial * edgeVariation(angle);
-    dummy.position.set(x, terrainHeight(x, z) + 0.015, z);
+    dummy.position.set(x, terrainHeight(x, z) + 0.022, z);
     dummy.rotation.set(random() * 0.12, random() * Math.PI, random() * 0.12);
     const scale = 0.35 + random() * 0.75;
     dummy.scale.set(scale * (0.8 + random() * 0.6), 0.08 + random() * 0.08, scale);
     dummy.updateMatrix();
     moss.setMatrixAt(index, dummy.matrix);
-    color.setHSL(0.29 + (random() - 0.5) * 0.05, 0.3 + random() * 0.2, 0.38 + random() * 0.12);
+    color.setHSL(0.23 + (random() - 0.5) * 0.05, 0.06 + random() * 0.08, 0.78 + random() * 0.14);
     moss.setColorAt(index, color);
   }
   moss.instanceMatrix.needsUpdate = true;
   moss.instanceColor.needsUpdate = true;
+  moss.computeBoundingSphere();
   group.add(moss);
   return group;
 }

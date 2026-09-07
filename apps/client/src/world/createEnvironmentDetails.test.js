@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { createDistantIslands } from './createDistantIslands.js';
 import { createMagicDust } from './terrain/createArcaneDetails.js';
 import { createSphericalStarPositions, SPACE_STAR_COUNTS } from '../core/createMagicSky.js';
-import { createAnimatedGrass, createSurfaceRelief } from './terrain/terrainUnderside.js';
+import { createAnimatedGrass, createSurfaceRelief, createMossPatches } from './terrain/terrainUnderside.js';
 
 test('céu distribui milhares de estrelas em 360 graus', () => {
   assert.deepEqual(SPACE_STAR_COUNTS, {
@@ -62,4 +62,20 @@ test('ilha principal possui relevo superficial e gramíneas animadas fora do tab
   assert.equal(grass.material.type, 'MeshLambertMaterial');
   assert.equal(relief.name, 'Pedras e placas do relevo superficial');
   assert.equal(relief.userData.count, 40);
+});
+
+test('musgo usa um único lote leve e recorte irregular para integrar a superfície', () => {
+  const group = createMossPatches();
+  const mesh = group.children[0];
+  assert.equal(mesh.isInstancedMesh, true);
+  assert.equal(mesh.count, 64);
+  assert.equal(mesh.geometry.index.count / 3, 2);
+  assert.equal(mesh.material.transparent, false);
+  assert.equal(mesh.material.alphaTest, 0.45);
+  const pixels = mesh.material.map.image.data;
+  let covered = 0;
+  for (let index = 3; index < pixels.length; index += 4) if (pixels[index]) covered += 1;
+  assert.ok(covered > 500 && covered < 2500);
+  assert.equal(pixels[3], 0);
+  assert.ok(mesh.boundingSphere.radius > 10);
 });

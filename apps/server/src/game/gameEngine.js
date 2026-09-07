@@ -1,7 +1,7 @@
 import { ACTION_HANDLERS } from './actions/index.js';
 import { fail, playerById } from './gameQueries.js';
 import { refreshKingdomProgress } from './kingdomProgress.js';
-import { endTurn } from './turnLifecycle.js';
+import { endTurn, turnEndRequirement } from './turnLifecycle.js';
 
 export function applyGameAction(state, playerId, action, expectedVersion) {
   if (!action || typeof action !== 'object' || typeof action.type !== 'string') fail('Ação inválida.');
@@ -26,6 +26,9 @@ export function applyGameAction(state, playerId, action, expectedVersion) {
 
 export function applyTurnTimeout(state) {
   if (state.phase !== 'playing' || !state.turnEndsAt || Date.now() < state.turnEndsAt) return false;
+  // Expiration cannot choose or discard cards on the player's behalf. Keep the
+  // pending decision and the expired deadline until the player resolves it.
+  if (turnEndRequirement(state)) return false;
   state.effects = [];
   endTurn(state);
   state.version += 1;

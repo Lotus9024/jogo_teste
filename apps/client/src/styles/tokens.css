@@ -1,0 +1,39 @@
+:root {
+  --bone: #d7d0bd;
+  --muted: #a6a393;
+  --gold: #a98245;
+  --gold-hi: #d0ac66;
+  --blood: #6d211e;
+  --panel: rgba(10, 12, 12, .92);
+  --line: rgba(169, 130, 69, .27);
+  --surface: #101511;
+  --background: #050707;
+  --focus: #f1d795;
+  --scroll-thumb: #776342;
+  --scroll-track: #111610;
+  --scroll-hover: #a98245;
+  --scroll-active: #d0ac66;
+  --font-display: Cinzel, Georgia, serif;
+  --font-body: Inter, system-ui, sans-serif;
+  --font-data: ui-monospace, Consolas, monospace;
+  --control-radius: 6px;
+  --panel-radius: 12px;
+  --space-control: 12px;
+  --space-section: 24px;
+  color-scheme: dark;
+  scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+  scrollbar-width: thin;
+}
+* { scrollbar-color: var(--scroll-thumb) var(--scroll-track); scrollbar-width: thin; }
+::-webkit-scrollbar { width: 9px; height: 9px; }
+::-webkit-scrollbar-track { background: var(--scroll-track); }
+::-webkit-scrollbar-thumb { border: 2px solid var(--scroll-track); border-radius: 8px; background: var(--scroll-thumb); }
+::-webkit-scrollbar-thumb:hover { background: var(--scroll-hover); }
+::-webkit-scrollbar-thumb:active { background: var(--scroll-active); }
+:where(a, button, input, select, summary, [tabindex]):focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+button:not(:disabled), summary { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+@media (forced-colors: active) {
+  :root, * { scrollbar-color: auto; }
+  :where(a, button, input, select, summary, [tabindex]):focus-visible { outline-color: Highlight; }
+}

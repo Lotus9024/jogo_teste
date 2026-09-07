@@ -11,10 +11,17 @@ export function requireTurn(state, player) {
   if (state.activeSeat !== player.seat) fail('Aguarde o seu turno.');
 }
 
-export function endTurn(state) {
+export function turnEndRequirement(state) {
   const endingPlayer = state.players.find(item => item.seat === state.activeSeat);
-  if ((endingPlayer?.pendingMageAltarChoices ?? 0) > 0) fail('Escolha uma carta do seu baralho pelo Altar Mago antes de passar o turno.');
-  if (endingPlayer?.hand.length > GAME_CONFIG.maxHandSize) fail(`Jogue ou descarte até ficar com no máximo ${GAME_CONFIG.maxHandSize} cartas.`);
+  if ((endingPlayer?.pendingMageAltarChoices ?? 0) > 0) return 'Escolha uma carta do seu baralho pelo Altar Mago antes de passar o turno.';
+  if (endingPlayer?.hand.length > GAME_CONFIG.maxHandSize) return `Jogue ou descarte até ficar com no máximo ${GAME_CONFIG.maxHandSize} cartas.`;
+  return null;
+}
+
+export function endTurn(state) {
+  const requirement = turnEndRequirement(state);
+  if (requirement) fail(requirement);
+  const endingPlayer = state.players.find(item => item.seat === state.activeSeat);
   resolveEndingFires(state, state.activeSeat);
   finishSnowstormTurn(state, state.activeSeat);
   if (endingPlayer) endingPlayer.goblinSpankingTurn = null;

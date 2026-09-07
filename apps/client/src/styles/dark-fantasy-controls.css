@@ -241,6 +241,7 @@ textarea:focus {
 
 .dev-card-gallery {
   scrollbar-color: #8f52b9 #09050e;
+  scrollbar-width: thin;
 }
 
 .dev-card-gallery::-webkit-scrollbar-track {

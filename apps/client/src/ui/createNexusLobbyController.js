@@ -1,3 +1,7 @@
+import { renderRoomDirectory } from './lobby/roomDirectory.js';
+import { validateLobbyForm } from './lobby/formValidation.js';
+import { createModalFocus } from './createModalFocus.js';
+
 function cleanRoomCode(value) {
   return String(value ?? '').toUpperCase().replace(/[^A-Z2-9]/g, '').slice(0, 6);
 }
@@ -22,6 +26,7 @@ export function createNexusLobbyController({
   let busy = false;
   let pendingRoomCancelled = false;
   let pendingExperimentalRoom = null;
+  const experimentalFocus = createModalFocus(document.querySelector('#experimental-mode-modal'), { onEscape: closeExperimentalModal });
 
   function createRoom(options) {
     pendingRoomCancelled = false;
@@ -34,6 +39,7 @@ export function createNexusLobbyController({
   function closeExperimentalModal() {
     const modal = document.querySelector('#experimental-mode-modal');
     modal.hidden = true;
+    experimentalFocus.deactivate();
     pendingExperimentalRoom = null;
   }
 
@@ -98,45 +104,7 @@ export function createNexusLobbyController({
   }
 
   function renderRooms(rooms = []) {
-    const container = document.querySelector('#rooms-list');
-    container.replaceChildren();
-    if (!rooms.length) {
-      const empty = document.createElement('p');
-      empty.className = 'nexus-empty-state';
-      empty.textContent = 'Nenhuma sala disponível agora.';
-      container.append(empty);
-      return;
-    }
-    rooms.forEach(room => {
-      const isPrivate = Boolean(room.locked || room.visibility === 'private');
-      const card = document.createElement('article');
-      card.className = 'nexus-room-card';
-      card.dataset.roomPrivate = String(isPrivate);
-
-      const copy = document.createElement('div');
-      const title = document.createElement('strong');
-      title.textContent = room.name || 'Sala sem nome';
-      const detail = document.createElement('small');
-      const playerCount = Number(room.playerCount ?? room.players ?? 0);
-      const capacity = Number(room.capacity ?? 2);
-      detail.textContent = `${playerCount}/${capacity} jogadores`;
-      copy.append(title, detail);
-
-      const action = document.createElement('button');
-      action.type = 'button';
-      if (isPrivate) {
-        action.textContent = 'PRIVADA';
-        action.disabled = true;
-      } else if (playerCount >= capacity) {
-        action.textContent = 'ESPECTAR';
-        action.addEventListener('click', () => joinRoom(room.code, { spectate: true }));
-      } else {
-        action.textContent = 'ENTRAR';
-        action.addEventListener('click', () => joinRoom(room.code));
-      }
-      card.append(copy, action);
-      container.append(card);
-    });
+    renderRoomDirectory(document.querySelector('#rooms-list'), rooms, joinRoom);
   }
 
   function joinRoom(code, { spectate = false } = {}) {
@@ -181,17 +149,20 @@ export function createNexusLobbyController({
 
     document.querySelector('#guest-form')?.addEventListener('submit', event => {
       event.preventDefault();
+      if (!validateLobbyForm(event.currentTarget, errorOutput)) return;
       const name = formValue(event.currentTarget, '#guest-king-name');
       void submit(() => api.continueAsGuest(name));
     });
     document.querySelector('#register-form')?.addEventListener('submit', event => {
       event.preventDefault();
+      if (!validateLobbyForm(event.currentTarget, errorOutput)) return;
       const name = formValue(event.currentTarget, '#register-king-name');
       const password = event.currentTarget.querySelector('#register-vault-password')?.value ?? '';
       void submit(() => api.register(name, password));
     });
     document.querySelector('#login-form')?.addEventListener('submit', event => {
       event.preventDefault();
+      if (!validateLobbyForm(event.currentTarget, errorOutput)) return;
       const name = formValue(event.currentTarget, '#login-king-name');
       const password = event.currentTarget.querySelector('#login-vault-password')?.value ?? '';
       void submit(() => api.login(name, password));
@@ -199,14 +170,19 @@ export function createNexusLobbyController({
     document.querySelector('#discord-register')?.addEventListener('click', () => api.startDiscord());
     document.querySelector('#discord-login')?.addEventListener('click', () => api.startDiscord());
     document.querySelector('#logout-account')?.addEventListener('click', async () => {
+      if (busy) return;
+      setBusy(true);
       try {
         await api.logout();
-      } finally {
         onlineSession.disconnect();
         account = null;
         socketReady = false;
         deckBuilder.setDeckCardIds([]);
         showScreen('entry');
+      } catch (error) {
+        errorOutput.textContent = error.message || 'Não foi possível sair. Tente novamente.';
+      } finally {
+        setBusy(false);
       }
     });
   }
@@ -237,11 +213,13 @@ export function createNexusLobbyController({
     document.querySelector('#room-code')?.addEventListener('input', event => {
       event.target.value = cleanRoomCode(event.target.value);
     });
-    document.querySelector('#join-room-code')?.addEventListener('click', () => {
+    document.querySelector('.nexus-code-form')?.addEventListener('submit', event => {
+      event.preventDefault();
       joinRoom(document.querySelector('#room-code')?.value);
     });
     document.querySelector('#create-room-form')?.addEventListener('submit', event => {
       event.preventDefault();
+      if (!validateLobbyForm(event.currentTarget, errorOutput)) return;
       const visibility = new FormData(event.currentTarget).get('room-visibility') === 'private'
         ? 'private'
         : 'public';
@@ -251,7 +229,7 @@ export function createNexusLobbyController({
       if (playerCount > 2) {
         pendingExperimentalRoom = options;
         document.querySelector('#experimental-mode-modal').hidden = false;
-        document.querySelector('#confirm-experimental-mode')?.focus();
+        experimentalFocus.activate(document.querySelector('#cancel-experimental-mode'));
         return;
       }
       createRoom(options);
@@ -335,11 +313,14 @@ export function createNexusLobbyController({
     mountMatchMenu();
     mountSessionEvents();
     syncDeckGate();
+    setBusy(true);
     try {
       applySession(await restoreSessionWithRetry());
     } catch {
       showScreen('entry');
       errorOutput.textContent = 'Não foi possível verificar sua sessão.';
+    } finally {
+      setBusy(false);
     }
   }
 

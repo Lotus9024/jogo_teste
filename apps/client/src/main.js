@@ -12,6 +12,7 @@ import { createSettingsController } from './ui/createSettingsController.js';
 import { createDeckBuilderController } from './ui/createDeckBuilderController.js';
 import { createNexusLobbyController } from './ui/createNexusLobbyController.js';
 import { createVictoryPresentation } from './ui/createVictoryPresentation.js';
+import { createStatusController } from './ui/createStatusController.js';
 import './style.css';
 
 const {
@@ -35,13 +36,8 @@ if (import.meta.env.DEV && new URLSearchParams(globalThis.location.search).has('
   victoryPresentation.show({ outcome: 'victory' });
 }
 const deckBuilder = createDeckBuilderController();
-const gameError = document.querySelector('#game-error');
-let gameErrorTimer;
-callbacks.showGameError = message => {
-  gameError.textContent = message;
-  clearTimeout(gameErrorTimer);
-  gameErrorTimer = setTimeout(() => { gameError.textContent = ''; }, 2800);
-};
+const gameStatus = createStatusController(document.querySelector('#game-error'));
+callbacks.showGameError = gameStatus.show;
 
 const actions = createUnitActionController({
   state,

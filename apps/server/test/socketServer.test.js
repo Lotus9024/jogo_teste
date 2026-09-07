@@ -214,6 +214,71 @@ test('impede duas conexoes autenticadas e retoma partida apos queda', async t =>
   assert.equal(resumed.payload.state.players[0].connected, true);
 });
 
+test('isola um frame de texto inválido sem derrubar outras conexões', async t => {
+  const harness = await startSocketHarness(t, { async consumeSocketTicket() { return null; } });
+  const invalid = await harness.connect();
+  await invalid.next(SERVER_EVENTS.CONNECTION_READY);
+  const closed = invalid.closed();
+  invalid.socket.send(Buffer.from([0xff]), { binary: false });
+  await closed;
+
+  const healthy = await harness.connect();
+  assert.equal((await healthy.next(SERVER_EVENTS.CONNECTION_READY)).payload.authenticationRequired, true);
+});
+
+test('descarta mensagens enfileiradas quando a conexão fecha durante autenticação', async t => {
+  let release;
+  let started;
+  let calls = 0;
+  const consuming = new Promise(resolve => { started = resolve; });
+  const ticketResult = new Promise(resolve => { release = resolve; });
+  const harness = await startSocketHarness(t, {
+    async consumeSocketTicket() {
+      calls += 1;
+      started();
+      return ticketResult;
+    }
+  });
+  const client = await harness.connect();
+  await client.next(SERVER_EVENTS.CONNECTION_READY);
+  client.send(CLIENT_EVENTS.AUTHENTICATE, { ticket: 'h'.repeat(43) });
+  client.send(CLIENT_EVENTS.AUTHENTICATE, { ticket: 'i'.repeat(43) });
+  await consuming;
+  client.socket.close();
+  await client.closed();
+  await waitFor(() => harness.websocketServer.clients.size === 0);
+  release(identity('fechado', 'Rei Fechado'));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(calls, 1);
+  assert.equal(harness.rooms.rooms.size, 0);
+});
+
+async function startSocketHarness(t, authService) {
+  const rooms = new RoomManager();
+  const server = createServer();
+  const websocketServer = createSocketServer(server, rooms, authService);
+  await new Promise((resolve, reject) => {
+    server.once('error', reject);
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  const clients = [];
+  t.after(async () => {
+    for (const client of clients) client.socket.terminate();
+    await Promise.all(clients.map(client => client.closed()));
+    await new Promise(resolve => websocketServer.close(resolve));
+    await new Promise(resolve => server.close(resolve));
+  });
+  return {
+    rooms,
+    websocketServer,
+    async connect() {
+      const client = await connect(`ws://127.0.0.1:${server.address().port}/ws`);
+      clients.push(client);
+      return client;
+    }
+  };
+}
+
 function identity(playerId, name) {
   return { playerId, name, deckCardIds: [...DEFAULT_DECK_CARD_IDS] };
 }

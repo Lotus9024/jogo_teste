@@ -345,7 +345,10 @@ export function createWorldEnvironment(scene, renderer, { quality, fireLights, f
     if (highFidelityScheduled) return;
     highFidelityScheduled = true;
     const loadRocks = () => islandRocks.userData.load?.();
-    const loadTrees = () => islandTrees.userData.load?.();
+    const loadTrees = () => {
+      islandTrees.userData.load?.();
+      renderer.shadowMap.needsUpdate = true;
+    };
     if (globalThis.requestIdleCallback) {
       globalThis.requestIdleCallback(loadRocks, { timeout: 2200 });
       globalThis.requestIdleCallback(loadTrees, { timeout: 4200 });
@@ -361,6 +364,10 @@ export function createWorldEnvironment(scene, renderer, { quality, fireLights, f
     islandTrees.visible = high;
     wisps.forEach(wisp => { wisp.visible = high; });
     fireLights.forEach(light => { light.visible = high; });
+    environment.traverse(object => {
+      if (object.isPointLight) object.visible = high;
+    });
+    renderer.shadowMap.needsUpdate = high;
     if (high) scheduleHighFidelityAssets();
   }
 

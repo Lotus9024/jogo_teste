@@ -207,6 +207,38 @@ test('aguarda quatro minutos antes do W.O. por desconexão', () => {
   assert.equal(room.state.forfeitSeat, 1);
 });
 
+test('IA não executa turnos depois de um abandono e outras salas continuam avançando', () => {
+  const rooms = new RoomManager({ botDelayMs: 0 });
+  const finished = rooms.createAiAuthenticated(identity('desistente-ia', 'Rei Desistente'), {});
+  const playing = rooms.createAiAuthenticated(identity('ativo-ia', 'Rei Ativo'), {});
+  for (const { room, player } of [finished, playing]) {
+    rooms.action(room.code, player.id, { type: 'end_turn' }, room.state.version);
+  }
+
+  rooms.leave(finished.player.id, { abandon: true });
+  const version = finished.room.state.version;
+  const changed = rooms.tick();
+
+  assert.deepEqual(changed, [playing.room]);
+  assert.equal(finished.room.state.phase, 'finished');
+  assert.equal(finished.room.state.version, version);
+  assert.equal(finished.room.botTurnReadyAt, null);
+  assert.equal(playing.room.state.activeSeat, 1);
+  assert.deepEqual(rooms.tick(), []);
+});
+
+test('limpeza de salas inativas preserva o limite de cinco minutos', () => {
+  let now = 0;
+  const rooms = new RoomManager({ now: () => now });
+  const { room } = rooms.createAuthenticated(identity('sala-inativa', 'Rei Inativo'), null);
+  now = 300_000;
+  rooms.tick();
+  assert.equal(rooms.rooms.has(room.code), true);
+  now += 1;
+  rooms.tick();
+  assert.equal(rooms.rooms.has(room.code), false);
+});
+
 function identity(playerId, name) {
   return { playerId, name, deckCardIds: [...DEFAULT_DECK_CARD_IDS] };
 }

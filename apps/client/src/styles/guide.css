@@ -1,0 +1,56 @@
+* { box-sizing: border-box; }
+html { scroll-padding-top: 100px; }
+body { margin: 0; background: var(--background); color: var(--bone); font: 16px/1.8 var(--font-body); }
+a { color: var(--gold-hi); text-underline-offset: 4px; }
+a:hover { color: var(--focus); }
+.skip-link { position: fixed; left: 16px; top: -80px; z-index: 10; padding: 8px 16px; background: var(--surface); }
+.skip-link:focus { top: 12px; }
+.guide-header { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 24px; padding: 20px clamp(20px, 5vw, 80px); background: var(--surface); border-bottom: 1px solid var(--line); }
+.guide-brand { display: flex; align-items: center; gap: 14px; text-decoration: none; font: 600 20px/1.3 var(--font-display); }
+.guide-brand > span:first-child { color: var(--gold-hi); font-size: 30px; }
+.guide-brand small { display: block; margin-top: 5px; color: var(--muted); font: 11px/1.4 var(--font-body); letter-spacing: .12em; text-transform: uppercase; }
+.guide-play { flex: none; font-size: 13px; text-decoration: none; border: 1px solid var(--line); border-radius: var(--control-radius); padding: 8px 14px; }
+.guide-layout { display: grid; grid-template-columns: 210px minmax(0, 790px) 190px; justify-content: center; gap: clamp(24px, 4vw, 64px); max-width: 1500px; margin: auto; padding: 48px 32px 90px; }
+.guide-nav, .guide-outline { align-self: start; position: sticky; top: 130px; max-height: calc(100vh - 160px); overflow: auto; scrollbar-gutter: stable; }
+.guide-eyebrow { display: block; margin-bottom: 16px; color: var(--muted); font: 11px/1.4 var(--font-body); letter-spacing: .13em; text-transform: uppercase; }
+.guide-nav a, .guide-outline a { display: block; margin-bottom: 8px; padding: 7px 10px; border-left: 1px solid var(--line); text-decoration: none; color: var(--muted); font-size: 13px; line-height: 1.6; }
+.guide-nav a[aria-current], .guide-nav a:hover, .guide-outline a:hover { color: var(--gold-hi); border-color: var(--gold); background: var(--surface); }
+#guide-content { min-width: 0; }
+article > :first-child { margin-top: 0; }
+article h1 { max-width: 780px; color: var(--focus); font: 500 clamp(30px, 4vw, 48px)/1.2 var(--font-display); letter-spacing: -.025em; margin-bottom: 28px; }
+article h2 { margin: 56px 0 20px; padding-top: 22px; border-top: 1px solid var(--line); color: var(--gold-hi); font: 500 26px/1.35 var(--font-display); }
+article h3 { margin: 32px 0 12px; color: var(--bone); font-size: 18px; }
+article p, article ul, article ol { margin: 0 0 20px; }
+article li + li { margin-top: 8px; }
+article strong { color: var(--focus); font-weight: 600; }
+article code { padding: 2px 5px; background: var(--surface); font: .88em var(--font-data); overflow-wrap: anywhere; }
+article pre { padding: 20px; border: 1px solid var(--line); border-radius: var(--control-radius); background: var(--surface); overflow: auto; line-height: 1.6; }
+article pre code { padding: 0; overflow-wrap: normal; }
+article blockquote { margin: 24px 0; border-left: 2px solid var(--gold); padding: 12px 20px; background: var(--surface); }
+article blockquote p:last-child { margin-bottom: 0; }
+.guide-table { max-width: 100%; overflow: auto; margin: 24px 0; border: 1px solid var(--line); border-radius: var(--control-radius); }
+table { width: 100%; border-collapse: collapse; font-size: 13px; line-height: 1.6; }
+th { color: var(--gold-hi); text-align: left; background: var(--surface); }
+td, th { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: top; min-width: 90px; }
+tbody tr:last-child td { border-bottom: 0; }
+article img { max-width: 100%; height: auto; }
+.guide-footer { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px; border-top: 1px solid var(--line); padding: 24px; color: var(--muted); font-size: 12px; }
+@media (max-width: 1150px) { .guide-layout { grid-template-columns: 190px minmax(0, 790px); } .guide-outline { display: none; } }
+@media (max-width: 720px) {
+  .guide-header { padding: 16px; gap: 12px; }
+  .guide-brand { font-size: 16px; gap: 8px; }
+  .guide-play { font-size: 12px; padding: 8px; }
+  .guide-layout { display: block; padding: 24px 20px 48px; }
+  .guide-nav { position: static; max-height: none; margin-bottom: 32px; }
+  #guide-documents { display: flex; flex-wrap: wrap; gap: 6px; }
+  .guide-nav a { margin: 0; padding: 8px; border: 1px solid var(--line); border-radius: var(--control-radius); }
+  article h2 { font-size: 23px; }
+}
+@media print {
+  body { color: #111; background: #fff; font-size: 11pt; }
+  .guide-header, .guide-nav, .guide-outline, .guide-footer, .skip-link { display: none; }
+  .guide-layout { display: block; padding: 0; }
+  article h1, article h2, article h3, article strong, th, a { color: #111; }
+  article h2, article h3 { break-after: avoid; }
+  .guide-table, article pre { overflow: visible; break-inside: avoid; }
+}

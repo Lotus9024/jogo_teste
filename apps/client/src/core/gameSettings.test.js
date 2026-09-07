@@ -26,3 +26,21 @@ test('preserva as preferências escolhidas pelo jogador', () => {
   saveGameSettings({ graphics: 'high', cameraCentering: false }, storage);
   assert.deepEqual(loadGameSettings(storage, { deviceMemory: 4, hardwareConcurrency: 4 }), { graphics: 'high', cameraCentering: false });
 });
+
+test('preferências inválidas ou armazenamento bloqueado não impedem abrir o jogo', () => {
+  for (const value of ['null', '[]', 'false', '{invalid']) {
+    const settings = loadGameSettings({ getItem: () => value }, { deviceMemory: 4 });
+    assert.equal(settings.graphics, 'low');
+    assert.equal(settings.cameraCentering, true);
+  }
+  const blocked = { getItem() { throw new Error('denied'); }, setItem() { throw new Error('denied'); } };
+  assert.equal(loadGameSettings(blocked, { deviceMemory: 4 }).graphics, 'low');
+  assert.doesNotThrow(() => saveGameSettings({ graphics: 'high' }, blocked));
+});
+
+test('densidade de pixel inválida nunca produz canvas negativo ou infinito', () => {
+  for (const ratio of [-2, 0, NaN, Infinity, 'bad']) {
+    assert.equal(pixelRatioForQuality('high', ratio), 1);
+    assert.equal(pixelRatioForQuality('low', ratio), 0.85);
+  }
+});

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { M, add } from '../core/scenePrimitives.js';
 import { createMasonryMaps, texturedStandardMaterial } from '../core/darkFantasySurfaces.js';
+import { createBoardTiles } from './createBoardTiles.js';
 
 function addPerimeterFrame(board, size, material) {
   const frame = new THREE.Group();
@@ -52,20 +53,7 @@ export function createBoard(scene, { flameOuter, flameCore }) {
   const boardBase = add(new THREE.BoxGeometry(boardSize + 1, 0.48, boardSize + 1), M.stoneDark, board, [0, -0.34, 0]);
   boardBase.castShadow = false;
 
-  for (let z = 0; z < N; z += 1) {
-    for (let x = 0; x < N; x += 1) {
-      const material = (x + z) % 2 === 0 ? paleStone : darkStone;
-      const slab = add(
-        new THREE.BoxGeometry(tile - 0.035, 0.18, tile - 0.035, 2, 1, 2),
-        material,
-        board,
-        [x * tile - half, -0.04, z * tile - half]
-      );
-      slab.castShadow = false;
-      slab.position.y += (((x * 17 + z * 11) % 5) - 2) * 0.004;
-      slab.rotation.y = (((x * 7 + z * 3) % 5) - 2) * 0.0025;
-    }
-  }
+  board.add(createBoardTiles({ size: N, tile, half, materials: [paleStone, darkStone] }));
 
   addPerimeterFrame(board, boardSize, frameStone);
   addSurfaceCracks(board, tile, half, N);

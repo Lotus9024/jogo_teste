@@ -72,6 +72,7 @@ export function createIslandRocks(renderer, { autoLoad = true } = {}) {
       group.add(rocks);
       group.userData.status = 'ready';
       group.userData.count = ROCK_SPOTS.length;
+      renderer.shadowMap.needsUpdate = true;
     },
     undefined,
     () => {

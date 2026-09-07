@@ -1,4 +1,5 @@
 import { saveGameSettings } from '../core/gameSettings.js';
+import { createModalFocus } from './createModalFocus.js';
 
 export function createSettingsController({
   state,
@@ -13,6 +14,7 @@ export function createSettingsController({
   const toggle = document.querySelector('#settings-toggle');
   const closeButton = document.querySelector('#settings-close');
   let restoreControlsAfterSettings = true;
+  const modalFocus = createModalFocus(modal, { onEscape: close });
 
   function syncButtons() {
     document.querySelectorAll('[data-graphics]').forEach(button => {
@@ -43,11 +45,12 @@ export function createSettingsController({
     controls.enabled = false;
     modal.hidden = false;
     syncButtons();
-    closeButton.focus();
+    modalFocus.activate(closeButton);
   }
 
   function close() {
     modal.hidden = true;
+    modalFocus.deactivate();
     controls.enabled = restoreControlsAfterSettings && !cameraTransition.active;
     toggle.focus();
   }

@@ -324,6 +324,49 @@ describe('limpeza do repositório PostgreSQL', () => {
 });
 
 describe('API HTTP Nexus', () => {
+  test('preserva preflight e rejeita métodos sem rota', async () => {
+    const baseUrl = await startRouter(createApiRouter({
+      config: baseConfig,
+      repository: new MemoryIdentityRepository()
+    }));
+    const options = await fetch(`${baseUrl}/api/deck`, {
+      method: 'OPTIONS',
+      headers: { Origin: baseConfig.clientOrigins[0] }
+    });
+    assert.equal(options.status, 204);
+    assert.equal(options.headers.get('access-control-allow-origin'), baseConfig.clientOrigins[0]);
+    assert.equal(options.headers.get('access-control-allow-credentials'), 'true');
+    assert.equal(options.headers.get('cache-control'), 'no-store');
+    assert.equal(await options.text(), '');
+
+    const unknown = await fetch(`${baseUrl}/api/auth/register`, { method: 'GET' });
+    assert.equal(unknown.status, 404);
+    assert.equal((await unknown.json()).code, 'NOT_FOUND');
+    const forbidden = await fetch(`${baseUrl}/api/deck`, { method: 'OPTIONS' });
+    assert.equal(forbidden.status, 403);
+  });
+
+  test('valida formato e tamanho do JSON antes de criar uma identidade', async () => {
+    const repository = new MemoryIdentityRepository();
+    const baseUrl = await startRouter(createApiRouter({ config: baseConfig, repository }));
+    for (const [body, contentType, status, code] of [
+      ['{}', 'text/plain', 415, 'UNSUPPORTED_MEDIA_TYPE'],
+      ['{', 'application/json', 400, 'INVALID_JSON'],
+      ['null', 'application/json', 400, 'INVALID_JSON'],
+      ['[]', 'application/json', 400, 'INVALID_JSON'],
+      [JSON.stringify({ name: 'a'.repeat(16 * 1024) }), 'application/json', 413, 'PAYLOAD_TOO_LARGE']
+    ]) {
+      const response = await fetch(`${baseUrl}/api/auth/guest`, {
+        method: 'POST',
+        headers: { 'Content-Type': contentType, 'X-Nexus-Request': 'browser' },
+        body
+      });
+      assert.equal(response.status, status);
+      assert.equal((await response.json()).code, code);
+      assert.equal(response.headers.get('set-cookie'), null);
+    }
+  });
+
   test('registra, restaura sessão e salva Deck usando cookie HttpOnly e CSRF', async () => {
     const router = createApiRouter({
       config: baseConfig,

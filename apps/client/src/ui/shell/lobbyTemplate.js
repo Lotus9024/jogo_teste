@@ -20,23 +20,26 @@ export function lobbyTemplate() {
   return `
     <section id="online-lobby" class="online-lobby" aria-labelledby="nexus-title">
       <div class="nexus-lobby">
-        <div class="nexus-brand" aria-label="Nexus">
+        <div class="nexus-brand" aria-label="Tronos em Ruínas">
           <span aria-hidden="true">✦</span>
           <div>
-            <h1 id="nexus-title">Nexus</h1>
+            <span class="nexus-brand-caption">NEXUS · ESTRATÉGIA ENTRE REINOS</span>
+            <h1 id="nexus-title">Tronos em<br />Ruínas</h1>
           </div>
         </div>
 
         <section class="nexus-screen" data-lobby-screen="entry">
+          <p class="nexus-intro">Erga seu reino.<br /><em>Conquiste o último trono.</em></p>
           ${screenHeader({
             eyebrow: 'BEM-VINDO AO NEXUS',
             title: 'Escolha seu caminho',
           })}
           <div class="nexus-actions">
-            <button type="button" id="guest-entry" class="nexus-primary">JOGAR SEM LOGIN</button>
-            <button type="button" id="register-entry">REGISTRAR</button>
-            <button type="button" id="login-entry" class="nexus-quiet">JÁ TENHO LOGIN</button>
+            <button type="button" id="guest-entry" class="nexus-primary">Jogar sem login <span aria-hidden="true">→</span></button>
+            <button type="button" id="register-entry">Criar conta</button>
+            <button type="button" id="login-entry" class="nexus-quiet">Já tenho uma conta</button>
           </div>
+          <p class="nexus-entry-note">Cartas, castelos e combate tático em um tabuleiro 3D.</p>
         </section>
 
         <section class="nexus-screen" data-lobby-screen="guest" hidden>
@@ -45,7 +48,7 @@ export function lobbyTemplate() {
             title: 'Nomeie seu rei',
             back: true,
           })}
-          <form id="guest-form" class="nexus-form">
+          <form id="guest-form" class="nexus-form" novalidate>
             <label for="guest-king-name">Nome de rei</label>
             <input id="guest-king-name" name="kingName" type="text" minlength="2" maxlength="24" autocomplete="nickname" required />
             <button type="submit" class="nexus-primary">CONTINUAR</button>
@@ -58,7 +61,7 @@ export function lobbyTemplate() {
             title: 'Registrar',
             back: true,
           })}
-          <form id="register-form" class="nexus-form">
+          <form id="register-form" class="nexus-form" novalidate>
             <label for="register-king-name">Nome de rei</label>
             <input id="register-king-name" name="kingName" type="text" minlength="2" maxlength="24" autocomplete="username" required />
             <label for="register-vault-password">Senha do cofre do rei</label>
@@ -76,7 +79,7 @@ export function lobbyTemplate() {
             title: 'Login',
             back: true,
           })}
-          <form id="login-form" class="nexus-form">
+          <form id="login-form" class="nexus-form" novalidate>
             <label for="login-king-name">Nome de rei</label>
             <input id="login-king-name" name="kingName" type="text" minlength="2" maxlength="24" autocomplete="username" required />
             <label for="login-vault-password">Senha do cofre do rei</label>
@@ -116,11 +119,11 @@ export function lobbyTemplate() {
             title: 'Entrar em salas',
             back: true,
           })}
-          <form class="nexus-code-form">
+          <form class="nexus-code-form" novalidate>
             <label for="room-code">Código da sala</label>
             <div>
               <input id="room-code" name="roomCode" type="text" maxlength="6" autocomplete="off" inputmode="text" placeholder="CÓDIGO" aria-label="Código da sala" />
-              <button type="button" id="join-room-code" class="nexus-primary">ENTRAR</button>
+              <button type="submit" id="join-room-code" class="nexus-primary">ENTRAR</button>
             </div>
           </form>
           <div class="nexus-room-heading">
@@ -138,7 +141,7 @@ export function lobbyTemplate() {
             title: 'Criar sala',
             back: true,
           })}
-          <form id="create-room-form" class="nexus-form">
+          <form id="create-room-form" class="nexus-form" novalidate>
             <label for="room-display-name">Nome da sala</label>
             <input id="room-display-name" name="roomName" type="text" minlength="2" maxlength="32" autocomplete="off" required />
             <fieldset class="nexus-visibility">
@@ -170,6 +173,7 @@ export function lobbyTemplate() {
         </section>
 
         <footer class="nexus-lobby-footer">
+          <a class="nexus-guide-link" href="./guide.html" target="_blank" rel="noopener">Como jogar <span aria-hidden="true">↗</span><span class="sr-only"> (abre em outra aba)</span></a>
           <output id="lobby-error" class="lobby-error" aria-live="polite"></output>
         </footer>
       </div>

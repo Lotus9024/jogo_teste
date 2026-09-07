@@ -1,6 +1,7 @@
 import { CARD_BY_ID, CARD_CATEGORY_LABELS, DECK_LIMITS, deckCounts, normalizeDeckCardIds, validateDeckCardIds } from '@tronos/shared/cards';
 import { cardMarkup, cards as availableCards } from './cardView.js';
 import { cardIconMarkup, cardSymbolMarkup } from './cardIcon.js';
+import { createModalFocus } from './createModalFocus.js';
 
 const STORAGE_KEY = 'nexus.deck.v1';
 const LEGACY_STORAGE_KEY = 'tronos.deck.v1';
@@ -17,8 +18,9 @@ export function createDeckBuilderController() {
   const error = document.querySelector('#deck-builder-error');
   let selected = load();
   let saveHandler = async () => {};
-  let focusBeforeOpen = null;
+  let saving = false;
   const listeners = new Set();
+  const modalFocus = createModalFocus(modal, { onEscape: close });
 
   function load() {
     try {
@@ -81,6 +83,7 @@ export function createDeckBuilderController() {
   }
 
   function toggle(cardId) {
+    if (saving) return;
     error.textContent = '';
     const shouldRestoreFocus = document.activeElement?.dataset.cardId === cardId;
     if (selected.includes(cardId)) selected = selected.filter(id => id !== cardId);
@@ -97,17 +100,16 @@ export function createDeckBuilderController() {
   }
 
   function open() {
-    focusBeforeOpen = document.activeElement;
     modal.hidden = false;
     error.textContent = '';
     render();
-    document.querySelector('#deck-builder-close')?.focus();
+    modalFocus.activate(document.querySelector('#deck-builder-close'));
   }
   function close() {
+    if (saving) return;
     hidePreview();
     modal.hidden = true;
-    focusBeforeOpen?.focus?.();
-    focusBeforeOpen = null;
+    modalFocus.deactivate();
   }
   function isComplete(value = selected) {
     const counts = deckCounts(value);
@@ -120,19 +122,32 @@ export function createDeckBuilderController() {
   }
 
   async function save() {
+    if (saving) return;
     const button = document.querySelector('#deck-builder-save');
+    const disabledBeforeSave = new Map();
     try {
       selected = validateDeckCardIds(selected);
-      button.disabled = true;
+      const submitted = [...selected];
+      saving = true;
+      modal.setAttribute('aria-busy', 'true');
+      modal.querySelectorAll('button').forEach(control => {
+        disabledBeforeSave.set(control, control.disabled);
+        control.disabled = true;
+      });
       button.textContent = 'SALVANDO...';
-      await saveHandler([...selected]);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(selected));
+      await saveHandler(submitted);
+      selected = submitted;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(submitted));
       document.querySelector('#deck-status').textContent = `${selected.length} CARTAS`;
+      saving = false;
       close();
       notify();
     } catch (caught) {
       error.textContent = caught.message;
     } finally {
+      saving = false;
+      modal.setAttribute('aria-busy', 'false');
+      for (const [control, disabled] of disabledBeforeSave) control.disabled = disabled;
       button.textContent = 'SALVAR DECK';
       button.disabled = !isComplete();
     }
@@ -150,25 +165,6 @@ export function createDeckBuilderController() {
     });
   });
   modal.addEventListener('click', event => { if (event.target === modal) close(); });
-  modal.addEventListener('keydown', event => {
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      close();
-      return;
-    }
-    if (event.key !== 'Tab') return;
-    const focusable = [...modal.querySelectorAll('button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])')];
-    if (!focusable.length) return;
-    const first = focusable[0];
-    const last = focusable.at(-1);
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  });
   const initialCounts = deckCounts(selected);
   const initialComplete = Object.entries(DECK_LIMITS).every(([rarity, limit]) => initialCounts[rarity] === limit);
   document.querySelector('#deck-status').textContent = initialComplete ? `${selected.length} CARTAS` : 'INCOMPLETO';

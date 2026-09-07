@@ -47,6 +47,46 @@ test('passar turno compra carta, entrega energia e reinicia o relógio', () => {
   assert.ok(room.state.turnEndsAt >= previousDeadline);
 });
 
+test('timeout mantém escolha pendente do Altar sem encerrar o servidor ou alterar a mão', () => {
+  const { rooms, room, first } = match();
+  const player = room.state.players[0];
+  player.pendingMageAltarChoices = 1;
+  room.state.turnEndsAt = Date.now() - 1;
+  const before = structuredClone(room.state);
+
+  assert.deepEqual(rooms.tick(), []);
+  assert.deepEqual(room.state, before);
+  assert.throws(() => rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version), /Altar Mago/);
+
+  rooms.action(room.code, first.id, {
+    type: 'choose_deck_card', cardId: player.deckCardIds[0]
+  }, room.state.version);
+  if (player.hand.length > GAME_CONFIG.maxHandSize) {
+    rooms.action(room.code, first.id, {
+      type: 'discard_card', cardInstanceId: player.hand[0].instanceId
+    }, room.state.version);
+  }
+  assert.deepEqual(rooms.tick(), [room]);
+  assert.equal(room.state.activeSeat, 2);
+});
+
+test('timeout aguarda descarte de mão excedente e retoma automaticamente depois dele', () => {
+  const { rooms, room, first } = match();
+  const player = room.state.players[0];
+  player.hand.push({ instanceId: 'carta-excedente', cardId: 'warrior' });
+  room.state.turnEndsAt = Date.now() - 1;
+  const before = structuredClone(room.state);
+
+  assert.deepEqual(rooms.tick(), []);
+  assert.deepEqual(room.state, before);
+  assert.throws(() => rooms.action(room.code, first.id, { type: 'end_turn' }, room.state.version), /no máximo 7/);
+  rooms.action(room.code, first.id, {
+    type: 'discard_card', cardInstanceId: 'carta-excedente'
+  }, room.state.version);
+  assert.deepEqual(rooms.tick(), [room]);
+  assert.equal(room.state.activeSeat, 2);
+});
+
 test('cartas usam os atributos definidos', () => {
   assert.deepEqual(
     Object.fromEntries(Object.values(CARD_BY_ID).map(card => [card.id, {

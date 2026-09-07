@@ -6,7 +6,7 @@ import { deckBuilderTemplate } from './shell/deckBuilderTemplate.js';
 
 export function mountGameShell() {
   document.body.innerHTML = `${lobbyTemplate()}${deckBuilderTemplate()}
-    <main id="game" tabindex="0" aria-label="Tabuleiro 3D medieval com três tropas">
+    <main id="game" tabindex="0" aria-label="Tabuleiro 3D de Tronos em Ruínas">
       ${gameHudTemplate()}
       ${settingsTemplate()}
       ${devGalleryTemplate()}

@@ -1,16 +1,20 @@
-import { randomInt, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import { DEFAULT_DECK_CARD_IDS, validateDeckCardIds } from '@tronos/shared/cards';
 import { GAME_CONFIG } from '@tronos/shared/game-config';
 import { createInitialState } from './createInitialState.js';
 import { applyGameAction, applyTurnTimeout } from './gameEngine.js';
-
-const ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const ROOM_CODE_PATTERN = /^[A-Z2-9]{6}$/;
-const ID_PATTERN = /^[A-Za-z0-9:_-]{1,128}$/;
-
-function roomCode() {
-  return Array.from({ length: 6 }, () => ALPHABET[randomInt(ALPHABET.length)]).join('');
-}
+import { roomDirectory } from './roomDirectory.js';
+import {
+  roomCode,
+  participant,
+  authenticatedIdentity,
+  legacyIdentity,
+  normalizeName,
+  normalizeRoomName,
+  normalizeVisibility,
+  normalizePlayerCount,
+  normalizeCode
+} from './roomPolicy.js';
 
 export class RoomManager {
   constructor({ botDelayMs = 350, now = () => Date.now() } = {}) {
@@ -143,28 +147,7 @@ export class RoomManager {
   }
 
   directory() {
-    return [...this.rooms.values()]
-      .filter(room => room.listed && room.state.phase !== 'finished')
-      .sort((left, right) => right.updatedAt - left.updatedAt)
-      .map(room => {
-        const full = room.players.length >= room.capacity;
-        const isPrivate = room.visibility === 'private';
-        return {
-          id: room.id,
-          name: room.name,
-          visibility: room.visibility,
-          locked: isPrivate,
-          code: isPrivate ? null : room.code,
-          playerCount: room.players.length,
-          capacity: room.capacity,
-          players: room.players.length,
-          maxPlayers: room.capacity,
-          spectators: room.spectators.length,
-          status: full ? 'playing' : 'waiting',
-          canJoin: !isPrivate && !full,
-          canSpectate: !isPrivate && full
-        };
-      });
+    return roomDirectory(this.rooms.values());
   }
 
   action(roomCodeValue, playerId, action, expectedVersion) {
@@ -226,6 +209,12 @@ export class RoomManager {
         continue;
       }
 
+      // Finished matches can keep spectators, but never schedule another action.
+      if (room.state.phase !== 'playing') {
+        room.botTurnReadyAt = null;
+        continue;
+      }
+
       const disconnectedPlayer = room.players.find(player => (
         !player.isBot
         && !player.socket
@@ -263,6 +252,10 @@ export class RoomManager {
   }
 
   #armBot(room) {
+    if (room.state.phase !== 'playing') {
+      room.botTurnReadyAt = null;
+      return;
+    }
     const activeStatePlayer = room.state.players.find(player => player.seat === room.state.activeSeat);
     const activeBot = room.players.find(player => player.id === activeStatePlayer?.id && player.isBot);
     room.botTurnReadyAt = activeBot ? this.now() + this.botDelayMs : null;
@@ -278,6 +271,7 @@ export class RoomManager {
     room.state.endReason = 'forfeit';
     room.state.forfeitReason = reason;
     room.state.forfeitSeat = player.seat;
+    room.botTurnReadyAt = null;
     room.state.version += 1;
     const statePlayer = room.state.players.find(item => item.id === player.id);
     if (statePlayer) {
@@ -297,75 +291,4 @@ export class RoomManager {
       }
     }
   }
-}
-
-function participant(identity, seat, socket, isBot = false) {
-  return {
-    id: identity.playerId,
-    name: identity.name,
-    seat,
-    socket,
-    isBot,
-    forfeitAt: null,
-    deckCardIds: [...identity.deckCardIds]
-  };
-}
-
-function authenticatedIdentity(value) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Identidade inválida.');
-  const playerId = String(value.playerId ?? '').trim();
-  if (!ID_PATTERN.test(playerId)) throw new Error('Identidade inválida.');
-  return {
-    playerId,
-    name: normalizeName(value.name),
-    deckCardIds: validateDeckCardIds(value.deckCardIds, { allowDefault: false })
-  };
-}
-
-function legacyIdentity(playerName, deckCardIds) {
-  return {
-    playerId: randomUUID(),
-    name: normalizeName(playerName),
-    deckCardIds: validateDeckCardIds(deckCardIds, { allowDefault: false })
-  };
-}
-
-function normalizeName(value) {
-  const name = String(value ?? '')
-    .normalize('NFKC')
-    .trim()
-    .replace(/[<>\u0000-\u001f\u007f]/g, '')
-    .slice(0, 24);
-  if (name.length < 2) throw new Error('O nome precisa ter pelo menos 2 caracteres.');
-  return name;
-}
-
-function normalizeRoomName(value, ownerName) {
-  const fallback = `Sala de ${ownerName}`;
-  const name = String(value ?? fallback)
-    .normalize('NFKC')
-    .trim()
-    .replace(/[<>\u0000-\u001f\u007f]/g, '')
-    .slice(0, 32);
-  if (name.length < 2) throw new Error('O nome da sala precisa ter pelo menos 2 caracteres.');
-  return name;
-}
-
-function normalizeVisibility(value) {
-  if (value === undefined) return 'private';
-  if (value !== 'public' && value !== 'private') throw new Error('Privacidade de sala inválida.');
-  return value;
-}
-
-function normalizePlayerCount(value) {
-  if (value === undefined) return GAME_CONFIG.maxPlayers;
-  const playerCount = Number(value);
-  if (![2, 3, 4].includes(playerCount)) throw new Error('Quantidade de jogadores inválida.');
-  return playerCount;
-}
-
-function normalizeCode(value) {
-  const code = String(value ?? '').trim().toUpperCase();
-  if (!ROOM_CODE_PATTERN.test(code)) throw new Error('Código de sala inválido.');
-  return code;
 }

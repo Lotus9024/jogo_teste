@@ -13,3 +13,5 @@
 @import './styles/settings.css';
 @import './styles/dev-mode.css';
 @import './styles/dark-fantasy-controls.css';
+@import './styles/tokens.css';
+@import './styles/interface-polish.css';

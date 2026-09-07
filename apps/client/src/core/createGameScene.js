@@ -50,7 +50,7 @@ export function createGameScene(app, { quality = 'high' } = {}) {
   scene.add(new THREE.AmbientLight(0x756b8f, 0.62));
 
   // One real-time directional light behaves like Unity's global sun. The
-  // orthographic shadow camera tightly covers the board so the 2048px map is
+  // orthographic shadow camera tightly covers the board so the shadow map is
   // spent on gameplay instead of the distant scenery.
   const sunTarget = new THREE.Object3D();
   sunTarget.position.set(0, 0, 0);
@@ -60,7 +60,7 @@ export function createGameScene(app, { quality = 'high' } = {}) {
   sun.position.set(-8.6, 13.8, -4.8);
   sun.target = sunTarget;
   sun.castShadow = true;
-  sun.shadow.mapSize.set(1024, 1024);
+  sun.shadow.mapSize.set(2048, 2048);
   sun.shadow.camera.left = -13;
   sun.shadow.camera.right = 13;
   sun.shadow.camera.top = 13;
@@ -69,7 +69,7 @@ export function createGameScene(app, { quality = 'high' } = {}) {
   sun.shadow.camera.far = 36;
   sun.shadow.bias = -0.00018;
   sun.shadow.normalBias = 0.045;
-  sun.shadow.radius = 4;
+  sun.shadow.radius = 3;
   scene.add(sun);
 
   const cool = new THREE.DirectionalLight(0x8b74bd, 1.72);
@@ -96,7 +96,7 @@ export function createGameScene(app, { quality = 'high' } = {}) {
     renderer.shadowMap.needsUpdate = !low;
     magicSky.setQuality(nextQuality);
     app.dataset.graphicsQuality = nextQuality;
-    app.dataset.shadows = low ? 'disabled' : 'static-soft';
+    app.dataset.shadows = low ? 'disabled' : 'adaptive-soft';
   }
 
   setGraphicsQuality(quality);

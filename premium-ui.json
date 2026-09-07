@@ -1,0 +1,13 @@
+{
+  "profile": "product-admin",
+  "sourceRoots": ["apps/client/src", "apps/client/index.html", "apps/client/guide.html"],
+  "locale": "pt-BR",
+  "canonicalMap": "UX-CONTRACT.md",
+  "requiredCapabilities": ["Form", "Scrollbar", "Toast"],
+  "requiredCommands": ["check", "test", "build"],
+  "commands": {
+    "check": "npm run check",
+    "test": "npm test",
+    "build": "npm run build"
+  }
+}

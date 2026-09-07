@@ -406,20 +406,19 @@ export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) 
   scene.environment = null;
   scene.environmentIntensity = 0;
 
-  const skyGeometries = {
-    low: new THREE.SphereGeometry(68, 32, 16),
-    high: new THREE.SphereGeometry(68, 96, 48)
-  };
-  Object.values(skyGeometries).forEach(geometry => {
+  const skyGeometries = {};
+  const textures = {};
+  function prepareQuality(nextQuality) {
+    if (skyGeometries[nextQuality]) return;
+    const high = nextQuality === 'high';
+    const geometry = new THREE.SphereGeometry(68, high ? 96 : 32, high ? 48 : 16);
     const uvs = geometry.getAttribute('uv');
     for (let index = 0; index < uvs.count; index += 1) uvs.setY(index, 0.5 + uvs.getY(index) * 0.5);
     uvs.needsUpdate = true;
-  });
-
-  const textures = {
-    low: createDarkFantasyTexture(1024),
-    high: createDarkFantasyTexture(2048)
-  };
+    skyGeometries[nextQuality] = geometry;
+    textures[nextQuality] = createDarkFantasyTexture(high ? 2048 : 1024);
+  }
+  prepareQuality(quality);
   const skyMaterial = new THREE.MeshBasicMaterial({
     map: textures[quality],
     color: 0xffffff,
@@ -498,6 +497,7 @@ export function createMagicSky(scene, renderer, app, { quality = 'high' } = {}) 
 
   function setQuality(nextQuality) {
     const high = nextQuality === 'high';
+    prepareQuality(nextQuality);
     sky.geometry = skyGeometries[nextQuality];
     skyMaterial.map = textures[nextQuality];
     skyMaterial.needsUpdate = true;

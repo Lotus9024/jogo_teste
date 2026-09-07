@@ -3,7 +3,7 @@ import { CLIENT_EVENTS, PROTOCOL_LIMITS, SERVER_EVENTS, parseMessage } from '@tr
 const PRODUCTION_SOCKET_URL = 'wss://tronos-em-ruinas-api.squareweb.app/ws';
 
 export function resolveSocketUrl({
-  configuredUrl = import.meta.env.VITE_WS_URL,
+  configuredUrl = import.meta.env?.VITE_WS_URL,
   protocol = globalThis.location?.protocol ?? 'https:',
   hostname = globalThis.location?.hostname ?? ''
 } = {}) {
@@ -33,6 +33,7 @@ export class GameSocketClient extends EventTarget {
     this.connecting = false;
     this.authenticated = false;
     this.reconnectEnabled = true;
+    this.connectionGeneration = 0;
   }
 
   setTicketProvider(provider) {
@@ -45,20 +46,27 @@ export class GameSocketClient extends EventTarget {
     clearTimeout(this.reconnectTimer);
     this.reconnectEnabled = true;
     this.connecting = true;
+    const generation = ++this.connectionGeneration;
     let ticket;
     try {
       ticket = await this.ticketProvider();
     } catch (error) {
+      if (generation !== this.connectionGeneration || !this.reconnectEnabled) return;
       this.connecting = false;
-      this.#emit(SERVER_EVENTS.ERROR, { message: error.message });
+      this.#emit(SERVER_EVENTS.ERROR, { message: error?.message ?? 'Não foi possível conectar à partida.' });
       this.#scheduleReconnect();
       return;
     }
-    if (!this.reconnectEnabled) {
+    if (generation !== this.connectionGeneration || !this.reconnectEnabled) return;
+    let socket;
+    try {
+      socket = new this.WebSocketImpl(this.url, ['nexus-v1']);
+    } catch (error) {
       this.connecting = false;
+      this.#emit(SERVER_EVENTS.ERROR, { message: error?.message ?? 'Não foi possível abrir a conexão.' });
+      this.#scheduleReconnect();
       return;
     }
-    const socket = new this.WebSocketImpl(this.url, ['nexus-v1']);
     this.socket = socket;
     this.authenticated = false;
     socket.addEventListener('open', () => {
@@ -68,12 +76,14 @@ export class GameSocketClient extends EventTarget {
     });
     socket.addEventListener('close', () => {
       if (socket !== this.socket) return;
+      this.socket = null;
       this.connecting = false;
       this.authenticated = false;
       this.#emit('disconnected');
       this.#scheduleReconnect();
     });
     socket.addEventListener('message', ({ data }) => {
+      if (socket !== this.socket || !this.reconnectEnabled) return;
       const message = parseMessage(data, { maxBytes: PROTOCOL_LIMITS.serverMessageBytes });
       if (!message) return;
       if (message.type === SERVER_EVENTS.AUTHENTICATED) {
@@ -87,11 +97,13 @@ export class GameSocketClient extends EventTarget {
 
   disconnect() {
     this.reconnectEnabled = false;
+    this.connectionGeneration += 1;
     clearTimeout(this.reconnectTimer);
-    this.socket?.close();
+    const socket = this.socket;
     this.socket = null;
     this.authenticated = false;
     this.connecting = false;
+    socket?.close();
   }
 
   requestRooms() {

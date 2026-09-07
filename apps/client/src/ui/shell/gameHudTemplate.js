@@ -12,6 +12,7 @@ export function gameHudTemplate() {
       <i id="game-cursor" class="game-cursor" aria-hidden="true"><span></span></i>
       <div id="match-state" class="match-state" hidden><span id="turn-label">SEU TURNO</span><time id="turn-clock">02:00</time></div>
       <button id="settings-toggle" class="settings-toggle" aria-haspopup="dialog" aria-controls="settings-modal" aria-label="Abrir configurações">⚙</button>
+      <a class="game-guide-toggle" href="./guide.html" target="_blank" rel="noopener" aria-label="Como jogar (abre em outra aba)" title="Como jogar">?</a>
       <button id="leave-match" class="leave-match" type="button" hidden>SAIR <span>W.O.</span></button>
       <output id="game-error" class="game-error" aria-live="polite"></output>
       <section id="victory-presentation" class="victory-presentation" role="status" aria-live="assertive" hidden>
