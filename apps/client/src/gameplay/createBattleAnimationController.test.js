@@ -2,8 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import { createBattleAnimationController } from './createBattleAnimationController.js';
+import { makeWarrior } from '../assets/models/warriorModel.js';
 
-function setup() {
+function setup(options = {}) {
   const scene = new THREE.Scene();
   const units = [];
   const hoverables = [];
@@ -13,6 +14,7 @@ function setup() {
     half: 7,
     units,
     hoverables,
+    ...options,
   });
   return { scene, units, hoverables, controller };
 }
@@ -108,22 +110,27 @@ test('Torre lança quatro flechas físicas e a Nevasca permanece pelo prazo corr
   assert.match(storm.id, /^local-snowstorm-/);
 });
 
-test('ataque corpo a corpo dá impulso à unidade e desenha o corte no alvo', () => {
+test('ataque corpo a corpo move a arma e preserva a raiz lógica da unidade', () => {
   const { scene, units, controller } = setup();
-  const warrior = new THREE.Group();
+  const warrior = makeWarrior();
   warrior.position.set(0, 0.06, 0);
   warrior.userData.cardId = 'warrior';
   units.push(warrior);
   scene.add(warrior);
   const initialChildren = scene.children.length;
+  const sword = warrior.getObjectByName('warriorSword');
+  const swordRotation = sword.rotation.clone();
 
   assert.equal(controller.playAttack(warrior, new THREE.Vector3(1, 0.06, 0)), true);
   assert.equal(scene.children.length, initialChildren + 1);
   controller.update(0.17, 0.17);
-  assert.ok(warrior.scale.x > 1);
+  assert.notEqual(sword.rotation.x, swordRotation.x);
+  assert.deepEqual(warrior.scale.toArray(), [1, 1, 1]);
+  assert.deepEqual(warrior.position.toArray(), [0, 0.06, 0]);
 
   controller.update(0.17, 0.34);
   assert.deepEqual(warrior.scale.toArray(), [1, 1, 1]);
+  assert.equal(sword.rotation.x, swordRotation.x);
   assert.equal(scene.children.length, initialChildren);
 });
 
@@ -147,4 +154,69 @@ test('efeito online de ataque lança um projétil quando a unidade é arqueira',
   assert.equal(scene.children.length, initialChildren + 1);
   controller.update(0.3, 0.3);
   assert.equal(scene.children.length, initialChildren);
+});
+
+test('efeitos confirmados são idempotentes durante toda a partida, inclusive após muitos eventos', () => {
+  const { scene, units, controller } = setup();
+  const warrior = makeWarrior();
+  warrior.userData.serverUnitId = 'warrior';
+  units.push(warrior);
+  scene.add(warrior);
+  const event = { id: 'first-hit', type: 'unit_attack', unitId: 'warrior', cardId: 'warrior', toX: 8, toZ: 7 };
+  controller.processServerEffects([event], { present: false });
+  assert.equal(scene.children.length, 1);
+  controller.processServerEffects([event]);
+  assert.equal(scene.children.length, 1);
+  for (let index = 0; index < 210; index += 1) controller.processServerEffects([{ ...event, id: `next-${index}` }]);
+  assert.ok(scene.children.filter(part => part.name === 'attackTrace').length <= 8);
+  controller.update(1, 1);
+  controller.processServerEffects([event]);
+  assert.equal(scene.children.length, 1);
+});
+
+test('cancelar deslocamento por outro destino não acumula inclinação nem muda a escala da unidade', () => {
+  const { scene, controller } = setup();
+  const warrior = makeWarrior();
+  warrior.scale.setScalar(0.55);
+  scene.add(warrior);
+  controller.slideUnit(warrior, new THREE.Vector3(2, 0.06, 0));
+  controller.update(0.1, 0.1);
+  controller.slideUnit(warrior, new THREE.Vector3(3, 0.06, 2));
+  controller.update(1, 1.1);
+  assert.deepEqual(warrior.position.toArray(), [3, 0.06, 2]);
+  assert.deepEqual(warrior.scale.toArray(), [0.55, 0.55, 0.55]);
+  assert.deepEqual(warrior.rotation.toArray().slice(0, 3), [0, 0, 0]);
+  assert.equal(warrior.userData.presentationAnimating, false);
+});
+
+test('derrota usa materiais temporários sem liberar geometrias ou alterar materiais compartilhados', () => {
+  const { scene, controller } = setup();
+  const warrior = makeWarrior();
+  const original = warrior.getObjectByName('swordBlade');
+  let geometryDisposed = false;
+  original.geometry.addEventListener('dispose', () => { geometryDisposed = true; });
+  controller.playDefeat(warrior);
+  assert.ok(scene.getObjectByName('unitDefeatEcho'));
+  controller.update(0.12, 0.12);
+  assert.equal(original.material.opacity, 1);
+  controller.update(0.12, 0.24);
+  assert.equal(scene.getObjectByName('unitDefeatEcho'), undefined);
+  assert.equal(geometryDisposed, false);
+});
+
+test('limpar a apresentação libera efeitos temporários e restaura poses e escalas', () => {
+  const { scene, controller } = setup();
+  const warrior = makeWarrior();
+  scene.add(warrior);
+  controller.playAbility(warrior);
+  controller.spawnClone(warrior);
+  controller.explodeAt(new THREE.Vector3());
+  controller.launchTowerVolley(new THREE.Vector3());
+  controller.playDefeat(makeWarrior());
+  controller.update(0.08, 0.08);
+  controller.clear();
+  assert.equal(scene.children.length, 1);
+  assert.equal(warrior.userData.presentationAnimating, false);
+  assert.equal(warrior.userData.cloneAnimating, false);
+  assert.deepEqual(warrior.scale.toArray(), [1, 1, 1]);
 });

@@ -99,6 +99,15 @@ try {
   await inactive.waitForFunction(() => !document.querySelector('#end-turn').disabled);
   assert.equal(await active.locator('#end-turn').isEnabled(), false);
   passed('Dois jogadores: sala privada, entrada por Enter, 7 cartas e troca de turno');
+  assert.equal(await first.locator('#castle-hover').count(), 0, 'O castelo não deve ter painel de hover.');
+  const enemyMarker = await first.locator('.enemy-base-tag').boundingBox();
+  if (enemyMarker) {
+    await first.mouse.move(enemyMarker.x + enemyMarker.width / 2, enemyMarker.y + 28);
+    assert.equal(await first.locator('#hover-card.visible').count(), 0);
+  }
+  assert.equal(await first.locator('#game-cursor').count(), 0, 'O cursor luminoso foi retirado do HUD minimalista.');
+  const statusBounds = await first.locator('.battle-status-bar').boundingBox();
+  assert.ok(statusBounds.height <= 40 && statusBounds.width < 400);
   await first.locator('#settings-toggle').click();
   await first.keyboard.press('Shift+Tab');
   assert.equal(await first.evaluate(() => document.querySelector('#settings-modal').contains(document.activeElement)), true);
@@ -108,6 +117,7 @@ try {
   await first.screenshot({ path: resolve(output, 'partida-desktop.png') });
   await first.setViewportSize({ width: 390, height: 844 });
   assert.equal(await first.locator('.command-resource.energy').isVisible(), true);
+  assert.equal(await first.locator('.command-resource.level').isVisible(), true);
   await first.waitForFunction(() => {
     const box = document.querySelector('.bottom-command').getBoundingClientRect();
     return box.x >= 0 && box.right <= innerWidth;

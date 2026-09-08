@@ -52,3 +52,18 @@ test('deck hover converges identically at 30 and 60 frames per second', () => {
   }
   assert.ok(Math.abs(simulate(30) - simulate(60)) < 1e-12);
 });
+
+test('ambient animation does not overwrite action poses or lift machines', () => {
+  for (const userData of [{ cardType: 'machine' }, { presentationAnimating: true }, { isMoving: true }]) {
+    const unit = new Group();
+    unit.userData = userData;
+    const rig = new Group();
+    rig.name = 'rig';
+    rig.position.y = 0.27;
+    rig.rotation.z = 0.11;
+    unit.add(rig);
+    createAnimation([unit]).update(2);
+    assert.equal(rig.position.y, 0.27);
+    assert.equal(rig.rotation.z, 0.11);
+  }
+});

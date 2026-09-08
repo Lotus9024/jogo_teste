@@ -101,6 +101,7 @@ export function createAbilityController(options) {
       z: Math.round((selected.position.z + half) / tile),
     };
     battleAnimations.launchTowerVolley(selected.position, instant.range);
+    battleAnimations.playAbility?.(selected);
     for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
       const target = units.filter(unit => unit !== selected).map(unit => {
         const x = Math.round((unit.position.x + half) / tile);
@@ -196,7 +197,10 @@ export function createAbilityController(options) {
           callbacks.damageLocalUnit?.(selected, selected.userData.hp);
         },
       );
-    } else selected.userData.actionUsed = true;
+    } else {
+      selected.userData.actionUsed = true;
+      battleAnimations.playAbility?.(selected);
+    }
     return true;
   }
 
@@ -212,6 +216,7 @@ export function createAbilityController(options) {
       selected.userData.maxHp += 1;
       selected.userData.hp = Math.min(selected.userData.maxHp, selected.userData.hp + 1);
       selected.userData.instantReadyTurn = currentTurnIndex() + (instant.cooldownTurns ?? 2);
+      battleAnimations.playAbility?.(selected, { color: 0x86aeca });
     }
     return true;
   }

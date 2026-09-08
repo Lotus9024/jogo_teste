@@ -7,6 +7,7 @@ import { cardIconMarkup } from '../ui/cardIcon.js';
 import { setResource } from '../ui/resourceView.js';
 import { ensureAbilityBadge, updateHealthBadge } from '../ui/unitHealthBadge.js';
 import { GameSocketClient, SERVER_EVENTS } from './gameSocket.js';
+import { presentationChanges } from '../gameplay/animation/presentationChanges.js';
 
 export function createOnlineSession({
   state,
@@ -126,14 +127,17 @@ export function createOnlineSession({
     return unit;
   }
 
-  function reconcileOnlineUnits(serverUnits, effects = []) {
+  function reconcileOnlineUnits(serverUnits, effects = [], animateChanges = true) {
     const nextById = new Map(serverUnits.map(data => [data.id, data]));
     const previousUnits = [...units];
     const existingById = new Map(previousUnits.map(unit => [unit.userData.serverUnitId, unit]));
     previousUnits.forEach(unit => {
       const next = nextById.get(unit.userData.serverUnitId);
       const lost = Math.max(0, unit.userData.hp - (next?.hp ?? 0));
-      if (lost) damageEffects.show(unit.position, lost);
+      if (lost && animateChanges) {
+        damageEffects.show(unit.position, lost);
+        if (next) battleAnimations.playImpact?.(unit);
+      }
     });
     interaction.clearMovementGrid();
     abilities.clearMageTargets();
@@ -147,7 +151,9 @@ export function createOnlineSession({
       const target = battleAnimations.worldPoint(data.x, data.z);
       if (unit) {
         const index = cards.findIndex(card => card.id === data.cardId);
+        const changed = presentationChanges(unit.userData, data);
         syncOnlineUnitData(unit, data, cards[index], index);
+        if (animateChanges && (changed.ability || changed.healed)) battleAnimations.playAbility?.(unit);
         setArcherMountedState(unit, false);
         if (!data.mountedOnTowerId && unit.position.distanceToSquared(target) > 0.0001) {
           battleAnimations.slideUnit(unit, target);
@@ -155,6 +161,7 @@ export function createOnlineSession({
       } else {
         unit = onlineUnit(data);
         scene.add(unit);
+        if (animateChanges && data.cardId !== 'goblin_clone' && !data.isGoblinClone) battleAnimations.spawnUnit?.(unit);
       }
       nextUnits.push(unit);
     });
@@ -165,6 +172,7 @@ export function createOnlineSession({
         nextUnits.push(unit);
         return;
       }
+      if (animateChanges) battleAnimations.playDefeat?.(unit);
       scene.remove(unit);
     });
     units.splice(0, units.length, ...nextUnits);
@@ -202,6 +210,8 @@ export function createOnlineSession({
 
   function applyState(payload) {
     const previous = state.onlineState;
+    const animateChanges = Boolean(previous && previous.code === payload.code);
+    if (!animateChanges) battleAnimations.clear?.();
     const spectator = Boolean(payload.self?.spectator);
     const selfSeat = spectator ? (payload.self?.perspectiveSeat ?? 1) : payload.self.seat;
     const shouldSetPerspective = !previous
@@ -214,6 +224,8 @@ export function createOnlineSession({
     keeps.forEach(keep => {
       const player = payload.state.players.find(item => item.seat === keep.userData.ownerSeat);
       if (!player) return;
+      const previousPlayer = previous?.state.players.find(item => item.seat === player.seat);
+      if (animateChanges && previousPlayer?.baseHp > player.baseHp) battleAnimations.playImpact?.(keep);
       keep.userData.rulerName = player.name;
       keep.userData.baseHp = player.baseHp;
       keep.userData.currentLevel = player.baseLevel ?? 1;
@@ -250,9 +262,16 @@ export function createOnlineSession({
     );
     boardPresentation.reconcileFires(payload.state.fires ?? []);
     const battleEffects = payload.state.effects ?? [];
-    reconcileOnlineUnits(payload.state.units, battleEffects);
+    reconcileOnlineUnits(payload.state.units, battleEffects, animateChanges);
     battleAnimations.reconcileSnowstorms(payload.state.snowstorms ?? []);
-    battleAnimations.processServerEffects(battleEffects);
+    battleAnimations.processServerEffects(battleEffects, { present: animateChanges });
+    if (animateChanges) {
+      const previousFires = new Set((previous.state.fires ?? []).map(fire => fire.id));
+      (payload.state.fires ?? []).filter(fire => !previousFires.has(fire.id)).forEach(fire => {
+        const mage = units.find(unit => unit.userData.serverUnitId === fire.casterUnitId);
+        if (mage) battleAnimations.playAttack(mage, battleAnimations.worldPoint(fire.x, fire.z), 'mage');
+      });
+    }
     boardPresentation.reconcileRoads(payload.state.roads ?? []);
     const me = payload.state.players.find(player => player.seat === state.selfSeat);
     const enemy = payload.state.players.find(player => player.seat !== state.selfSeat);
@@ -341,6 +360,7 @@ export function createOnlineSession({
       applyState(event.detail);
     });
     socket.addEventListener(SERVER_EVENTS.ROOM_LEFT, () => {
+      battleAnimations.clear?.();
       state.onlineState = null;
       callbacks.hideMatchResult?.();
       leaveMatchButton.hidden = true;

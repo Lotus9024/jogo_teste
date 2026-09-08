@@ -18,7 +18,7 @@ export function createDevModeController(options) {
   const {
     state, app, scene, tile, half, units, hoverables, roads, boardPresentation,
     interaction, actions, abilities, handController, cameraTransition, deckBuilder, setPlayerCount = () => {},
-    callbacks, localCardEffects,
+    callbacks, localCardEffects, battleAnimations,
   } = options;
   const toolCallbacks = {
     ...callbacks,
@@ -105,12 +105,13 @@ export function createDevModeController(options) {
     }
     setResource('#self-health', tools.kingdoms[state.activePlayer].hp, GAME_CONFIG.startingBaseHp);
     document.querySelector('.enemy-base-tag i').style.width = `${tools.kingdoms[enemySeat].hp / GAME_CONFIG.startingBaseHp * 100}%`;
-    document.querySelector('#turn-label').textContent = `REINO ${state.activePlayer} · TURNO ${state.round}`;
+    document.querySelector('#turn-label').textContent = `Reino ${state.activePlayer}`;
     tools.syncSettings();
   }
 
   function damageDevBase(seat, amount) {
     const remainingHp = tools.damageBase(seat, amount);
+    if (remainingHp !== null && amount > 0) battleAnimations?.playImpact?.(tools.keepForSeat(seat));
     if (remainingHp === 0) callbacks.showMatchResult?.({ outcome: 'victory', winnerSeat: state.activePlayer });
     return remainingHp;
   }
@@ -165,6 +166,7 @@ export function createDevModeController(options) {
   }
 
   function initializeDevMode() {
+    battleAnimations?.clear?.();
     deckBuilder?.close();
     callbacks.activatePreferredGraphics?.();
     Object.assign(state, { devMode: true, onlineState: null, activePlayer: 1, round: 1, selfSeat: 1 });

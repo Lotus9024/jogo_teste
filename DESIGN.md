@@ -39,6 +39,8 @@ components:
 
 Uma mesa de guerra de pedra suspensa num reino em ruínas. A miniatura e o terreno 3D são a assinatura; os menus devem parecer parte desse mundo, mas a leitura das decisões vem primeiro. Público: jogadores de estratégia em navegador; idioma atual pt-BR, foco em desktop com adaptações para telas estreitas. O guia é uma biblioteca de consulta, não uma página promocional.
 
+Preferência explícita do jogador: **HUD minimalista, sem poluição visual**. Castelos não abrem informação ao passar o mouse nem por clique. Durante a partida, remover ornamentos que disputem atenção com as peças; explicações longas pertencem ao guia. Essa decisão orienta alterações futuras e prevalece sobre os tratamentos ornamentais legados.
+
 As regras são autoridade do servidor. A interface apresenta energia, alcance e disponibilidade sem inventar custos ou prever decisões definitivas. Consulte [arquitetura](docs/ARQUITETURA.md) e [contrato de interface](UX-CONTRACT.md).
 
 ## Colors
@@ -55,9 +57,13 @@ Cinzel nos títulos e selos; Inter nos formulários e explicações; monoespaça
 
 Menu em um painel estreito na lateral em desktop; centralizado em telas pequenas. Comandos e cartas ficam nas bordas, sem acrescentar painéis permanentes no centro do campo. O guia abre em outra aba para consulta sem sair da partida; seu conteúdo rola naturalmente e tabelas têm rolagem própria. Breakpoints do refinamento: 620px no jogo; 720/1150px no guia. Modais limitados pela altura dinâmica da janela; ações sempre alcançáveis.
 
+Na batalha, `styles/minimal-hud.css` é o responsável final pela linha de estado e barra de recursos, após o tema legado e interface-polish.css. No alto, estado/reino, rodada e relógio numa única linha discreta à esquerda. Na base, Castelo/Energia/Vida/Cidadãos e Passar turno em uma barra de até 480×50px; sem caixas por recurso, ícones redundantes, brilho violeta ou sombras fortes. Todos os recursos permanecem visíveis em telas estreitas. O cursor é nativo. O marcador permanente do castelo inimigo é uma linha curta de vida, sem painel de detalhes.
+
 ## Elevation & Depth
 
 Painéis de pedra quase opacos, bordas finas e luz contida. O mundo carrega a profundidade: casas chanfradas, luz direcional, sombras atualizadas quando objetos mudam. Qualidade baixa reduz custo de luz/sombra sem mudar áreas válidas nem a posição das peças. Evitar brilhar todas as bordas e desfocar o tabuleiro a ponto de eliminar a cena.
+
+Castelos mantêm portaria, pátio e menagem legíveis dentro do quadrado ocupado; arquitetura de baixa altura com materiais foscos substitui o excesso de pináculos e neon. Obras mostram andaimes, estoque e ferramentas apoiados no chão. Ruas têm relevo discreto e continuidade nas conexões cardeais. Animações de ação são locais e curtas: passos, armas, recuo e impacto, sem sacudir a câmera ou alterar a posição lógica da unidade. Respeitar movimento reduzido.
 
 ## Shapes
 

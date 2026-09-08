@@ -13,10 +13,11 @@ export function createShadowInvalidation(renderer, { interval = 1 / 12 } = {}) {
       const signature = [
         ...object.position, ...object.quaternion, ...object.scale,
         object.visible, object.children.length, object.userData.currentLevel,
-        object.userData.underConstruction,
+        object.userData.underConstruction, object.userData.presentationAnimating,
       ].join(',');
       next.set(object, signature);
       if (snapshots.get(object) !== signature) changed = true;
+      if (object.userData.presentationAnimating && object.visible) changed = true;
     }
     if (snapshots.size !== next.size) changed = true;
     snapshots = next;

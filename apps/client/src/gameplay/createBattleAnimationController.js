@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { createUnitMotion } from './animation/createUnitMotion.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const ARROW_MATERIAL = new THREE.MeshStandardMaterial({
@@ -83,13 +84,14 @@ function createArcaneProjectile() {
 
 function createSlashEffect() {
   const group = new THREE.Group();
-  for (let index = 0; index < 2; index += 1) {
+  group.name = 'attackTrace';
+  for (let index = 0; index < 1; index += 1) {
     const slash = new THREE.Mesh(
-      new THREE.TorusGeometry(0.34 + index * 0.09, 0.025, 5, 20, Math.PI * 1.18),
+      new THREE.TorusGeometry(0.27, 0.012, 4, 18, Math.PI * 0.85),
       new THREE.MeshBasicMaterial({
-        color: index === 0 ? 0xf7eaff : 0xa747e8,
+        color: 0xe6d2a8,
         transparent: true,
-        opacity: 0.9 - index * 0.2,
+        opacity: 0.65,
         depthWrite: false,
       }),
     );
@@ -127,12 +129,12 @@ function createSnowstormGroup(tile, radius) {
   ring.position.y = 0.09;
   group.add(ring);
 
-  for (let index = 0; index < 30; index += 1) {
+  for (let index = 0; index < 8; index += 1) {
     const flake = new THREE.Mesh(
       new THREE.TetrahedronGeometry(0.035 + index % 4 * 0.009, 0),
       ICE_MATERIAL.clone(),
     );
-    const angle = index / 30 * Math.PI * 2;
+    const angle = index / 8 * Math.PI * 2;
     const distance = reach * (0.2 + (index % 7) / 8);
     flake.position.set(Math.cos(angle) * distance, 0.18 + (index % 8) * 0.12, Math.sin(angle) * distance);
     flake.userData.snowflake = true;
@@ -151,12 +153,16 @@ export function createBattleAnimationController({
   half,
   units,
   hoverables,
+  keeps = [],
+  reducedMotion = () => globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
 }) {
   const motions = [];
   const arrows = [];
   const bursts = [];
   const cloneEffects = [];
-  const attackPoses = [];
+  const unitMotion = createUnitMotion({ reducedMotion });
+  const cues = new Map();
+  const defeats = [];
   const slashEffects = [];
   const stormGroups = new Map();
   const seenEffects = new Set();
@@ -164,6 +170,78 @@ export function createBattleAnimationController({
   let localStormSequence = 0;
 
   const worldPoint = (x, z, y = 0.06) => new THREE.Vector3(x * tile - half, y, z * tile - half);
+
+  function reserveEffect(list, limit, getObject) {
+    if (list.length < limit) return;
+    const previous = list.shift();
+    const object = getObject(previous);
+    scene.remove(object);
+    disposeGroup(object);
+  }
+
+  function cue(unit, color = 0xc7ac6a) {
+    if (!unit) return;
+    const previous = cues.get(unit);
+    if (previous) {
+      scene.remove(previous.mesh);
+      disposeGroup(previous.mesh);
+    }
+    // One short ground outline per actor, capped even for a large army buff.
+    if (cues.size >= 12 && !previous) return;
+    const ring = new THREE.Mesh(new THREE.RingGeometry(tile * 0.33, tile * 0.345, 28),
+      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.5, depthWrite: false, side: THREE.DoubleSide }));
+    ring.name = 'unitActionCue';
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.copy(unit.position);
+    ring.position.y += 0.025;
+    scene.add(ring);
+    cues.set(unit, { mesh: ring, age: 0, duration: reducedMotion() ? 0.18 : 0.34 });
+  }
+
+  function playImpact(unit) {
+    if (Number.isInteger(unit)) unit = keeps.find(keep => keep.userData.ownerSeat === unit);
+    return unitMotion.play(unit, 'impact');
+  }
+
+  function playAbility(unit, { color = unit?.userData.cardId === 'mage' ? 0x8da883 : 0xc7ac6a } = {}) {
+    if (!unit) return false;
+    unitMotion.play(unit, 'ability');
+    cue(unit, color);
+    return true;
+  }
+
+  function spawnUnit(unit) {
+    if (!unit || unit.userData.cloneAnimating) return false;
+    unitMotion.play(unit, 'spawn', { duration: 0.26 });
+    cue(unit, 0xbfc7b0);
+    return true;
+  }
+
+  function playDefeat(unit) {
+    if (!unit) return;
+    unitMotion.cancel(unit);
+    if (reducedMotion() || defeats.length >= 8) return;
+    const echo = unit.clone(true);
+    echo.name = 'unitDefeatEcho';
+    const materials = new Map();
+    echo.traverse(part => {
+      if (part.isSprite || part.isLight) part.visible = false;
+      part.castShadow = false;
+      if (!part.material) return;
+      const copy = material => {
+        if (!materials.has(material)) {
+          const clone = material.clone();
+          clone.transparent = true;
+          clone.depthWrite = false;
+          materials.set(material, clone);
+        }
+        return materials.get(material);
+      };
+      part.material = Array.isArray(part.material) ? part.material.map(copy) : copy(part.material);
+    });
+    scene.add(echo);
+    defeats.push({ echo, materials: [...materials.values()], age: 0, y: echo.position.y });
+  }
 
   function slideUnit(unit, destination, {
     duration = 0.46,
@@ -187,9 +265,9 @@ export function createBattleAnimationController({
       start,
       end,
       elapsed: 0,
-      duration,
+      duration: reducedMotion() ? Math.min(duration, 0.16) : duration,
       charge,
-      startTilt: unit.rotation.z,
+      distance: start.distanceTo(end) / tile,
       onComplete,
     });
     return true;
@@ -205,6 +283,7 @@ export function createBattleAnimationController({
   }
 
   function explodeAt(position, color = 0xff6b24) {
+    reserveEffect(bursts, 4, effect => effect.group);
     const group = new THREE.Group();
     group.position.copy(position);
     group.position.y = 0.16;
@@ -217,17 +296,17 @@ export function createBattleAnimationController({
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.065, 6, 24), ringMaterial);
     ring.rotation.x = Math.PI / 2;
     group.add(ring);
-    for (let index = 0; index < 12; index += 1) {
+    for (let index = 0; index < (reducedMotion() ? 0 : 6); index += 1) {
       const shard = new THREE.Mesh(
         new THREE.TetrahedronGeometry(0.075, 0),
         new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.9 }),
       );
-      const angle = index / 12 * Math.PI * 2;
+      const angle = index / 6 * Math.PI * 2;
       shard.userData.direction = new THREE.Vector3(Math.cos(angle), 0.32 + index % 3 * 0.12, Math.sin(angle)).normalize();
       group.add(shard);
     }
     scene.add(group);
-    bursts.push({ group, ring, age: 0, duration: 0.72 });
+    bursts.push({ group, ring, age: 0, duration: reducedMotion() ? 0.16 : 0.38 });
   }
 
   function chargeGoblin(unit, destination, onImpact) {
@@ -249,39 +328,32 @@ export function createBattleAnimationController({
     const start = origin.clone();
     start.y += start.y > 0.5 ? 0.35 : 1.22;
     for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      reserveEffect(arrows, 16, effect => effect.arrow);
       const end = start.clone().add(new THREE.Vector3(dx * tile * range, -0.7, dz * tile * range));
       const arrow = createArrow();
       arrow.position.copy(start);
       const direction = end.clone().sub(start).normalize();
       arrow.quaternion.setFromUnitVectors(UP, direction);
       scene.add(arrow);
-      arrows.push({ arrow, start: start.clone(), end, age: 0, duration: 0.44 });
+      arrows.push({ arrow, start: start.clone(), end, age: 0, duration: reducedMotion() ? 0.12 : 0.44 });
     }
   }
 
   function playAttack(unit, targetPosition, cardId = unit?.userData.cardId) {
     if (!unit || !targetPosition) return false;
-    for (let index = attackPoses.length - 1; index >= 0; index -= 1) {
-      const existing = attackPoses[index];
-      if (existing.unit !== unit) continue;
-      existing.unit.scale.copy(existing.startScale);
-      existing.unit.rotation.z = existing.startTilt;
-      attackPoses.splice(index, 1);
-    }
-    attackPoses.push({
-      unit,
-      startScale: unit.scale.clone(),
-      startTilt: unit.rotation.z,
-      age: 0,
-      duration: 0.34,
-    });
+    unitMotion.play(unit, 'attack', { targetPosition });
 
-    if (['archer', 'cannon'].includes(cardId)) {
+    if (['archer', 'cannon', 'mage'].includes(cardId)) {
+      reserveEffect(arrows, 16, effect => effect.arrow);
       const start = unit.position.clone();
-      start.y += cardId === 'cannon' ? 0.68 : 0.92;
+      const muzzle = unit.getObjectByName(cardId === 'cannon' ? 'cannonMuzzle' : cardId === 'archer' ? 'archerBow' : 'mageFireOrb');
+      if (muzzle) muzzle.getWorldPosition(start);
+      else start.y += cardId === 'cannon' ? 0.68 : 0.92;
       const end = targetPosition.clone();
-      end.y = Math.max(0.32, end.y + 0.3);
-      const projectile = cardId === 'archer' ? createArrow() : createArcaneProjectile();
+      end.y = Math.max(0.4, end.y + 0.5);
+      const projectile = cardId === 'archer' ? createArrow() : cardId === 'mage' ? createArcaneProjectile()
+        : new THREE.Mesh(new THREE.SphereGeometry(0.10, 8, 6), ARROW_HEAD_MATERIAL.clone());
+      projectile.name = cardId + 'AttackProjectile';
       projectile.position.copy(start);
       projectile.quaternion.setFromUnitVectors(UP, end.clone().sub(start).normalize());
       scene.add(projectile);
@@ -290,16 +362,18 @@ export function createBattleAnimationController({
         start,
         end,
         age: 0,
-        duration: cardId === 'cannon' ? 0.38 : 0.3,
+        duration: reducedMotion() ? 0.12 : cardId === 'cannon' ? 0.38 : 0.3,
       });
       return true;
     }
 
+    reserveEffect(slashEffects, 8, effect => effect.group);
     const slash = createSlashEffect();
+    if (reducedMotion()) slash.visible = false;
     slash.position.copy(targetPosition);
     slash.position.y = Math.max(0.32, slash.position.y + 0.34);
     scene.add(slash);
-    slashEffects.push({ group: slash, age: 0, duration: 0.32 });
+    slashEffects.push({ group: slash, age: 0, duration: reducedMotion() ? 0.12 : 0.24 });
     return true;
   }
 
@@ -307,11 +381,11 @@ export function createBattleAnimationController({
     if (!unit || unit.userData.cloneAnimating) return;
     unit.userData.cloneAnimating = true;
     const targetScale = unit.scale.clone();
-    unit.scale.setScalar(0.035);
+    if (!reducedMotion()) unit.scale.setScalar(0.035);
     const spectral = new THREE.Group();
     spectral.position.copy(unit.position);
     spectral.position.y = 0.08;
-    for (let index = 0; index < 3; index += 1) {
+    for (let index = 0; index < 1; index += 1) {
       const ring = new THREE.Mesh(
         new THREE.TorusGeometry(0.24 + index * 0.12, 0.025, 6, 24),
         new THREE.MeshBasicMaterial({
@@ -325,17 +399,17 @@ export function createBattleAnimationController({
       ring.position.y = index * 0.42;
       spectral.add(ring);
     }
-    for (let index = 0; index < 10; index += 1) {
+    for (let index = 0; index < (reducedMotion() ? 0 : 4); index += 1) {
       const shard = new THREE.Mesh(
         new THREE.TetrahedronGeometry(0.045, 0),
         new THREE.MeshBasicMaterial({ color: 0x75dcff, transparent: true, opacity: 0.86 }),
       );
-      const angle = index / 10 * Math.PI * 2;
+      const angle = index / 4 * Math.PI * 2;
       shard.position.set(Math.cos(angle) * 0.38, 0.15 + index % 5 * 0.21, Math.sin(angle) * 0.38);
       spectral.add(shard);
     }
     scene.add(spectral);
-    cloneEffects.push({ unit, targetScale, spectral, age: 0, duration: 0.9 });
+    cloneEffects.push({ unit, targetScale, spectral, age: 0, duration: reducedMotion() ? 0.14 : 0.48 });
   }
 
   function addSnowstorm(storm) {
@@ -393,15 +467,16 @@ export function createBattleAnimationController({
   }
 
   function burstBlizzard(x, z, radius = 1) {
+    reserveEffect(bursts, 4, effect => effect.group);
     const position = worldPoint(x, z, 0.12);
     const group = new THREE.Group();
     group.position.copy(position);
-    for (let index = 0; index < 22; index += 1) {
+    for (let index = 0; index < (reducedMotion() ? 0 : 8); index += 1) {
       const shard = new THREE.Mesh(
         new THREE.TetrahedronGeometry(0.04 + index % 3 * 0.012, 0),
         ICE_MATERIAL.clone(),
       );
-      const angle = index / 22 * Math.PI * 2;
+      const angle = index / 8 * Math.PI * 2;
       shard.userData.direction = new THREE.Vector3(
         Math.cos(angle) * (0.45 + index % 4 * 0.13),
         0.55 + index % 5 * 0.12,
@@ -410,7 +485,7 @@ export function createBattleAnimationController({
       group.add(shard);
     }
     scene.add(group);
-    bursts.push({ group, ring: null, age: 0, duration: 0.9, blizzard: true, radius });
+    bursts.push({ group, ring: null, age: 0, duration: 0.42, blizzard: true, radius });
   }
 
   function preserveIdsForEffects(effects = []) {
@@ -422,11 +497,13 @@ export function createBattleAnimationController({
     return ids;
   }
 
-  function processServerEffects(effects = []) {
+  function processServerEffects(effects = [], { present = true } = {}) {
     for (const effect of effects) {
       if (!effect?.id || seenEffects.has(effect.id)) continue;
       seenEffects.add(effect.id);
+      if (!present) continue;
       if (effect.type === 'tower_arrow_volley') {
+        unitMotion.play(units.find(unit => unit.userData.serverUnitId === effect.unitId), 'attack');
         launchTowerVolley(worldPoint(effect.x, effect.z, 0.06), effect.range ?? 3);
       }
       if (effect.type === 'blizzard_cast') {
@@ -449,27 +526,9 @@ export function createBattleAnimationController({
         });
       }
     }
-    if (seenEffects.size > 160) {
-      const retained = [...seenEffects].slice(-80);
-      seenEffects.clear();
-      retained.forEach(id => seenEffects.add(id));
-    }
   }
 
-  function update(delta, time) {
-    for (let index = attackPoses.length - 1; index >= 0; index -= 1) {
-      const pose = attackPoses[index];
-      pose.age += delta;
-      const progress = Math.min(1, pose.age / pose.duration);
-      const emphasis = Math.sin(progress * Math.PI);
-      pose.unit.scale.copy(pose.startScale).multiplyScalar(1 + emphasis * 0.09);
-      pose.unit.rotation.z = pose.startTilt - emphasis * 0.12;
-      if (progress < 1) continue;
-      pose.unit.scale.copy(pose.startScale);
-      pose.unit.rotation.z = pose.startTilt;
-      attackPoses.splice(index, 1);
-    }
-
+  function update(delta, time = 0) {
     for (let index = motions.length - 1; index >= 0; index -= 1) {
       const motion = motions[index];
       motion.elapsed += delta;
@@ -477,10 +536,9 @@ export function createBattleAnimationController({
       const progress = motion.charge ? raw * raw : easeInOutCubic(raw);
       motion.unit.position.lerpVectors(motion.start, motion.end, progress);
       motion.unit.position.y = THREE.MathUtils.lerp(motion.start.y, motion.end.y, progress);
-      motion.unit.rotation.z = motion.startTilt + Math.sin(raw * Math.PI) * (motion.charge ? -0.16 : -0.045);
+      unitMotion.walk(motion.unit, raw, motion.distance, motion.charge);
       if (raw < 1) continue;
       motion.unit.position.copy(motion.end);
-      motion.unit.rotation.z = motion.startTilt;
       motion.unit.userData.isMoving = false;
       motions.splice(index, 1);
       motion.onComplete?.();
@@ -501,10 +559,10 @@ export function createBattleAnimationController({
       const slash = slashEffects[index];
       slash.age += delta;
       const progress = Math.min(1, slash.age / slash.duration);
-      slash.group.scale.setScalar(0.65 + progress * 0.85);
-      slash.group.rotation.y += delta * 5.2;
+      slash.group.scale.setScalar(0.85 + progress * 0.3);
+      slash.group.rotation.y += delta * 1.2;
       slash.group.children.forEach(part => {
-        part.material.opacity = Math.max(0, 0.9 * (1 - progress));
+        part.material.opacity = Math.max(0, 0.65 * (1 - progress));
       });
       if (progress < 1) continue;
       scene.remove(slash.group);
@@ -516,7 +574,7 @@ export function createBattleAnimationController({
       const burst = bursts[index];
       burst.age += delta;
       const progress = Math.min(1, burst.age / burst.duration);
-      if (burst.ring) burst.ring.scale.setScalar(1 + progress * 7);
+      if (burst.ring) burst.ring.scale.setScalar(1 + progress * (reducedMotion() ? 0 : 3));
       burst.group.children.forEach((child, childIndex) => {
         if (child === burst.ring || !child.userData.direction) return;
         child.position.addScaledVector(child.userData.direction, delta * (burst.blizzard ? 1.65 : 2.8));
@@ -536,8 +594,8 @@ export function createBattleAnimationController({
       effect.age += delta;
       const progress = Math.min(1, effect.age / effect.duration);
       const reveal = easeInOutCubic(Math.min(1, progress * 1.25));
-      effect.unit.scale.copy(effect.targetScale).multiplyScalar(Math.max(0.05, reveal));
-      effect.spectral.rotation.y += delta * 4.2;
+      effect.unit.scale.copy(effect.targetScale).multiplyScalar(reducedMotion() ? 1 : Math.max(0.05, reveal));
+      effect.spectral.rotation.y += reducedMotion() ? 0 : delta * 1.5;
       effect.spectral.scale.setScalar(0.55 + progress * 0.85);
       effect.spectral.traverse(part => {
         if (part.material?.transparent) part.material.opacity = Math.max(0, 0.9 * (1 - progress));
@@ -551,6 +609,7 @@ export function createBattleAnimationController({
     }
 
     for (const group of stormGroups.values()) {
+      if (reducedMotion()) continue;
       const ring = group.getObjectByName('snowstormRing');
       if (ring) {
         ring.rotation.z = time * 0.72;
@@ -566,12 +625,68 @@ export function createBattleAnimationController({
         part.rotation.y += delta * 2.3;
       });
     }
+
+    unitMotion.update(delta);
+    for (const [unit, effect] of cues) {
+      effect.age += delta;
+      const progress = Math.min(1, effect.age / effect.duration);
+      effect.mesh.material.opacity = 0.5 * (1 - progress);
+      effect.mesh.scale.setScalar(reducedMotion() ? 1 : 1 + progress * 0.15);
+      if (progress < 1) continue;
+      scene.remove(effect.mesh);
+      disposeGroup(effect.mesh);
+      cues.delete(unit);
+    }
+    for (let index = defeats.length - 1; index >= 0; index -= 1) {
+      const effect = defeats[index];
+      effect.age += delta;
+      const progress = Math.min(1, effect.age / 0.24);
+      effect.echo.position.y = effect.y - progress * 0.065;
+      effect.materials.forEach(material => { material.opacity = 1 - progress; });
+      if (progress < 1) continue;
+      scene.remove(effect.echo);
+      effect.materials.forEach(material => material.dispose());
+      defeats.splice(index, 1);
+    }
+  }
+
+  function clear() {
+    motions.splice(0).forEach(motion => {
+      motion.unit.position.copy(motion.end);
+      motion.unit.userData.isMoving = false;
+    });
+    unitMotion.clear();
+    for (const effect of [...arrows.map(item => item.arrow), ...bursts.map(item => item.group),
+      ...slashEffects.map(item => item.group), ...cues.values()].map(item => item.mesh ?? item)) {
+      scene.remove(effect);
+      disposeGroup(effect);
+    }
+    arrows.length = bursts.length = slashEffects.length = 0;
+    cues.clear();
+    cloneEffects.splice(0).forEach(effect => {
+      effect.unit.scale.copy(effect.targetScale);
+      effect.unit.userData.cloneAnimating = false;
+      scene.remove(effect.spectral);
+      disposeGroup(effect.spectral);
+    });
+    defeats.splice(0).forEach(effect => {
+      scene.remove(effect.echo);
+      effect.materials.forEach(material => material.dispose());
+    });
+    reconcileSnowstorms([]);
+    seenEffects.clear();
+    protectedUnitIds.clear();
   }
 
   return {
     update,
     slideUnit,
     playAttack,
+    playImpact,
+    playAbility,
+    spawnUnit,
+    playDefeat,
+    clear,
     chargeGoblin,
     launchTowerVolley,
     spawnClone,

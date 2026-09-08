@@ -31,7 +31,8 @@ export function createAmbientAnimation({ units, fireMeshes, wisps, fireLights, p
           magic: animatedParts(unit, object => object.userData.magic) };
         unitParts.set(unit, parts);
       }
-      if (rig && unit.userData.cardType !== 'construction') {
+      if (rig && !['construction', 'machine', 'terrain'].includes(unit.userData.cardType)
+        && !unit.userData.presentationAnimating && !unit.userData.isMoving) {
         rig.position.y = 0.18 + Math.sin(time * 1.35 + index * 1.7) * 0.012;
         rig.rotation.z = Math.sin(time * 0.8 + index) * 0.006;
       }

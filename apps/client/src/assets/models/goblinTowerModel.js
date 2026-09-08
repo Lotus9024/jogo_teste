@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { M, add } from '../../core/scenePrimitives.js';
 import { unitBase } from './unitModelKit.js';
+import { timberStack, workLadder, worksiteSoil } from './constructionModelKit.js';
 
 const timber = new THREE.MeshStandardMaterial({ color: 0x4d301d, roughness: 0.92, flatShading: true });
 const timberLight = new THREE.MeshStandardMaterial({ color: 0x75502d, roughness: 0.88, flatShading: true });
@@ -64,6 +65,7 @@ export function makeGoblinTower() {
   const construction = new THREE.Group();
   construction.name = 'goblinTowerConstructionParts';
   rig.add(construction);
+  worksiteSoil(construction, 'goblinTowerWorksite', 1.36, 1.35);
   [[-0.38, -0.38], [0.38, -0.38], [-0.38, 0.38], [0.38, 0.38]].forEach(([x, z]) => {
     add(new THREE.CylinderGeometry(0.09, 0.13, 1.45, 7), timber, built, [x, 0.78, z], [0, 0, x * 0.08]);
   });
@@ -83,12 +85,13 @@ export function makeGoblinTower() {
   banner.name = 'goblinTowerBanner';
   for (const x of [-0.075, 0.075]) add(new THREE.ConeGeometry(0.048, 0.19, 4), bone, banner, [x, 0.02, 0.012], [0, 0, Math.PI]);
   add(new THREE.CylinderGeometry(0.025, 0.025, 1.1, 6), M.wood, built, [-0.22, 2.28, 0.02]);
-  [[-0.28, -0.15, 0.35], [0.22, -0.12, -0.42], [-0.05, 0.18, 0.08], [0.3, 0.22, 0.5]].forEach(([x, z, rotation]) => {
-    add(new THREE.CylinderGeometry(0.035, 0.05, 0.72, 6), timberLight, construction, [x, 0.28, z], [Math.PI / 2, 0, rotation]);
-  });
-  for (const x of [-0.38, 0.38]) timberBetween(construction, [x, 0.1, 0.25], [x, 0.92, 0.25], 0.11, 'goblinTowerScaffoldPost');
+  timberStack(construction, 'goblinTowerLooseTimber', { position: [0.02, 0.025, -0.05], length: 0.65, count: 5, yaw: -0.12 });
+  for (const x of [-0.38, 0.38]) timberBetween(construction, [x, 0.018, 0.25], [x, 0.92, 0.25], 0.11, 'goblinTowerScaffoldPost');
+  for (const x of [-0.38, 0.38]) timberBetween(construction, [x, 0.025, -0.36], [x, x < 0 ? 0.78 : 0.63, -0.36], 0.1, 'goblinTowerUnfinishedFrontPost');
+  timberBetween(construction, [-0.38, 0.76, -0.36], [-0.38, 0.88, 0.25], 0.065, 'goblinTowerPartialCrossbeam');
   timberBetween(construction, [-0.38, 0.37, 0.25], [0.38, 0.88, 0.25], 0.065, 'goblinTowerScaffoldBrace');
   add(new THREE.BoxGeometry(0.84, 0.065, 0.28), timberLight, construction, [0, 0.88, 0.25]);
+  workLadder(construction, 'goblinTowerWorkLadder', { position: [-0.05, 0.025, -0.49], height: 0.72, width: 0.21, lean: 0.14 });
   setGoblinTowerConstructionState(root, false);
   return root;
 }

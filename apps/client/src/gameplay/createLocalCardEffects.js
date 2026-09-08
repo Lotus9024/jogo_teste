@@ -18,6 +18,7 @@ export function createLocalCardEffects({
     unit.userData.maxHp += amount;
     unit.userData.hp = Math.min(unit.userData.maxHp, unit.userData.hp + amount);
     updateHealthBadge(unit);
+    battleAnimations.playAbility?.(unit, { color: 0xa9ba8f });
   }
 
   function applyRoyalWarriorBlessing(warrior) {

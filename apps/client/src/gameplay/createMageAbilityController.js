@@ -5,7 +5,7 @@ import { setMageFireBadgeActive } from '../ui/unitHealthBadge.js';
 
 export function createMageAbilityController({
   state, scene, tile, half, units, fires, unitAtCell, mageEffects,
-  boardPresentation, callbacks, currentRound, currentTurnIndex, syncAbilityBadges,
+  boardPresentation, callbacks, currentRound, currentTurnIndex, syncAbilityBadges, battleAnimations,
 }) {
   const geometry = new THREE.PlaneGeometry(tile * 0.78, tile * 0.78);
   const targetMaterial = new THREE.MeshBasicMaterial({
@@ -80,6 +80,8 @@ export function createMageAbilityController({
 
   function castFireLocally(cells) {
     const selected = state.selected;
+    cells.forEach(cell => battleAnimations?.playAttack(selected,
+      selected.position.clone().set(cell.x * tile - half, 0.06, cell.z * tile - half), 'mage'));
     const additions = cells.map((cell, index) => ({
       id: `local-fire-${state.round}-${Date.now()}-${index}`,
       ownerSeat: selected.userData.ownerSeat ?? state.activePlayer,
@@ -140,6 +142,7 @@ export function createMageAbilityController({
       x: Math.round((selected.position.x + half) / tile),
       z: Math.round((selected.position.z + half) / tile),
     };
+    battleAnimations?.playAbility(selected);
     [...units].filter(unit => unit !== selected && Math.max(
       Math.abs(Math.round((unit.position.x + half) / tile) - origin.x),
       Math.abs(Math.round((unit.position.z + half) / tile) - origin.z),

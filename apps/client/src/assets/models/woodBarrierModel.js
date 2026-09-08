@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { M, add } from '../../core/scenePrimitives.js';
 import { unitBase } from './unitModelKit.js';
+import { siteMallet, timberStack, worksiteSoil } from './constructionModelKit.js';
 
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 const freshWood = new THREE.MeshStandardMaterial({ color: 0xb78355, roughness: 0.92, flatShading: true });
@@ -97,6 +98,7 @@ function createBuiltParts() {
 function createConstructionParts() {
   const parts = new THREE.Group();
   parts.name = 'barrierConstructionParts';
+  worksiteSoil(parts, 'barrierPostTrench', 1.68, 0.78);
   [
     { x: -0.76, height: 1.03, z: 0.006, pointed: true },
     { x: -0.608, height: 0.94, z: -0.008, pointed: false },
@@ -113,6 +115,8 @@ function createConstructionParts() {
   beamBetween(parts, new THREE.Vector3(-0.78, 0.66, 0.09), new THREE.Vector3(-0.304, 0.66, 0.09), 0.046, freshWoodLight, 'barrierPartialUpperRail');
   beamBetween(parts, new THREE.Vector3(0.304, 0.25, 0.14), new THREE.Vector3(0.76, 0.75, 0.14), 0.038, freshWoodLight, 'barrierConstructionBrace');
   addRearSupports(parts, freshWood);
+  timberStack(parts, 'barrierUnfittedRails', { position: [-0.15, 0.023, -0.23], length: 0.78, count: 3, width: 0.065, yaw: 0.035 });
+  siteMallet(parts, 'barrierDrivingMallet', { position: [0.47, 0.025, -0.24], yaw: 0.23 });
   return parts;
 }
 

@@ -35,6 +35,7 @@ export function createUnitActionController(options) {
 
   function mountArcherLocally(unit, tower) {
     relations.placeArcherOnTower(unit, tower);
+    battleAnimations.spawnUnit?.(unit);
     unit.userData.mountedOnTowerId = relations.towerId(tower);
     const towerCard = CARD_BY_ID[tower.userData.cardId];
     unit.userData.attackRange = CARD_BY_ID.archer.attackRange + (towerCard.archerRangeBonus ?? 1);

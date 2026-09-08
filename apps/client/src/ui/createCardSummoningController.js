@@ -7,12 +7,14 @@ import { cards } from './cardView.js';
 
 export function createCardSummoningController({
   state, app, scene, camera, tile, half, units, hoverables, roads, hand,
-  boardCoordinates, boardPresentation, interaction, actions, abilities, callbacks,
+  boardCoordinates, boardPresentation, interaction, actions, abilities, callbacks, battleAnimations,
 }) {
   const summonFlightPoint = new THREE.Vector3();
   let cardCasting = false;
   const applyConstructionState = (unit, underConstruction) => {
+    const completed = unit.userData.underConstruction && !underConstruction;
     applyUnitConstructionState(unit, underConstruction, units, app);
+    if (completed) battleAnimations?.playAbility(unit, { color: 0xc7ac6a });
   };
   const deploymentSeat = () => state.onlineState ? state.selfSeat : state.activePlayer;
   const deploymentLevel = () => state.onlineState?.state.players
@@ -112,6 +114,7 @@ export function createCardSummoningController({
     units.push(unit);
     hoverables.push(unit);
     scene.add(unit);
+    if (card.id !== 'goblin_clone') battleAnimations?.spawnUnit(unit);
     if (card.id === 'wooden_house') boardPresentation.reconcileRoads(roads);
     if (card.buildRounds && !state.devInstantBuild) {
       unit.userData.buildReadyRound = state.round + card.buildRounds;

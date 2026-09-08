@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { M, add } from '../../core/scenePrimitives.js';
 import { unitBase } from './unitModelKit.js';
+import { WORK, masonryStack, mortarTub, siteBeam, siteMallet, timberStack, worksiteSoil } from './constructionModelKit.js';
 
 const goblinGlow = new THREE.MeshStandardMaterial({ color: 0x6ea646, emissive: 0x3c7a24, emissiveIntensity: 1.2, roughness: 0.35 });
 const mageGlow = new THREE.MeshStandardMaterial({ color: 0x8062cf, emissive: 0x4e2caa, emissiveIntensity: 1.35, roughness: 0.25 });
@@ -23,9 +24,7 @@ function supportRoot(name, color) {
   const construction = new THREE.Group();
   construction.name = 'supportConstructionParts';
   rig.add(construction);
-  [[-0.34, -0.2, 0.25], [0.32, 0.04, -0.5], [-0.08, 0.28, 0.1]].forEach(([x, z, rotation]) => {
-    add(new THREE.CylinderGeometry(0.045, 0.06, 0.78, 6), M.wood, construction, [x, 0.22, z], [Math.PI / 2, 0, rotation]);
-  });
+  worksiteSoil(construction, 'supportWorksiteSoil', 1.27, 1.19);
   return { root, built, construction };
 }
 
@@ -75,7 +74,22 @@ export function makeGoblinAltar() {
   }
   for (const x of [-0.25, 0.25]) add(new THREE.BoxGeometry(0.1, 0.23, 0.035), M.gold, built, [x, 0.38, -0.43], [0.15, Math.sign(x) * 0.35, Math.sign(x) * 0.2]);
   built.add(idol);
-  for (const x of [-0.24, 0, 0.24]) add(new THREE.DodecahedronGeometry(0.17, 0), paleStone, construction, [x, 0.11, 0.1], [0, x, 0], [1, 0.65, 1]);
+  const circle = new THREE.Group();
+  circle.name = 'goblinAltarUnfinishedCairn';
+  for (let index = 0; index < 4; index += 1) {
+    const angle = index * Math.PI / 3 + Math.PI / 6;
+    add(new THREE.DodecahedronGeometry(0.17, 0), index % 2 ? paleStone : M.stoneDark, circle,
+      [Math.sin(angle) * 0.27, 0.11 + index % 2 * 0.035, Math.cos(angle) * 0.27], [0, angle, 0], [1.12, 0.65, 0.95]);
+  }
+  construction.add(circle);
+  const socket = add(new THREE.CylinderGeometry(0.20, 0.23, 0.045, 8), M.iron, construction, [0, 0.043, 0]);
+  socket.name = 'goblinAltarEmptySocket';
+  for (const x of [-0.16, 0.14]) {
+    const tusk = add(new THREE.ConeGeometry(0.055, 0.30, 6), bone, construction, [x, 0.075, -0.35], [Math.PI / 2, 0, x * 0.3]);
+    tusk.name = 'goblinAltarUnfittedTusk';
+  }
+  siteBeam(construction, 'goblinAltarBareStake', [0.36, 0.025, 0.16], [0.36, 0.41, 0.16], 0.085, M.wood);
+  siteMallet(construction, 'goblinAltarStoneMallet', { position: [-0.38, 0.02, -0.08], yaw: 0.28 });
   setSupportConstructionState(root, false);
   return root;
 }
@@ -118,6 +132,14 @@ export function makeMageAltar() {
   crystalCage.name = 'mageAltarCrystalSetting';
   add(new THREE.CylinderGeometry(0.3, 0.42, 0.18, 4), paleStone, construction, [0, 0.11, 0], [0, Math.PI / 4, 0]);
   for (const x of [-0.34, 0.34]) add(new THREE.BoxGeometry(0.13, 0.42, 0.13), paleStone, construction, [x, 0.23, 0.3]);
+  const obeliskBlank = add(new THREE.CylinderGeometry(0.12, 0.19, 0.51, 4), paleStone, construction,
+    [0.02, 0.25, -0.19], [Math.PI / 2, Math.PI / 4, 0]);
+  obeliskBlank.name = 'mageAltarUnfittedObelisk';
+  for (const z of [-0.34, 0.03]) add(new THREE.BoxGeometry(0.34, 0.055, 0.07), WORK.timber, construction, [0.02, 0.105, z]);
+  masonryStack(construction, 'mageAltarDressedStoneSupply', { position: [-0.12, 0.02, 0.42], rows: 1 });
+  siteMallet(construction, 'mageAltarCarvingMallet', { position: [0.42, 0.02, -0.14], yaw: -0.22 });
+  const chisel = add(new THREE.CylinderGeometry(0.018, 0.009, 0.22, 5), M.iron, construction, [0.31, 0.04, -0.25], [Math.PI / 2, 0, 0.18]);
+  chisel.name = 'mageAltarStoneChisel';
   setSupportConstructionState(root, false);
   return root;
 }
@@ -193,8 +215,21 @@ export function makeBuilderArea() {
     tools.add(hanging);
   }
   built.add(tools);
-  add(new THREE.BoxGeometry(0.96, 0.065, 0.35), oldTimber, construction, [0, 0.16, -0.15]);
-  for (const x of [-0.44, 0.44]) add(new THREE.BoxGeometry(0.08, 0.54, 0.08), M.wood, construction, [x, 0.3, 0.27]);
+  const benchFrame = new THREE.Group();
+  benchFrame.name = 'builderUnfinishedBench';
+  for (const x of [-0.36, 0.36]) {
+    for (const z of [-0.24, 0.06]) siteBeam(benchFrame, 'builderUnfinishedBenchLeg', [x, 0.025, z], [x, 0.46, z], 0.065);
+  }
+  for (const z of [-0.24, 0.06]) siteBeam(benchFrame, 'builderBenchFrameRail', [-0.4, 0.46, z], [0.4, 0.46, z], 0.065);
+  for (const x of [-0.26, -0.09]) add(new THREE.BoxGeometry(0.145, 0.065, 0.38), oldTimber, benchFrame, [x, 0.515, -0.09]);
+  construction.add(benchFrame);
+  for (const x of [-0.44, 0.44]) siteBeam(construction, 'builderBareCanopyPost', [x, 0.025, 0.31], [x, 0.98, 0.31], 0.08);
+  siteBeam(construction, 'builderBareCanopyRail', [-0.46, 0.98, 0.31], [0.46, 0.98, 0.31], 0.075);
+  const canvas = add(new THREE.CylinderGeometry(0.066, 0.069, 0.61, 8), WORK.cloth, construction, [0, 1.046, 0.31], [0, 0, Math.PI / 2]);
+  canvas.name = 'builderRolledCanvas';
+  timberStack(construction, 'builderTimberSupply', { position: [0.0, 0.023, -0.40], length: 0.56, count: 4, width: 0.06 });
+  siteMallet(construction, 'builderAssemblyMallet', { position: [-0.15, 0.552, -0.11], yaw: 0.25 });
+  mortarTub(construction, 'builderWorkBucket', [0.42, 0.021, -0.20]);
   setSupportConstructionState(root, false);
   return root;
 }

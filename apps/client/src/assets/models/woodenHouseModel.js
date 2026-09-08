@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { M, add } from '../../core/scenePrimitives.js';
 import { unitBase } from './unitModelKit.js';
+import { siteMallet, timberStack, trestle, workLadder } from './constructionModelKit.js';
 
 const wood = new THREE.MeshStandardMaterial({ color: 0x76513a, roughness: 0.94, flatShading: true });
 const darkWood = new THREE.MeshStandardMaterial({ color: 0x5c4032, roughness: 0.96, flatShading: true });
@@ -205,7 +206,11 @@ function createConstructionRoof(parent) {
   patch.name = 'houseConstructionRoofPatch';
   patch.position.set(eaveX / 2, (ridgeY + eaveY) / 2, 0.36);
   patch.rotation.z = -Math.atan2(rise, eaveX);
-  add(new THREE.BoxGeometry(slope, 0.06, 0.42), freshWood, patch, [0, 0.06, 0]);
+  for (let strip = 0; strip < 4; strip += 1) {
+    const board = add(new THREE.BoxGeometry(slope, 0.055, 0.092), strip % 2 ? wood : freshWood, patch,
+      [0, 0.06 + strip % 2 * 0.006, (strip - 1.5) * 0.103]);
+    board.name = 'houseUnfinishedRoofBoard';
+  }
   parent.add(patch);
 }
 
@@ -219,6 +224,10 @@ function createConstructionCabin(parent) {
     }
   }
   createConstructionRoof(parent);
+  timberStack(parent, 'houseFloorTimberSupply', { position: [-0.28, 0.195, -0.18], length: 0.62, count: 5, width: 0.075 });
+  trestle(parent, 'houseCarpenterTrestle', { position: [0.21, 0.195, 0.08], width: 0.52, height: 0.39, depth: 0.24 });
+  siteMallet(parent, 'houseCarpenterMallet', { position: [0.22, 0.615, 0.07], yaw: Math.PI / 2 });
+  workLadder(parent, 'houseRoofLadder', { position: [0.56, 0.085, -0.73], width: 0.21, height: 1.07, lean: 0.16 });
 }
 
 export function makeWoodenHouse() {

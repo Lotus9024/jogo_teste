@@ -6,7 +6,7 @@ import { setUnitTeamColor } from './unitState.js';
 import { cards } from '../ui/cardView.js';
 
 export function createGoblinTowerAbilityController({
-  state, scene, tile, half, units, hoverables, unitAtCell, baseSeatAtCell, callbacks, syncAbilityBadges,
+  state, scene, tile, half, units, hoverables, unitAtCell, baseSeatAtCell, callbacks, syncAbilityBadges, battleAnimations,
 }) {
   const geometry = new THREE.PlaneGeometry(tile * 0.78, tile * 0.78);
   const material = new THREE.MeshBasicMaterial({
@@ -81,6 +81,8 @@ export function createGoblinTowerAbilityController({
     units.push(goblin);
     hoverables.push(goblin);
     scene.add(goblin);
+    battleAnimations?.spawnUnit(goblin);
+    battleAnimations?.playAbility(tower);
     tower.userData.actionUsed = true;
     tower.userData.abilityUsed = true;
     syncAbilityBadges();

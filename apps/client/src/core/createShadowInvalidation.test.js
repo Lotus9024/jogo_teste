@@ -30,3 +30,18 @@ test('castle upgrades and visibility invalidate shadows; low quality does no sha
   castle.scale.setScalar(2);
   assert.equal(shadows.update([castle], 3), false);
 });
+
+test('animated architecture and weapons refresh shadows at the existing cadence without moving the logical root', () => {
+  const renderer = { shadowMap: { enabled: true, needsUpdate: false } };
+  const shadows = createShadowInvalidation(renderer);
+  const unit = new Group();
+  shadows.update([unit], 0);
+  unit.userData.presentationAnimating = true;
+  assert.equal(shadows.update([unit], 0.1), true);
+  renderer.shadowMap.needsUpdate = false;
+  assert.equal(shadows.update([unit], 0.12), false);
+  assert.equal(shadows.update([unit], 0.2), true);
+  unit.userData.presentationAnimating = false;
+  assert.equal(shadows.update([unit], 0.3), true);
+  assert.equal(shadows.update([unit], 0.4), false);
+});

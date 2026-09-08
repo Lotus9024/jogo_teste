@@ -133,6 +133,7 @@ createSettingsController({
 
 const handController = createHandController({
   state,
+  battleAnimations,
   app,
   scene,
   renderer,
@@ -160,6 +161,7 @@ Object.assign(callbacks, {
 
 const devController = createDevModeController({
   state,
+  battleAnimations,
   app,
   scene,
   alliedKeep,
@@ -190,6 +192,7 @@ Object.assign(callbacks, {
 
 const renderLoop = createRenderLoop({
   renderer,
+  keeps,
   scene,
   camera,
   controls,

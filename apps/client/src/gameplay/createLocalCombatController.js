@@ -20,6 +20,7 @@ export function createLocalCombatController({
   callbacks,
 }) {
   function removeLocalUnit(unit) {
+    battleAnimations.playDefeat?.(unit);
     const removedTowerId = relations.towerId(unit);
     units.splice(units.indexOf(unit), 1);
     hoverables.splice(hoverables.indexOf(unit), 1);
@@ -37,6 +38,7 @@ export function createLocalCombatController({
   function damageLocalUnit(unit, amount) {
     if (!unit || !units.includes(unit)) return;
     damageEffects.show(unit.position, amount);
+    if (amount > 0) battleAnimations.playImpact?.(unit);
     unit.userData.hp -= amount;
     updateHealthBadge(unit);
     if (unit.userData.hp <= 0) removeLocalUnit(unit);
@@ -87,9 +89,11 @@ export function createLocalCombatController({
       );
       const damage = impactDistance === 0 ? unit.userData.damage : unit.userData.areaDamage;
       damageEffects.show(candidate.position, damage);
+      if (damage > 0) battleAnimations.playImpact?.(candidate);
       candidate.userData.hp -= damage;
       updateHealthBadge(candidate);
       if (candidate.userData.hp <= 0) {
+        battleAnimations.playDefeat?.(candidate);
         units.splice(units.indexOf(candidate), 1);
         hoverables.splice(hoverables.indexOf(candidate), 1);
         scene.remove(candidate);
@@ -125,12 +129,14 @@ export function createLocalCombatController({
       return false;
     }
     battleAnimations.playAttack(unit, target.position, unit.userData.cardId);
+    battleAnimations.playImpact?.(target);
     damageEffects.show(target.position, unit.userData.damage);
     target.userData.hp -= unit.userData.damage;
     updateHealthBadge(target);
     app.dataset.lastAttack = `${unit.userData.name}->${target.userData.name}:${Math.max(0, target.userData.hp)}`;
     if (target.userData.hp > 0) return true;
     const removedTowerId = relations.towerId(target);
+    battleAnimations.playDefeat?.(target);
     units.splice(units.indexOf(target), 1);
     hoverables.splice(hoverables.indexOf(target), 1);
     scene.remove(target);

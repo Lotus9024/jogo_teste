@@ -59,3 +59,74 @@ test('castelos de quatro jogadores permanecem alinhados aos cantos em qualquer t
     }
   }
 });
+
+test('arquitetura e fundação respeitam o footprint real nos modos de dois, três e quatro jogadores', () => {
+  const tile = 1.08, half = 7.56;
+  const board = new THREE.Group();
+  const { keeps, setPlayerCount, setVisualSize } = createCastleKeeps(board, { tile, half });
+  for (const playerCount of [2, 3, 4]) {
+    setPlayerCount(playerCount);
+    for (let seat = 1; seat <= playerCount; seat += 1) {
+      for (const size of [1, 3, 6]) {
+        const { footprint } = setVisualSize(seat, size);
+        const keep = keeps[seat - 1];
+        board.updateWorldMatrix(true, true);
+        // Measure transformed vertices: rotated circular towers have a looser
+        // bounding-box approximation than the geometry that is actually drawn.
+        const bounds = new THREE.Box3().setFromObject(keep, true);
+        const halfWidth = footprint * tile / 2;
+        assert.ok(bounds.min.x >= keep.position.x - halfWidth - 0.0001);
+        assert.ok(bounds.max.x <= keep.position.x + halfWidth + 0.0001);
+        assert.ok(bounds.min.z >= keep.position.z - halfWidth - 0.0001);
+        assert.ok(bounds.max.z <= keep.position.z + halfWidth + 0.0001);
+        const foundation = new THREE.Box3().setFromObject(keep.getObjectByName('Limite visual da base'));
+        assert.ok(Math.abs(foundation.max.x - foundation.min.x - footprint * tile) < 0.0001);
+        assert.ok(Math.abs(foundation.max.z - foundation.min.z - footprint * tile) < 0.0001);
+        const entrance = keep.getObjectByName('castleEntrance').getWorldPosition(new THREE.Vector3());
+        const direction = entrance.sub(keep.position).setY(0);
+        assert.ok(direction.dot(keep.position.clone().negate().setY(0)) > 0, 'o portão segue orientado para o centro');
+      }
+    }
+  }
+});
+
+test('rig de dano não move footprint, pátio ou âncora de status e começa sem transformações', () => {
+  const board = new THREE.Group();
+  const { alliedKeep } = createCastleKeeps(board, { tile: 1.08, half: 7.56 });
+  const structure = alliedKeep.getObjectByName('castleStructure');
+  assert.deepEqual(structure.position.toArray(), [0, 0, 0]);
+  assert.deepEqual(structure.scale.toArray(), [1, 1, 1]);
+  assert.equal(alliedKeep.getObjectByName('castleEntrance').parent.parent, structure);
+  board.updateWorldMatrix(true, true);
+  const fixed = ['Limite visual da base', 'castleCourtyard', 'castleStatusAnchor'].map(name => {
+    const object = alliedKeep.getObjectByName(name);
+    return [object, object.matrixWorld.clone()];
+  });
+  const roofBounds = new THREE.Box3().setFromObject(structure);
+  const status = alliedKeep.getObjectByName('castleStatusAnchor').getWorldPosition(new THREE.Vector3());
+  assert.ok(status.y > roofBounds.max.y);
+  assert.ok(status.y - roofBounds.max.y < 0.4);
+  structure.position.set(0.07, 0.02, -0.05);
+  structure.rotation.z = 0.03;
+  board.updateWorldMatrix(true, true);
+  for (const [object, matrix] of fixed) assert.deepEqual(object.matrixWorld.elements, matrix.elements);
+});
+
+test('portaria tem passagem aberta e arquitetura usa luz discreta sem luzes pontuais extras', () => {
+  const board = new THREE.Group();
+  const { alliedKeep, enemyKeep } = createCastleKeeps(board, { tile: 1.08, half: 7.56 });
+  board.updateWorldMatrix(true, true);
+  for (const keep of [alliedKeep, enemyKeep]) {
+    const entrance = keep.getObjectByName('castleEntrance');
+    const origin = entrance.localToWorld(new THREE.Vector3(0.035, 0.6, 1));
+    const direction = new THREE.Vector3(0, 0, -1).applyQuaternion(entrance.getWorldQuaternion(new THREE.Quaternion()));
+    const ray = new THREE.Raycaster(origin, direction);
+    assert.equal(ray.intersectObject(keep.getObjectByName('castleGatehousePassage')).length, 0);
+    assert.ok(keep.getObjectByName('castleMainRoof'));
+    assert.ok(keep.getObjectByName('castleGatehouseRoof'));
+    keep.traverse(object => {
+      assert.equal(Boolean(object.isPointLight), false);
+      if (object.isMesh) assert.ok((object.material.emissiveIntensity ?? 0) <= 1);
+    });
+  }
+});

@@ -51,6 +51,7 @@ export function createGameRuntime() {
   const hoverables = [];
   const battleAnimations = createBattleAnimationController({
     scene,
+    keeps: world.keeps,
     tile,
     half,
     units,

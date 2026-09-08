@@ -50,6 +50,8 @@ Há uma escolha estratégica nesse exemplo: **Guerreiro Real e Torre Real exigem
 
 Selecione uma peça ou passe o ponteiro sobre uma carta para consultar informações. Uma peça com a aparência de obra ainda não concluiu a construção. A confirmação do servidor determina a posição e os recursos finais; uma mensagem de erro informa por que uma intenção não foi aceita.
 
+O HUD é compacto: no alto ficam o estado da partida, a rodada e o relógio; embaixo, Castelo, Energia, Vida, Cidadãos e **Passar turno**. **Passar o mouse ou clicar num castelo não abre painel de informações.** A pequena barra sobre o castelo rival indica sua vida. Para consultar requisitos de evolução, use este guia.
+
 ## 4. Controles
 
 | Ação | Controle |
@@ -58,6 +60,7 @@ Selecione uma peça ou passe o ponteiro sobre uma carta para consultar informaç
 | Jogar uma carta | Arrastar da mão até o tabuleiro |
 | Mover uma tropa | Selecionar e arrastar para um destino válido |
 | Atacar | Arrastar sua tropa até um alvo válido; o Mago usa o comando de fogo |
+| Atacar um castelo | Com uma tropa selecionada e alcance válido, clicar no castelo rival ou arrastar até uma casa válida da base |
 | Girar a câmera | Arrastar uma região livre da cena com o botão esquerdo |
 | Aproximar / afastar | Roda do mouse sobre a cena |
 | Percorrer uma mão larga | Roda do mouse sobre a área das cartas |

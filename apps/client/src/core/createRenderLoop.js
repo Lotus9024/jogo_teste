@@ -9,6 +9,7 @@ export function createRenderLoop({
   renderer, scene, camera, controls, cameraTransition, damageEffects, mageEffects,
   battleAnimations, units, fireMeshes, wisps, fireLights, physicalDecks,
   alliedKeep, enemyKeep, updateDynamicLighting, updateTerrain,
+  keeps = [alliedKeep, enemyKeep],
   getSelfSeat, getGraphicsQuality, getDeckHoverSeat,
   environment = globalThis,
 }) {
@@ -32,8 +33,12 @@ export function createRenderLoop({
   function positionEnemyStatus() {
     const target = getSelfSeat() === 2 ? alliedKeep : enemyKeep;
     if (!enemyBaseTag || !target) return;
-    target.getWorldPosition(baseTagPoint);
-    baseTagPoint.y += 4.9;
+    const anchor = target.getObjectByName?.('castleStatusAnchor');
+    if (anchor) anchor.getWorldPosition(baseTagPoint);
+    else {
+      target.getWorldPosition(baseTagPoint);
+      baseTagPoint.y += 4.9;
+    }
     baseTagPoint.project(camera);
     enemyBaseTag.style.left = ((baseTagPoint.x * 0.5 + 0.5) * environment.innerWidth) + 'px';
     enemyBaseTag.style.top = ((-baseTagPoint.y * 0.5 + 0.5) * environment.innerHeight) + 'px';
@@ -79,7 +84,7 @@ export function createRenderLoop({
       updateDynamicLighting(ambientTime);
       updateTerrain(ambientTime);
       ambient.update(ambientTime);
-      shadows.update([...units, alliedKeep, enemyKeep], elapsed);
+      shadows.update([...units, ...keeps.filter(Boolean)], elapsed);
     }
     renderer.render(scene, camera);
   }

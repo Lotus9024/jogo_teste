@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { add } from '../../core/scenePrimitives.js';
 import { unitBase } from './unitModelKit.js';
+import { masonryStack, mortarTub, workLadder, worksiteSoil } from './constructionModelKit.js';
 
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
@@ -162,6 +163,7 @@ function addScaffoldRing(parent, y) {
 function createConstructionParts() {
   const parts = new THREE.Group();
   parts.name = 'towerConstructionParts';
+  worksiteSoil(parts, 'towerExcavationSoil', 1.47, 1.43);
   addFoundation(parts);
 
   const body = add(new THREE.CylinderGeometry(0.54, 0.6, 0.72, 8), stone, parts, [0, 0.44, 0]);
@@ -187,6 +189,15 @@ function createConstructionParts() {
   beamBetween(parts, new THREE.Vector3(edge, 0.72, -edge), new THREE.Vector3(edge, 1.51, edge), 0.03, freshWood, 'towerScaffoldBrace');
   const partialDeck = add(new THREE.BoxGeometry(0.46, 0.055, 0.92), freshWood, parts, [0.28, 1.48, 0]);
   partialDeck.name = 'towerPartialDeck';
+  for (let index = 0; index < 5; index += 1) {
+    const angle = index * Math.PI / 4;
+    const block = add(new THREE.BoxGeometry(0.29, 0.125, 0.14), index % 2 ? stoneLight : stoneDark,
+      parts, [Math.sin(angle) * 0.46, 0.855 + index % 2 * 0.014, Math.cos(angle) * 0.46], [0, angle, 0]);
+    block.name = 'towerOpenMasonryCourse';
+  }
+  workLadder(parts, 'towerScaffoldLadder', { position: [0.05, 0.02, -0.70], height: 1.47, width: 0.24, lean: 0.14 });
+  masonryStack(parts, 'towerStoneSupply', { position: [0.43, 0.025, -0.54], yaw: 0.08 });
+  mortarTub(parts, 'towerMortarTub', [-0.45, 0.02, -0.59]);
   return parts;
 }
 
