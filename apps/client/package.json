@@ -7,6 +7,8 @@
     "dev": "vite --host 0.0.0.0 --port 4173",
     "test": "node ../../scripts/test-workspace.mjs src",
     "build": "vite build",
+    "build:spectator": "vite build --config spectator/vite.spectator.config.mjs",
+    "preview:spectator": "vite preview --config spectator/vite.spectator.config.mjs --host 127.0.0.1 --port 4174 --strictPort",
     "preview": "vite preview --host 0.0.0.0 --port 4173"
   },
   "dependencies": {

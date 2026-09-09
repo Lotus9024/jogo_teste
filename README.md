@@ -57,15 +57,22 @@ Há salas públicas, salas privadas por código, espectadores e reconexão. **Jo
 ## Estrutura
 
 ```text
-apps/client/       Interface, cena 3D, interações e conexão com a partida
-apps/server/       HTTP, autenticação, WebSocket e motor autoritativo
+apps/
+  client/          Frontend: interface, cena 3D e conexão com a partida
+    spectator/     Espectador local da arena do bot, com build separado
+  server/          Backend: HTTP, autenticação, WebSocket e motor autoritativo
+  bot/             Terminal, assessor estratégico e lançadores da arena
+    src/           Código do bot
+    test/          Testes do bot
 packages/shared/  Configuração, catálogo, protocolo e regras puras
 docs/              Manual do jogador e documentação técnica
 scripts/           Verificações e descoberta de testes
-local-tools/       Ferramentas auxiliares e experimentos independentes
+local-tools/       Experimentos locais independentes do jogo
 ```
 
 O estado das partidas fica **na memória do processo do servidor**. Contas, sessões e Decks podem persistir em PostgreSQL, mas reiniciar o servidor encerra as partidas ativas. Os limites concretos estão em [Arquitetura](docs/ARQUITETURA.md) e [Revisão das regras](docs/REVISAO-DAS-REGRAS.md).
+
+O workspace [apps/bot](apps/bot/README.md) reúne as ferramentas que antes estavam em `local-tools`. `npm run bot:terminal -- criar "Meu bot"` abre um jogador textual; `npm run dev:bot -- --source http://127.0.0.1:4310` acompanha suas recomendações. O assessor lê o estado e sugere ações; não é um jogador autônomo. O comando `npm run dev` continua iniciando frontend e backend.
 
 ## Verificar mudanças
 

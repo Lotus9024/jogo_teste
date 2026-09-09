@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tronos em Ruínas — Arena das IAs</title>
+    <link rel="stylesheet" href="./spectator.css" />
+  </head>
+  <body>
+    <main id="spectator">
+      <section id="game" aria-label="Partida entre inteligências artificiais"></section>
+      <header class="spectator-header">
+        <div>
+          <span class="eyebrow">ARENA LOCAL · SOMENTE LEITURA</span>
+          <h1>Codex vs Codex</h1>
+        </div>
+        <div id="connection" class="connection waiting">Conectando...</div>
+      </header>
+      <aside class="score blue">
+        <span id="blue-name">Codex Azul</span>
+        <strong><b id="blue-hp">10</b> ♥</strong>
+        <small>LV <b id="blue-level">1</b> · ☺ <b id="blue-citizens">0</b> · <b id="blue-energy">10</b>/<b id="blue-max-energy">10</b> energia</small>
+      </aside>
+      <aside class="score red">
+        <span id="red-name">Codex Vermelho</span>
+        <strong><b id="red-hp">10</b> ♥</strong>
+        <small>LV <b id="red-level">1</b> · ☺ <b id="red-citizens">0</b> · <b id="red-energy">10</b>/<b id="red-max-energy">10</b> energia</small>
+      </aside>
+      <section class="turn-panel">
+        <span id="room-code">SALA ------</span>
+        <strong id="turn-label">AGUARDANDO</strong>
+        <span id="round-label">RODADA 1</span>
+      </section>
+      <section class="event-log" aria-live="polite">
+        <span>ÚLTIMA AÇÃO</span>
+        <strong id="last-action">Aguardando os jogadores...</strong>
+      </section>
+      <div id="winner" class="winner" hidden>
+        <span>VITÓRIA</span>
+        <strong id="winner-name"></strong>
+      </div>
+    </main>
+    <script type="module" src="./spectator.js"></script>
+  </body>
+</html>

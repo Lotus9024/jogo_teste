@@ -1,0 +1,19 @@
+{
+  "name": "@tronos/bot",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node src/codex-advisor.mjs --watch",
+    "start": "node src/codex-advisor.mjs",
+    "terminal": "node src/game-terminal.mjs",
+    "arena": "node src/arena-code.mjs",
+    "arena:pair": "node src/start-ai-arena.mjs",
+    "test": "node --test",
+    "build": "node scripts/check.mjs"
+  },
+  "dependencies": {
+    "@tronos/shared": "0.2.0",
+    "ws": "^8.18.3"
+  }
+}

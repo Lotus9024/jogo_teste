@@ -6,6 +6,10 @@
 
 O projeto é um monorepo JavaScript ESM com npm workspaces. O navegador renderiza a mesa em Three.js, apresenta os menus em DOM e envia intenções ao servidor. O servidor Node.js executa autenticação HTTP e partidas WebSocket. `packages/shared` contém os dados e as funções puras consumidas pelos dois lados.
 
+As aplicações ficam em `apps/client` (frontend), `apps/server` (backend) e `apps/bot` (terminal, assessor e lançadores). O bot declara suas próprias dependências de `ws` e `@tronos/shared`; os arquivos de origem ficam em `src/`, testes em `test/` e estado temporário em `.local-data/`. O espectador gráfico pertence ao frontend em `apps/client/spectator/` e possui um build separado.
+
+`apps/bot/src/paths.mjs` resolve os caminhos dos lançadores a partir dos próprios módulos, sem depender do diretório do terminal. O assessor estratégico continua somente leitura; `game-terminal.mjs` é o cliente que recebe comandos e envia intenções pelo protocolo. Organizar essas ferramentas como aplicação não altera a IA indisponível no menu do jogo nem introduz jogadas automáticas.
+
 ```text
 Navegador
   UI / ponteiro → controlador → intenção + versão esperada

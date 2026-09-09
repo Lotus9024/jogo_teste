@@ -101,6 +101,10 @@ Se o computador não tiver o cluster preparado, use sua instalação PostgreSQL 
 | `npm ci` | Instala dependências conforme a lockfile |
 | `npm run dev` | Frontend e backend juntos |
 | `npm run dev:client` / `npm run dev:server` | Um lado do sistema |
+| `npm run dev:bot -- --source http://127.0.0.1:4310` | Assessor do bot em modo de acompanhamento, após abrir um terminal |
+| `npm run bot:terminal -- criar "Meu bot"` | Jogador textual do bot |
+| `npm run bot:arena -- criar "Meu bot"` | Terminal com espectador local |
+| `npm run bot:pair` | Dois terminais na mesma sala; as decisões são externas |
 | `npm run check` | Verificação de sintaxe e organização configurada pelos scripts |
 | `npm test` | Suítes dos workspaces com descoberta dos testes |
 | `npm run build` | Build de todos os workspaces aplicáveis |
@@ -108,13 +112,17 @@ Se o computador não tiver o cluster preparado, use sua instalação PostgreSQL 
 | `npm run playtest` | Inicia ambiente isolado e exercita os fluxos no navegador |
 | `npm run build --workspace @tronos/client` | Gera frontend e manual em `apps/client/dist` |
 | `npm run build --workspace @tronos/server` | Confere sintaxe dos módulos do servidor |
+| `npm run build --workspace @tronos/bot` | Confere sintaxe dos módulos do bot |
+| `npm run build:spectator --workspace @tronos/client` | Compila o espectador separado usado pelos lançadores do bot |
 | `npm run preview --workspace @tronos/client` | Prévia local do frontend compilado; ainda requer API para jogar online |
 | `npm start` | Inicia somente o backend |
 | `npm run db:migrate` / `npm run db:verify` | Migrations e conferência de permissões |
 
 O build do backend é uma verificação de JavaScript; não comprova conexão com PostgreSQL. Os testes usam principalmente ambientes isolados e estados sintéticos. Não substituem um teste de partida no navegador, uma migração real ou teste de carga.
 
-A integração contínua instala pela lockfile e executa `check`, testes e build. `scripts/test-workspace.mjs` descobre arquivos de teste para evitar que uma nova suíte seja esquecida numa lista manual. `local-tools` contém auxiliares independentes; não presuma que todas as suas suítes façam parte do runtime ou do comando principal.
+A integração contínua instala pela lockfile e executa `check`, testes e build. `apps/client`, `apps/server` e `apps/bot` são workspaces, com dependências na lockfile raiz; o bot usa os mesmos exports de `@tronos/shared`. `scripts/test-workspace.mjs` descobre arquivos de teste do cliente, e o bot também integra `npm test`. `local-tools` conserva apenas experimentos independentes e arquivos locais anteriores; o terminal, o assessor e os lançadores foram movidos para `apps/bot`.
+
+O espectador do bot fica em `apps/client/spectator`, com build separado. Seus lançadores usam a porta 4174, também utilizada pelo playtest isolado: encerre a arena antes de executar o playtest. O handshake novo fica em `apps/bot/.local-data/communication.json`, ignorado pelo Git. O antigo handshake e logs locais não são migrados nem publicados. Consulte [o README do bot](../apps/bot/README.md) para detalhes.
 
 ### Playtest automatizado local
 
